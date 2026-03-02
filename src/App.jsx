@@ -1,63 +1,65 @@
-import React, { useState } from 'react';
-import ModelEditor from './features/ModelEditor/ModelEditor';
-import SceneEditor from './features/SceneEditor/SceneEditor';
-import OutputPanel from './features/OutputPanel/OutputPanel';
-import ModelManager from './features/ModelManager/ModelManager';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import ModelsView from './views/ModelsView';
+import ModelEditorShell from './views/ModelEditorShell';
+import AccountsView from './views/AccountsView';
+import LocationsAndSandboxView from './views/LocationsAndSandboxView';
+import GenerationView from './views/GenerationView';
 
-const App = () => {
-  const [isManagerOpen, setIsManagerOpen] = useState(false);
-
+// -- THE GLOBAL LAYOUT SHELL --
+const AppLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-black text-gray-100 p-4 md:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-black text-gray-100 flex flex-col font-sans">
       
-      {/* HEADER BANNER */}
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent inline-block">
+      {/* HEADER BANNER GLOBAL */}
+      <header className="px-6 py-4 bg-[#050505] border-b border-gray-800 flex items-center justify-between shadow-xl sticky top-0 z-50">
+        <Link to="/" className="hover:opacity-80 transition-opacity">
+          <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent inline-block">
             NanaBanana Studio
           </h1>
-          <p className="text-gray-400 font-medium tracking-wide text-sm mt-1 uppercase">
-            Prompt Generator for Virtual Influencers (OFM)
+          <p className="text-gray-500 font-bold tracking-[0.2em] text-[10px] mt-0.5 uppercase">
+            OFM Hub Architecture (Entonnoir v4.1)
           </p>
+        </Link>
+        <div className="flex gap-3">
+            <Link to="/" className="text-sm font-bold text-blue-400 hover:text-white hover:bg-blue-900/40 bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-900/50 transition-colors flex items-center gap-2 shadow-sm">
+               🏠 Modèles <span className="opacity-50">| Niveau 1</span>
+            </Link>
         </div>
-        
-        {/* BOUTON MANAGER */}
-        <button 
-          onClick={() => setIsManagerOpen(true)}
-          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg font-semibold border border-gray-700 hover:border-blue-500 transition-colors shadow-sm"
-          title="Ouvrir la base de données d'influenceuses"
-        >
-          <span className="text-blue-400">👤</span> Mes Modèles
-        </button>
       </header>
 
-      {/* MAIN GRID LAYOUT */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
-        
-        {/* LEFT COLUMN: Face & Body Settings */}
-        <section className="col-span-1 lg:col-span-4 h-full">
-          <ModelEditor />
-        </section>
-
-        {/* MIDDLE COLUMN: Scene & Outfit Settings */}
-        <section className="col-span-1 lg:col-span-4 h-full">
-          <SceneEditor />
-        </section>
-
-        {/* RIGHT COLUMN: Output (Nano Banana Pro prompt) */}
-        <section className="col-span-1 lg:col-span-4 h-full">
-          <OutputPanel />
-        </section>
-
+      {/* DYNAMIC CONTENT AREA */}
+      <main className="flex-1 flex flex-col h-[calc(100vh-80px)] overflow-hidden">
+        {children}
       </main>
 
-      {/* MODALE GESTIONNAIRE DE MODELES */}
-      <ModelManager 
-        isOpen={isManagerOpen} 
-        onClose={() => setIsManagerOpen(false)} 
-      />
-
     </div>
+  );
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppLayout>
+        <Routes>
+           {/* LEVEL 1: Agence (Root) - List all models */}
+          <Route path="/" element={<ModelsView />} />
+          
+          {/* LEVEL 1b: Edit or Create a Model */}
+          <Route path="/models/new" element={<ModelEditorShell mode="create" />} />
+          <Route path="/models/:modelId/edit" element={<ModelEditorShell mode="edit" />} />
+
+          {/* LEVEL 2: Model selected -> List their Accounts */}
+          <Route path="/models/:modelId/accounts" element={<AccountsView />} />
+          
+          {/* LEVEL 3: Account selected -> List Locations OR Sandbox */}
+          <Route path="/models/:modelId/accounts/:accountId/locations" element={<LocationsAndSandboxView />} />
+          
+          {/* LEVEL 4: Scene Setup (Generation) for a specific Location OR Sandbox */}
+          <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<GenerationView />} />
+        </Routes>
+      </AppLayout>
+    </BrowserRouter>
   );
 };
 

@@ -1,37 +1,39 @@
-# 🍌 NanaBanana Studio
+# 🍌 NanaBanana Studio (OFM Hub v4.1)
 
-**AI Model Prompt Engine** — Créez des prompts JSON ultra-détaillés pour la génération d'images IA, avec des presets visuels pour les tenues, environnements, poses, éclairages et expressions.
+**Le système d'opérations ultime pour les Agences IA (OFM).**
 
-![Version](https://img.shields.io/badge/version-3.1.0-gold)
-![React](https://img.shields.io/badge/React-19-61dafb)
+NanaBanana Studio v4.1 est une application **SaaS Multi-Pages** conçue spécifiquement pour structurer et générer des prompts ultra-réalistes (Natural Language) destinés à **Google Nano Banana Pro** et autres modèles IA haut-de-gamme. Fini les générateurs "une page" désorganisés : place à une véritable gestion de base de données relationnelle locale pour vos Influenceuses Virtuelles.
+
+![Version](https://img.shields.io/badge/version-4.1.0-gold)
+![React](https://img.shields.io/badge/ReactRouter-v6-red)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
-## ✨ Fonctionnalités
+## 🎯 Philosophie de l'Outil : Le "Tunnel OFM"
 
-- 👤 **Éditeur de Modèle** — Configurez chaque détail physique (visage, yeux, lèvres, nez, cheveux, peau, corps) via des menus déroulants
-- 🎬 **Constructeur de Scène** — Choisissez tenue, environnement, pose, caméra, éclairage et expression en un clic
-- 📋 **Sortie JSON** — Générez un JSON structuré prêt pour ComfyUI, Stable Diffusion, ou tout pipeline IA
-- 📝 **Prompt Higgsfield** — Version texte plat du prompt, prête à copier-coller
-- 🚫 **Negative Prompt** — Prompt négatif complet inclus automatiquement
-- 💾 **Profils sauvegardables** — Sauvegardez, chargez et exportez vos modèles
-- 🎲 **Générateur aléatoire** — Créez un modèle aléatoire en un clic
-- 📜 **Historique** — Retrouvez et rechargez vos 50 dernières générations
-- 🌙 **Interface Dark Mode** — Design premium avec thème sombre et accents dorés
+Le défi majeur d'une agence est la **Cohérence Narrative**. Si un profil Instagram est censé être celui d'une étudiante modeste, l’IA ne doit jamais générer un décor de yacht de luxe par erreur.
+
+L'application est structurée en un **Entonnoir strict (4 Niveaux)** garanti par le routeur :
+
+1.  👱‍♀️ **Niveau 1 : Base d'Influenceuses** — Un CRM de vos Fiches Modèles. Vous sculptez leur visage, leur corps (Face ID / Body Type) dans l'éditeur pleine page.
+2.  📱 **Niveau 2 : Architecture Réseaux Sociaux** — Pour un modèle donné (ex: *Clara*), vous gérez sa flotte d'avatars numériques (Son Instagram officiel, son TikTok, son Tinder...).
+3.  📍 **Niveau 3 : Les Lieux Récurrents & Sandbox** — Pour un compte donné (ex: *TikTok @clara*), vous créez ses lieux de vie habituels (Chambre, Salle de sport). Un **Mode Bac à sable (Sandbox)** est dispo pour les fictions ponctuelles.
+4.  ⚡ **Niveau 4 : Générateur Intelligent (Nano Banana Pro)** — Selon le Lieu d'où vous venez, le studio **se verrouille automatiquement** (ex: impossible de choisir une ambiance Cyberpunk si vous avez cliqué sur "Salle de Bain de Clara"). Le rendu textuel sort sous forme de "Natural Language" ultra-structuré.
 
 ---
 
-## 🚀 Installation
+## ✨ Fonctionnalités Clés
 
-### Prérequis
+- 🏗️ **Architecture Feature-Based :** Code modulaire (Features, Views, Store, Constants). Fini le composant monolithique de 2000 lignes.
+- 🌑 **Dark Mode UI :** Propulsé par TailwindCSS pour un confort visuel pendant les longues sessions de prompt.
+- 💾 **Persistance Locale :** Toutes vos fiches modèles, comptes et restrictions de décors sont sauvegardés dans votre navigateur (`localStorage`).
+- 🤖 **Prompt Generator "Natural Language" :** Optimisé pour Google AI Studio, structurant parfaitement le Base Subject > Setting > Face > Body > Rigid Directives.
 
-- [Node.js](https://nodejs.org/) (v18 ou supérieur)
-- [npm](https://www.npmjs.com/) (inclus avec Node.js)
+---
 
-### Étapes
+## 🚀 Installation & Lancement
 
 ```bash
 # 1. Cloner le repository
@@ -40,113 +42,51 @@ git clone https://github.com/ledocsoff/nanabanana-studio.git
 # 2. Accéder au dossier
 cd nanabanana-studio
 
-# 3. Installer les dépendances
+# 3. Installer les dépendances (React Router DOM, Tailwind...)
 npm install
 
 # 4. Lancer l'application
 npm run dev
 ```
 
-L'application s'ouvre automatiquement dans votre navigateur par défaut à l'adresse `http://localhost:5173/`.
+L'application s'ouvrira en `http://localhost:5173/`.
 
 ---
 
-## 📖 Utilisation
+## 🛠️ Stack technique v4
 
-### 1. Configurer le Modèle (onglet 👤 Modèle)
-
-Personnalisez chaque aspect physique :
-
-| Catégorie | Options |
-|-----------|---------|
-| 🪪 Identité | Nom, âge |
-| 👤 Visage | Forme, mâchoire, front |
-| 👁️ Yeux | Couleur, forme, taille, cils, sourcils |
-| 👄 Bouche & Nez | Forme des lèvres, nez |
-| 💇 Cheveux | Couleur, longueur, texture, style |
-| ✨ Peau | Teint, texture, traits, éclat, détails |
-| 🏋️ Corps | Silhouette, buste, taille, hanches, etc. |
-| 🛡️ Anatomical Fidelity | Préréglages de fidélité anatomique |
-| 🎯 Signature | Style visuel du modèle |
-
-Vous pouvez aussi :
-- **🎲 Aléatoire** — Générer un modèle au hasard
-- **💾 Sauvegarder** — Enregistrer le profil actuel
-- **📤 Exporter** — Copier le JSON du profil dans le presse-papier
-- **📥 Importer** — Coller un JSON pour charger un profil
-
-### 2. Construire la Scène (onglet 🎬 Scène)
-
-Sélectionnez parmi les presets :
-
-- **👗 Tenue** — 12 options (bikini, crop top, lingerie, gym, etc.)
-- **🌍 Environnement** — 12 décors (plage, piscine, chambre, yacht, etc.)
-- **🤸 Pose** — 10 positions (selfie, debout, allongée, etc.)
-- **📷 Caméra** — 5 angles (selfie, candid, plein pied, gros plan, contre-plongée)
-- **💡 Éclairage** — 8 types (golden hour, flash, néons, etc.)
-- **😏 Expression** — 8 moods (sultry, sourire, candid, playful, etc.)
-
-### 3. Générer (bouton ⚡)
-
-Cliquez sur **⚡ Générer JSON Nano Banana** pour obtenir :
-
-- **JSON structuré** — Pour intégration dans vos pipelines IA
-- **Prompt Higgsfield** — Version texte plat prête à l'emploi
-- **Negative Prompt** — Anti-artefacts IA complet
-
-Chaque section est copiable en un clic.
-
-### 4. Historique (onglet 📜)
-
-Consultez et rechargez vos 50 dernières générations.
-
----
-
-## 🏗️ Build pour production
-
-```bash
-# Créer un build optimisé
-npm run build
-
-# Prévisualiser le build
-npm run preview
-```
-
-Le build de production est généré dans le dossier `dist/` et peut être déployé sur n'importe quel hébergement web statique (Netlify, Vercel, GitHub Pages, etc.).
-
----
-
-## 🛠️ Stack technique
-
-| Technologie | Version | Usage |
-|-------------|---------|-------|
-| React | 19 | UI Components |
-| Vite | 6 | Build tool & dev server |
-| localStorage | — | Persistance des données |
-| Google Fonts | — | DM Mono + Outfit |
+| Technologie | Usage |
+|-------------|-------|
+| **React 19** | Cœur Applicatif |
+| **React Router v6** | Navigation SPA en Entonnoir (URLs propres) |
+| **TailwindCSS 3** | UI Systèm, Grilles, Dark Mode |
+| **Context API** | State Global (StudioContext.jsx) |
+| **Vite 6** | Build & Dev Server fulgurant |
 
 ---
 
 ## 📁 Structure du projet
 
+La nouvelle arborescence est taillée pour la scalabilité :
+
+```text
+src/
+├── constants/         # Listes déroulantes brutes (Yeux, Cheveux, Poses...)
+├── features/          # Composants métier isolés
+│   ├── ModelEditor/   # Les curseurs physiques
+│   ├── OutputPanel/   # Le bloc noir copiable
+│   └── SceneEditor/   # L'éditeur de décors/lumières
+├── store/
+│   └── StudioContext.jsx # Le Cerveau : Base de données en mémoire
+├── utils/
+│   ├── promptGenerators.js # Assembleur de chaînes Nano Banana Pro
+│   └── storage.js          # Helpers LocalStorage relationnels
+├── views/             # Les "Pages" du Routeur
+│   ├── ModelsView.jsx     # (Niveau 1) Liste des modèles
+│   ├── ModelEditorShell   # (Niveau 1b) Création
+│   ├── AccountsView       # (Niveau 2) Les réseaux du modèle
+│   ├── LocationsAnd...    # (Niveau 3) CRUD des lieux + Sandbox Launcher
+│   └── GenerationView     # (Niveau 4) L'éditeur de scène intelligent
+├── App.jsx            # Shell React Router (Navbar)
+└── main.jsx           # Point d'entrée
 ```
-nanabanana-studio/
-├── index.html          # Point d'entrée HTML
-├── package.json        # Dépendances & scripts
-├── vite.config.js      # Configuration Vite
-└── src/
-    ├── main.jsx        # Entry point React
-    └── App.jsx         # Application principale (1000+ lignes)
-```
-
----
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
-
----
-
-## 📄 Licence
-
-MIT © [ledocsoff](https://github.com/ledocsoff)
