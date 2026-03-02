@@ -2,7 +2,7 @@
 
 **AI Model Prompt Engine** — Créez des prompts JSON ultra-détaillés pour la génération d'images IA, avec des presets visuels pour les tenues, environnements, poses, éclairages et expressions.
 
-![Version](https://img.shields.io/badge/version-3.0.0-gold)
+![Version](https://img.shields.io/badge/version-3.1.0-gold)
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-brightgreen)
