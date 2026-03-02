@@ -18,7 +18,7 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                         className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 text-sm rounded-xl px-4 py-3 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors custom-scrollbar"
                         rows="3"
                         placeholder="Ex: casual white crop top, light blue denim shorts, simple silver necklace..."
-                        value={sceneState.outfit}
+                        value={sceneState?.outfit || ""}
                         onChange={(e) => updateSceneState('outfit', e.target.value)}
                     ></textarea>
                 </div>
@@ -32,7 +32,7 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                                 key={ratio.promptEN}
                                 onClick={() => updateSceneState('aspect_ratio', ratio.promptEN)}
                                 className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 ${
-                                    sceneState.aspect_ratio === ratio.promptEN 
+                                    sceneState?.aspect_ratio === ratio.promptEN 
                                         ? 'bg-orange-500/10 border-orange-500 text-orange-400 font-bold' 
                                         : 'bg-[#0a0a0a] border-gray-800 text-gray-400 hover:border-gray-600 hover:text-white'
                                 }`}
@@ -52,19 +52,19 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                             className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 text-sm rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors custom-scrollbar"
                             rows="2"
                             placeholder="Ex: standing looking over shoulder, sitting casually on couch..."
-                            value={sceneState.pose}
+                            value={sceneState?.pose || ""}
                             onChange={(e) => updateSceneState('pose', e.target.value)}
                         ></textarea>
                     </div>
                     <div>
-                        <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">📸 Type de plan</label>
+                        <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">📸 Angle de Caméra</label>
                         <select 
                             className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 text-sm rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState.shot_type}
-                            onChange={(e) => updateSceneState('shot_type', e.target.value)}
+                            value={sceneState?.camera_angle || ""}
+                            onChange={(e) => updateSceneState('camera_angle', e.target.value)}
                         >
                             <option value="">-- Automatique --</option>
-                            {SCENE_OPTIONS.shot_type.map(shot => (
+                            {SCENE_OPTIONS.camera_angle.map(shot => (
                                 <option key={shot.promptEN} value={shot.promptEN}>{shot.labelFR}</option>
                             ))}
                         </select>
@@ -77,7 +77,7 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                         <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">✨ Vibe Média</label>
                         <select 
                             className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState.vibe}
+                            value={sceneState?.vibe || ""}
                             onChange={(e) => updateSceneState('vibe', e.target.value)}
                         >
                             <option value="">-- Neutre --</option>
@@ -90,7 +90,7 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                         <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">💡 Éclairage</label>
                         <select 
                             className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState.lighting}
+                            value={sceneState?.lighting || ""}
                             onChange={(e) => updateSceneState('lighting', e.target.value)}
                         >
                             <option value="">-- Automatique --</option>
@@ -103,14 +103,14 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
 
                 {/* EFFETS CAMERA */}
                 <div>
-                     <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">🎥 Effets Caméra</label>
+                     <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider">🎥 Expression Faciale</label>
                      <select 
                         className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-sm rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
-                        value={sceneState.camera_effect}
-                        onChange={(e) => updateSceneState('camera_effect', e.target.value)}
+                        value={sceneState?.expression || ""}
+                        onChange={(e) => updateSceneState('expression', e.target.value)}
                     >
                         <option value="">-- Sans effet --</option>
-                        {SCENE_OPTIONS.camera_effect.map(eff => (
+                        {SCENE_OPTIONS.expression.map(eff => (
                             <option key={eff.promptEN} value={eff.promptEN}>{eff.labelFR}</option>
                         ))}
                     </select>
