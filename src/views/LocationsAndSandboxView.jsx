@@ -10,11 +10,13 @@ const LocationsAndSandboxView = () => {
     const { allModelsDatabase, setAllModelsDatabase } = useStudio();
 
     // ETATS FORMULAIRE (Mode "Création" OU "Édition")
-    const [locFormMode, setLocFormMode] = useState('create'); // 'create' ou l'ID 'loc_xyz' d'édition
+    const [locFormMode, setLocFormMode] = useState('create'); 
     const [newLocName, setNewLocName] = useState('');
     // State pour savoir s'il tape manuellement son lieu custom ou non
     const [isCustomEnv, setIsCustomEnv] = useState(false);
-    const [newLocEnvDrop, setNewLocEnvDrop] = useState(SCENE_OPTIONS.environment[0]);
+    
+    // CORRECTION : On instancie bien avec le premier élément EN de la liste options
+    const [newLocEnvDrop, setNewLocEnvDrop] = useState(SCENE_OPTIONS.environment[0].promptEN);
     const [newLocEnvCustom, setNewLocEnvCustom] = useState('');
 
     // Retrouver Modèle > Compte
@@ -24,6 +26,9 @@ const LocationsAndSandboxView = () => {
     if (!currentModel || !currentAccount) {
         return <div className="p-8 text-center text-gray-500">Compte introuvable. <button onClick={() => navigate('/')} className="text-blue-500 underline">Retour</button></div>;
     }
+
+    // Extraction d'un tableau contenant uniquement les env en String EN pour les comparaisons futures (Custom vs Preset)
+    const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
     // --- ACTIONS DU FORMULAIRE ---
     const handleSaveLocation = () => {
@@ -63,8 +68,8 @@ const LocationsAndSandboxView = () => {
         setLocFormMode(loc.id);
         setNewLocName(loc.name);
         
-        // Si le prompt du lieu en base N'EST PAS dans notre liste déroulante, c'est forcément un Custom
-        if (!SCENE_OPTIONS.environment.includes(loc.environment)) {
+        // Si le prompt du lieu en base N'EST PAS dans notre liste des preset (en Anglais), c'est un Custom
+        if (!presetEnvironmentsEN.includes(loc.environment)) {
             setIsCustomEnv(true);
             setNewLocEnvCustom(loc.environment);
         } else {
@@ -81,7 +86,7 @@ const LocationsAndSandboxView = () => {
         setNewLocName('');
         setIsCustomEnv(false);
         setNewLocEnvCustom('');
-        setNewLocEnvDrop(SCENE_OPTIONS.environment[0]);
+        setNewLocEnvDrop(SCENE_OPTIONS.environment[0].promptEN);
     };
 
     return (
@@ -157,8 +162,9 @@ const LocationsAndSandboxView = () => {
                                             onChange={(e) => setNewLocEnvDrop(e.target.value)}
                                             className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-indigo-500 focus:bg-gray-800 transition-colors"
                                         >
+                                            {/* CORRECTION : L'option renvoie bien promptEN, mais on affiche le labelFR */}
                                             {SCENE_OPTIONS.environment.map(env => (
-                                                <option key={env} value={env}>{env}</option>
+                                                <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
                                             ))}
                                         </select>
                                     ) : (
@@ -234,8 +240,8 @@ const LocationsAndSandboxView = () => {
                                     <div className="mt-auto relative z-10">
                                         <div className="text-[10px] uppercase font-bold text-gray-500 mb-1.5 tracking-widest flex justify-between items-end">
                                             <span>Environnement IA Prompté :</span>
-                                            {/* On affiche un badge "Custom" si ce texte n'était pas dans la liste de base */}
-                                            {!SCENE_OPTIONS.environment.includes(loc.environment) && <span className="bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-900">Custom Tool</span>}
+                                            {/* CORRECTION : vérifie par rapport au tableau extrait 'presetEnvironmentsEN' */}
+                                            {!presetEnvironmentsEN.includes(loc.environment) && <span className="bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-900">Custom Tool</span>}
                                         </div>
                                         <p className="text-xs text-indigo-300 leading-relaxed bg-[#050505] px-3 py-3 rounded-lg border border-gray-800 h-[60px] overflow-hidden text-ellipsis">
                                             {loc.environment}

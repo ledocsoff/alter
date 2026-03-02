@@ -3,46 +3,46 @@ import { useStudio } from '../../store/StudioContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS } from '../../constants/sceneOptions';
 import { updateAccountRestrictions } from '../../utils/storage';
 
-// -- COMPOSANT : Select Simple --
-const DropdownSelect = ({ label, options, value, onChange, disabled }) => (
-  <div className="flex flex-col mb-3">
-    <label className="text-sm font-medium text-gray-400 mb-1">{label}</label>
-    <select
-      disabled={disabled}
-      className={`bg-gray-800 border ${disabled ? 'border-indigo-900/50 text-indigo-400 cursor-not-allowed font-bold' : 'border-gray-700 text-gray-200'} text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-colors`}
-      value={value}
-      onChange={onChange}
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
-      ))}
-    </select>
-  </div>
-);
+// -- COMPOSANT BILINGUE : Select Simple --
+const DropdownSelect = ({ label, optionsData, value, onChange, disabled }) => {
+  // on cherche l'option correspondante pour la pré-sélection (value est en EN)
+  return (
+    <div className="flex flex-col mb-4">
+      <label className="text-sm font-medium text-gray-400 mb-1.5">{label}</label>
+      <select
+        disabled={disabled}
+        className={`bg-gray-800 border ${disabled ? 'border-orange-900/50 text-orange-400 cursor-not-allowed font-bold' : 'border-gray-700 text-gray-200 focus:ring-blue-500 focus:border-blue-500'} text-sm rounded-lg block w-full p-2.5 transition-colors`}
+        value={value}
+        onChange={onChange}
+      >
+        {optionsData.map((opt) => (
+          <option key={opt.promptEN} value={opt.promptEN}>
+            {opt.labelFR}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
 // -- COMPOSANT : Titre de Section --
-const SectionTitle = ({ title, activeBadge }) => (
-  <h3 className="text-lg font-bold text-gray-100 mt-6 mb-4 border-b border-gray-700 pb-2 uppercase tracking-wider flex items-center justify-between">
-      <span>{title}</span>
-      {activeBadge && <span className="text-[10px] bg-indigo-900 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-700">{activeBadge}</span>}
+const SectionTitle = ({ title }) => (
+  <h3 className="text-lg font-bold text-gray-100 mt-2 mb-4 border-b border-gray-700 pb-2 uppercase tracking-wider">
+      {title}
   </h3>
 );
 
-// -- COMPOSANT : Grille de Presets (Vêtements) --
-const PresetGrid = ({ items, selected, onSelect, allowedIds = [] }) => {
-    // Si on a des restrictions (allowedIds non vide), on filtre
-    const isRestricted = allowedIds && allowedIds.length > 0;
-    const finalItems = isRestricted ? items.filter(item => allowedIds.includes(item.id)) : items;
-
+// -- COMPOSANT : Grille de Vêtements --
+const PresetGrid = ({ items, selected, onSelect }) => {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {finalItems.map((item) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+        {items.map((item) => (
           <button
             key={item.id}
             onClick={() => onSelect(item)}
             className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 ${
               selected?.id === item.id
-                ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]'
+                ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]'
                 : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-750 hover:border-gray-500'
             }`}
           >
@@ -50,178 +50,93 @@ const PresetGrid = ({ items, selected, onSelect, allowedIds = [] }) => {
             <span className="text-xs font-medium text-center leading-tight">{item.label}</span>
           </button>
         ))}
-        
-        {isRestricted && finalItems.length === 0 && (
-            <div className="col-span-full text-center p-4 text-xs text-red-400 border border-dashed border-red-900/50 rounded-lg">
-                ⚠️ Aucune tenue vestimentaire autorisée pour ce compte. Ouvrez le cadenas.
-            </div>
-        )}
       </div>
     );
-}
+};
 
-const SceneEditor = () => {
-  const { scene, updateSceneEntry, activeWorkflow, allModelsDatabase, setAllModelsDatabase } = useStudio();
-  const [isEditingRestrictions, setIsEditingRestrictions] = useState(false);
-
-  // --- LOGIQUE DE RESTRICTION ---
-  const isWorkflowActive = Boolean(activeWorkflow.modelId && activeWorkflow.phoneId && activeWorkflow.accountId);
+const SceneEditor = ({ forceLockedEnvironment = false }) => {
+  const { scene, updateSceneEntry } = useStudio();
   
-  let activeAccount = null;
-  if (isWorkflowActive) {
-      const dbModel = allModelsDatabase.find(m => m.id === activeWorkflow.modelId);
-      const dbPhone = dbModel?.phones?.find(p => p.id === activeWorkflow.phoneId);
-      activeAccount = dbPhone?.accounts?.find(a => a.id === activeWorkflow.accountId);
-  }
+  // State interne local pour savoir si l'utilisateur a décidé de forcer l'ouverture du cadenas de lieu
+  const [userUnlockedEnv, setUserUnlockedEnv] = useState(!forceLockedEnvironment);
 
-  // Listes filtrées dynamiquement
-  const allowedEnvironments = activeAccount?.allowed_environments?.length > 0 
-      ? activeAccount.allowed_environments 
-      : SCENE_OPTIONS.environment; 
-
-  const allowedOutfitIds = activeAccount?.allowed_outfits || [];
-
-
-  // --- SAUVEGARDE DES RESTRICTIONS EN DIRECT ---
-  const handleToggleEnvironment = (envName) => {
-      if (!activeAccount) return;
-      const currentList = activeAccount.allowed_environments || [];
-      const isAlreadyAllowed = currentList.includes(envName);
-      
-      const newList = isAlreadyAllowed 
-          ? currentList.filter(e => e !== envName) 
-          : [...currentList, envName];
-
-      const updatedDB = updateAccountRestrictions(activeWorkflow.modelId, activeWorkflow.phoneId, activeWorkflow.accountId, { environments: newList });
-      if (updatedDB) setAllModelsDatabase(updatedDB);
-      
-      // Sécurité : si on décoche l'environnement actuellement affiché, on force un environnement valide
-      if (isAlreadyAllowed && scene.environment === envName && newList.length > 0) updateSceneEntry('environment', newList[0]);
-  };
-
-  const handleToggleOutfit = (outfitId) => {
-      if (!activeAccount) return;
-      const currentList = activeAccount.allowed_outfits || [];
-      const isAlreadyAllowed = currentList.includes(outfitId);
-      
-      const newList = isAlreadyAllowed 
-          ? currentList.filter(e => e !== outfitId)
-          : [...currentList, outfitId];
-
-      const updatedDB = updateAccountRestrictions(activeWorkflow.modelId, activeWorkflow.phoneId, activeWorkflow.accountId, { outfits: newList });
-      if (updatedDB) setAllModelsDatabase(updatedDB);
-  }
+  // Déterminer s'il faut afficher l'avertissement
+  const showWarning = forceLockedEnvironment && userUnlockedEnv;
 
   return (
-    <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-800 p-6 h-full flex flex-col relative">
+    <div className="bg-gray-900/50 rounded-2xl shadow-lg border border-gray-800 p-6 md:p-8 h-full flex flex-col relative overflow-y-auto custom-scrollbar">
       
-      {/* HEADER BANDEAU ACTIF (Sticky) */}
-      {isWorkflowActive && activeAccount ? (
-          <div className="bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-4 mb-4 shadow-inner relative overflow-hidden group shrink-0">
-              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-              <h4 className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-1">Mode Cohérence Activé</h4>
-              <p className="text-white text-lg font-black">{activeAccount.handle} <span className="text-sm font-normal text-gray-400">({activeAccount.platform})</span></p>
-              
-              <button 
-                  onClick={() => setIsEditingRestrictions(!isEditingRestrictions)}
-                  className={`mt-3 text-xs border px-3 py-1.5 rounded w-full text-left flex justify-between items-center transition-colors ${isEditingRestrictions ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-indigo-900/40 hover:bg-indigo-800 border-indigo-700/50 text-indigo-200'}`}
-              >
-                  <span>{isEditingRestrictions ? "Terminer l'édition des restrictions" : "🔒 Restreindre la Garde-robe & Lieux"}</span>
-                  <span>{isEditingRestrictions ? "▲" : "▼"}</span>
-              </button>
-          </div>
-      ) : (
-          <div className="shrink-0 mb-4">
-            <h2 className="text-2xl font-black text-white mb-1 tracking-tight">Paramètres de Scène</h2>
-            <p className="text-gray-400 text-sm">Libre (Aucun profil d'influenceuse chargé).</p>
-          </div>
-      )}
-
-      {/* --- LE CORPS --- */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+      {/* 1. SEPARATION LIEU (Isolé & Verrouillable) */}
+      <SectionTitle title="1. Environnement & Origine" />
+      
+      <div className={`p-4 rounded-xl mb-8 border ${showWarning ? 'border-orange-500/50 bg-orange-950/10' : 'border-gray-800 bg-[#0a0a0a]'}`}>
           
-          {/* PANEL D'EDITION (ACCORDEON) */}
-          {isEditingRestrictions && activeAccount && (
-              <div className="bg-[#050505] border border-gray-800 rounded-xl p-4 mb-6 shadow-inner">
-                   {/* Checklist Décors */}
-                   <div className="mb-6">
-                       <p className="text-xs text-gray-400 mb-2 font-bold flex justify-between">
-                          <span>Lieux Autorisés ({activeAccount.allowed_environments?.length || 0})</span>
-                          {activeAccount.allowed_environments?.length === 0 && <span className="text-green-500">Tous 🔓</span>}
-                       </p>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                            {SCENE_OPTIONS.environment.map(env => {
-                                const isChecked = activeAccount.allowed_environments?.includes(env);
-                                return (
-                                    <label key={env} className={`flex items-start gap-2 p-2 rounded border cursor-pointer transition-colors ${isChecked ? 'bg-indigo-900/30 border-indigo-500/50 text-indigo-200' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
-                                        <input type="checkbox" className="mt-0.5 accent-indigo-500 w-3 h-3" checked={isChecked || false} onChange={() => handleToggleEnvironment(env)} />
-                                        <span className="text-[10px] uppercase font-semibold leading-tight">{env}</span>
-                                    </label>
-                                );
-                            })}
-                       </div>
-                   </div>
+          <div className="flex justify-between items-center mb-3">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+                  <span className={userUnlockedEnv ? 'text-gray-500' : 'text-orange-500'}>{userUnlockedEnv ? '🔓' : '🔒'}</span> 
+                  Lieu Physique (Base IA)
+              </label>
+              
+              {forceLockedEnvironment && (
+                  <button 
+                      onClick={() => setUserUnlockedEnv(!userUnlockedEnv)}
+                      className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-colors ${userUnlockedEnv ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-orange-600 hover:bg-orange-500 text-white'}`}
+                  >
+                      {userUnlockedEnv ? 'Re-Verrouiller le lieu' : 'Déverrouiller et Modifier'}
+                  </button>
+              )}
+          </div>
 
-                    {/* Checklist Tenues */}
-                   <div>
-                       <p className="text-xs text-gray-400 mb-2 font-bold flex justify-between">
-                          <span>Garde-Robe Autorisée ({activeAccount.allowed_outfits?.length || 0})</span>
-                          {activeAccount.allowed_outfits?.length === 0 && <span className="text-green-500">Toutes 🔓</span>}
-                       </p>
-                       <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
-                            {OUTFIT_PRESETS.map(outfit => {
-                                const isChecked = activeAccount.allowed_outfits?.includes(outfit.id);
-                                return (
-                                    <label key={outfit.id} className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${isChecked ? 'bg-indigo-900/30 border-indigo-500/50 text-indigo-200' : 'bg-gray-900 border-gray-800 text-gray-500 hover:bg-gray-800'}`}>
-                                        <input type="checkbox" className="accent-indigo-500 w-3 h-3" checked={isChecked || false} onChange={() => handleToggleOutfit(outfit.id)} />
-                                        <span className="text-xs">{outfit.icon} {outfit.label}</span>
-                                    </label>
-                                );
-                            })}
-                       </div>
-                   </div>
-              </div>
+          <select
+              disabled={!userUnlockedEnv}
+              className={`w-full text-base rounded-lg p-3 outline-none transition-colors ${!userUnlockedEnv ? 'bg-gray-900 border border-gray-800 text-gray-400 cursor-not-allowed' : 'bg-[#050505] border border-orange-500 focus:border-orange-400 text-white'}`}
+              value={scene.environment}
+              onChange={(e) => updateSceneEntry('environment', e.target.value)}
+          >
+              {SCENE_OPTIONS.environment.map((opt) => (
+                  <option key={opt.promptEN} value={opt.promptEN}>{opt.labelFR}</option>
+              ))}
+          </select>
+
+          {showWarning && (
+              <p className="text-xs text-orange-400 mt-3 flex gap-2">
+                  <span>⚠️</span> 
+                  Attention : ce lieu était verrouillé par sécurité. Toute modification textuelle ici altère l'histoire du lieu actif en cours.
+              </p>
           )}
 
+      </div>
 
-          {/* EDITEUR DE SCENE STANDARD (Grisé si édition restriction) */}
-          <div className={`transition-opacity duration-300 ${isEditingRestrictions ? 'opacity-20 pointer-events-none' : ''}`}>
-              
-              <SectionTitle title="Vêtements & Outfits" activeBadge={activeAccount?.allowed_outfits?.length > 0 ? "Filtré" : null} />
-              <PresetGrid
+      {/* 2. SEPARATION AMBIANCE ET ACCESSOIRES (Toujours libre) */}
+      <SectionTitle title="2. Ambiance & Garde-Robe" />
+      
+      <div className="bg-[#050505] border border-gray-800 p-5 rounded-xl mb-8">
+            <h4 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-3">Vestiaire</h4>
+            <PresetGrid
                 items={OUTFIT_PRESETS}
                 selected={scene.outfit}
                 onSelect={(preset) => updateSceneEntry('outfit', preset)}
-                allowedIds={allowedOutfitIds} 
-              />
-
-              <SectionTitle title="Lieu & Ambiance" activeBadge={activeAccount?.allowed_environments?.length > 0 ? "Filtré" : null} />
-              <div className="grid grid-cols-1 gap-x-4 mt-2">
-                <DropdownSelect 
-                    label={allowedEnvironments.length === 1 ? "Environnement (Verrouillé 🔒)" : "Environnement (Lieu)"} 
-                    options={allowedEnvironments} 
-                    value={scene.environment} 
-                    onChange={(e) => updateSceneEntry('environment', e.target.value)} 
-                    disabled={allowedEnvironments.length === 1} 
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                    <DropdownSelect label="Style de Photo (Vibe)" options={SCENE_OPTIONS.vibe} value={scene.vibe} onChange={(e) => updateSceneEntry('vibe', e.target.value)} />
-                    <DropdownSelect label="Éclairage (Lighting)" options={SCENE_OPTIONS.lighting} value={scene.lighting} onChange={(e) => updateSceneEntry('lighting', e.target.value)} />
-                </div>
-              </div>
-
-              <SectionTitle title="Photographie & Posture" />
-              <div className="grid grid-cols-1 gap-x-4 mt-2">
-                <DropdownSelect label="Pose du Modèle" options={SCENE_OPTIONS.pose} value={scene.pose} onChange={(e) => updateSceneEntry('pose', e.target.value)} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                    <DropdownSelect label="Angle de Caméra" options={SCENE_OPTIONS.camera_angle} value={scene.camera_angle} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)} />
-                    <DropdownSelect label="Expression" options={SCENE_OPTIONS.expression} value={scene.expression} onChange={(e) => updateSceneEntry('expression', e.target.value)} />
-                </div>
-              </div>
-
-          </div>
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 pt-4 border-t border-gray-800/50">
+                <DropdownSelect label="Directives Vibe Photographiques" optionsData={SCENE_OPTIONS.vibe} value={scene.vibe} onChange={(e) => updateSceneEntry('vibe', e.target.value)} />
+                <DropdownSelect label="Qualité de la Lumière IA" optionsData={SCENE_OPTIONS.lighting} value={scene.lighting} onChange={(e) => updateSceneEntry('lighting', e.target.value)} />
+            </div>
       </div>
+
+       {/* 3. POSTURE ET EXPRESSION */}
+       <SectionTitle title="3. Mise en Scène" />
+       
+       <div className="bg-[#050505] border border-gray-800 p-5 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                <div className="md:col-span-2">
+                     <DropdownSelect label="Pose & Posture" optionsData={SCENE_OPTIONS.pose} value={scene.pose} onChange={(e) => updateSceneEntry('pose', e.target.value)} />
+                </div>
+                <DropdownSelect label="Objectif Caméra" optionsData={SCENE_OPTIONS.camera_angle} value={scene.camera_angle} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)} />
+                <DropdownSelect label="Expression du Visage" optionsData={SCENE_OPTIONS.expression} value={scene.expression} onChange={(e) => updateSceneEntry('expression', e.target.value)} />
+            </div>
+       </div>
+
     </div>
   );
 };

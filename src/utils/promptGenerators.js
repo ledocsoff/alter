@@ -1,8 +1,13 @@
 // promptGenerators.js
 // Utilitaires de génération du texte pour NANO BANANA PRO (Google AI Studio)
 
-export const generateNanoBananaPrompt = (model, scene) => {
+export const generateNanoBananaPrompt = (model, scene, activeAccount = null) => {
+
+  // 0. GESTION FORMAT (L'Aspect Ratio Tiktok/Insta Forcé en en-tête)
+  const systemHeaders = `[Format requirement: Direct the model to generate a strict 9:16 vertical orientation suitable for TikTok or Instagram Reels. Generate an image emphasizing portrait layout].\n\n`;
+
   // 1. Définition du Sujet Principal (Type de photo et Sujet global)
+  // Note: On utilise le Vibe et les autres options de la Scène, qui sont maintenant enregistrées en Anglais dans notre state
   const baseSubject = `${scene.vibe}, ${scene.camera_angle} of a ${model.age}-year-old ${model.ethnicity} woman, ${model.body.type} figure, ${model.body.height}, wearing a ${scene.outfit.value}.`;
 
   // 2. Environnement et Contexte
@@ -16,16 +21,16 @@ export const generateNanoBananaPrompt = (model, scene) => {
   
   const hairDetails = `Her hair is ${model.hair.color}, ${model.hair.length}, ${model.hair.texture}, styled in a ${model.hair.style}.`;
 
-  // 5. Détails du Corps et de la Peau (Crucial pour le photoréalisme Nano Banana Pro)
+  // 5. Détails du Corps et de la Peau 
   const bodyDetails = `Her body features: ${model.body.bust} bust, ${model.body.waist} waist, ${model.body.hips} hips, ${model.body.glutes} glutes, with ${model.body.limbs} limbs. ${model.body.details}.`;
   
   const skinDetails = `Her skin is ${model.skin.tone} with a ${model.skin.texture}. She has ${model.skin.features} and a ${model.skin.sheen}. ${model.skin.details}.`;
 
-  // 6. Directives du Modèle pour la fidélité anatomique (Directives fortes)
+  // 6. Directives du Modèle pour la fidélité anatomique (Directives fortes OFM)
   const rigidStrucure = `Model directives: ${model.anatomical_fidelity}. Aesthetic signature: ${model.signature}.`;
 
-  // Assemblage en "Natural Language" (Paragraphes fluides)
-  return `${baseSubject}
+  // Assemblage
+  return `${systemHeaders}${baseSubject}
 ${setting} ${action}
 
 ${faceDetails} ${hairDetails}

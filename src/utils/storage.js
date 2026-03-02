@@ -118,3 +118,23 @@ export const deleteLocationData = (modelId, accountId, locationId) => {
     _saveAll(models);
     return models;
 };
+
+// ============================================
+// NIVEAU 2.5 : ACCOUNTS (RESTRICTIONS)
+// ============================================
+export const updateAccountRestrictions = (modelId, fakePhoneId, accountId, restrictions) => {
+    // Note: fakePhoneId n'est plus utilisé car l'entité Phone a disparu, l'account est branché direct.
+    const models = getSavedModels();
+    const model = models.find(m => m.id === modelId);
+    if (!model) return null;
+
+    const account = model.accounts.find(a => a.id === accountId);
+    if (!account) return null;
+
+    // Met à jour les restrictions de la garde-robe / lieux
+    if (restrictions.environments) account.allowed_environments = restrictions.environments;
+    if (restrictions.outfits) account.allowed_outfits = restrictions.outfits;
+    
+    _saveAll(models);
+    return models;
+};
