@@ -21,18 +21,39 @@ export const OUTFIT_PRESETS = [
 export const SCENE_OPTIONS = {
   vibe: [
     "candid Instagram photo", "Polaroid picture", "Tiktok screenshot", "amateur selfie",
-    "professional photoshoot", "cinematic still", "35mm film photography", "disposable camera shot"
+    "professional photoshoot", "cinematic still", "35mm film photography", "disposable camera shot",
+    "casual everyday snapshot", "behind the scenes candid"
   ],
   lighting: [
     "golden hour sunlight", "harsh direct sunlight", "soft overcast daylight", "neon club lighting",
     "warm bedroom lamplight", "flash photography", "dramatic cinematic lighting", "moody low light",
-    "ring light illumination", "colorful RGB LED lighting"
+    "ring light illumination", "colorful RGB LED lighting", "standard indoor bulb lighting", "window natural light crossing room"
   ],
   environment: [
-    "luxurious modern bedroom", "messy teenager bedroom", "sunny beach resort", "tropical villa pool",
-    "high-end hotel bathroom", "busy city street", "chic cafe interior", "neon-lit Tokyo street",
-    "modern gym interior", "luxury yacht deck", "cozy living room couch", "aesthetic mirror selfie context",
-    "car interior passenger seat", "clothing store dressing room"
+    // --- LIEUX "GIRL NEXT DOOR" (Habituels/Normaux) ---
+    "cozy messy bedroom with clothes on bed",
+    "standard apartment bathroom mirror", 
+    "small modern domestic kitchen",
+    "city apartment balcony with plants",
+    "casual living room couch",
+    "simple white bedroom walls, unmade bed",
+    "small bathroom shower stall",
+    
+    // --- LIEUX EXTÉRIEURS CLASSIQUES ---
+    "local coffee shop interior",
+    "regular city street sidewalk",
+    "local gym locker room mirror",
+    "modern gym interior equipment",
+    "supermarket aisle",
+    "passenger seat of a regular car",
+
+    // --- LIEUX HAUT DE GAMME (Luxe pour événements) ---
+    "luxurious modern bedroom",
+    "tropical villa private pool",
+    "chic exclusive restaurant interior",
+    "neon-lit Tokyo street",
+    "luxury yacht deck",
+    "sunny exclusive beach resort"
   ],
   camera_angle: [
     "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait",
@@ -69,7 +90,7 @@ export const DEFAULT_SCENE = {
   vibe: SCENE_OPTIONS.vibe[0],
   camera_angle: SCENE_OPTIONS.camera_angle[7], // medium shot
   pose: SCENE_OPTIONS.pose[0],
-  environment: SCENE_OPTIONS.environment[0],
+  environment: SCENE_OPTIONS.environment[0], // "cozy messy bedroom" par défaut
   lighting: SCENE_OPTIONS.lighting[0],
   expression: SCENE_OPTIONS.expression[0],
 };
