@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 // ═══════════════════════════════════════════════════════════
-// MODEL FIELD OPTIONS (dropdowns)
+// OPTIONS DES CHAMPS MODÈLE (listes déroulantes)
+// Les valeurs restent en anglais pour le JSON final
 // ═══════════════════════════════════════════════════════════
 
 const MODEL_OPTIONS = {
@@ -94,7 +95,7 @@ const MODEL_OPTIONS = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// CONSTANTS & PRESETS
+// CONSTANTES & PRÉRÉGLAGES
 // ═══════════════════════════════════════════════════════════
 
 const DEFAULT_MODEL = {
@@ -115,13 +116,13 @@ const DEFAULT_MODEL = {
 };
 
 const OUTFIT_PRESETS = [
-  { id: "bikini_string", label: "String Bikini", value: "tiny string bikini, minimal coverage, thin straps", icon: "👙" },
+  { id: "bikini_string", label: "Bikini String", value: "tiny string bikini, minimal coverage, thin straps", icon: "👙" },
   { id: "bikini_micro", label: "Micro Bikini", value: "micro triangle bikini, minimal fabric, revealing cut", icon: "🔥" },
   { id: "bikini_black", label: "Bikini Noir", value: "sleek black bikini, classic cut, matte fabric", icon: "🖤" },
-  { id: "tank_white", label: "Tank Top Blanc", value: "tight white ribbed tank top, form-fitting, thin fabric showing contours", icon: "🤍" },
+  { id: "tank_white", label: "Débardeur Blanc", value: "tight white ribbed tank top, form-fitting, thin fabric showing contours", icon: "🤍" },
   { id: "crop", label: "Crop Top", value: "cropped fitted top exposing midriff, tight fabric", icon: "✂️" },
   { id: "bodycon", label: "Robe Moulante", value: "form-fitting bodycon mini dress, fabric hugging every curve", icon: "👗" },
-  { id: "oversized", label: "Sweat Oversized", value: "oversized hoodie pulled off one shoulder, bare legs visible, cozy and revealing contrast", icon: "🧥" },
+  { id: "oversized", label: "Sweat Oversize", value: "oversized hoodie pulled off one shoulder, bare legs visible, cozy and revealing contrast", icon: "🧥" },
   { id: "sundress", label: "Robe d'Été", value: "flowy thin-strap sundress, light fabric, feminine", icon: "🌸" },
   { id: "jeans_bra", label: "Jean + Brassière", value: "low-rise jeans with fitted sports bra, exposed midriff", icon: "👖" },
   { id: "onepiece", label: "Maillot 1 Pièce", value: "high-cut one-piece swimsuit, plunging neckline", icon: "🩱" },
@@ -158,30 +159,30 @@ const POSE_PRESETS = [
 ];
 
 const LIGHTING_PRESETS = [
-  { id: "golden_hour", label: "Golden Hour", value: "warm natural golden hour sunlight, soft directional warmth, sun-kissed glow on skin, long gentle shadows, orange-warm color cast" },
+  { id: "golden_hour", label: "Heure Dorée", value: "warm natural golden hour sunlight, soft directional warmth, sun-kissed glow on skin, long gentle shadows, orange-warm color cast" },
   { id: "flash", label: "Flash Smartphone", value: "direct harsh smartphone flash at night, strong frontal illumination, dark background falloff, raw flash photography look, hard shadows behind subject" },
-  { id: "soft_indoor", label: "Lumière Douce Intérieur", value: "soft warm ambient indoor lighting from bedside lamp, intimate gentle shadows, warm color temperature, cozy atmosphere lighting" },
+  { id: "soft_indoor", label: "Lumière Douce", value: "soft warm ambient indoor lighting from bedside lamp, intimate gentle shadows, warm color temperature, cozy atmosphere lighting" },
   { id: "neon", label: "Néons / Club", value: "colorful neon light reflections on skin, alternating blue pink and purple tones, nightlife atmosphere, dynamic colored shadows" },
   { id: "natural", label: "Lumière Naturelle", value: "soft diffused natural daylight, even illumination, gentle shadows, clean and bright, true-to-life color rendering" },
   { id: "window", label: "Lumière Fenêtre", value: "directional soft window light from one side, creating gentle shadow gradient across face and body, Rembrandt-style natural lighting" },
-  { id: "sunset_back", label: "Contre-jour Sunset", value: "deep sunset backlighting, warm orange-pink sky behind, golden rim light outlining hair and body edges, silhouette contrast" },
+  { id: "sunset_back", label: "Contre-jour", value: "deep sunset backlighting, warm orange-pink sky behind, golden rim light outlining hair and body edges, silhouette contrast" },
   { id: "overcast", label: "Ciel Couvert", value: "soft overcast sky diffused light, no harsh shadows, even flattering illumination, muted tones, cloudy day natural beauty" },
 ];
 
 const MOOD_PRESETS = [
-  { id: "sultry", label: "Sultry", value: "sultry confident expression, slightly parted lips, intense direct smoldering gaze, bedroom eyes, magnetic presence", emoji: "😏" },
+  { id: "sultry", label: "Séductrice", value: "sultry confident expression, slightly parted lips, intense direct smoldering gaze, bedroom eyes, magnetic presence", emoji: "😏" },
   { id: "smile", label: "Sourire Naturel", value: "genuine warm radiant smile, eyes crinkling slightly, relaxed happy expression, approachable and naturally joyful", emoji: "😊" },
   { id: "candid", label: "Candid", value: "caught mid-moment candid expression, unposed authentic reaction, natural and spontaneous, real-life captured feel", emoji: "📸" },
-  { id: "playful", label: "Playful", value: "playful teasing expression, slight smirk, mischievous sparkling eyes, fun youthful energy, tongue or lip bite", emoji: "😜" },
-  { id: "dreamy", label: "Rêveur", value: "soft dreamy faraway expression, gazing slightly off-camera, peaceful serene energy, gentle half-smile, ethereal mood", emoji: "🌙" },
-  { id: "confident", label: "Confiant", value: "strong self-assured expression, chin slightly raised, powerful direct gaze, commanding presence, alpha energy", emoji: "💎" },
+  { id: "playful", label: "Joueuse", value: "playful teasing expression, slight smirk, mischievous sparkling eyes, fun youthful energy, tongue or lip bite", emoji: "😜" },
+  { id: "dreamy", label: "Rêveuse", value: "soft dreamy faraway expression, gazing slightly off-camera, peaceful serene energy, gentle half-smile, ethereal mood", emoji: "🌙" },
+  { id: "confident", label: "Confiante", value: "strong self-assured expression, chin slightly raised, powerful direct gaze, commanding presence, alpha energy", emoji: "💎" },
   { id: "laugh", label: "Rire", value: "mid-laugh genuine expression, mouth open in joy, eyes squinting with happiness, natural unforced laughter, infectious energy", emoji: "😂" },
-  { id: "mysterious", label: "Mystérieux", value: "enigmatic half-smile, eyes partially hidden by hair or shadow, mysterious alluring presence, leaving something to imagination", emoji: "🖤" },
+  { id: "mysterious", label: "Mystérieuse", value: "enigmatic half-smile, eyes partially hidden by hair or shadow, mysterious alluring presence, leaving something to imagination", emoji: "🖤" },
 ];
 
 const CAMERA_PRESETS = [
   { id: "selfie", label: "Selfie Smartphone", value: { shot_type: "smartphone selfie", angle: "slightly above eye level", perspective: "wide smartphone front camera lens, slight barrel distortion", distance: "arm's length, close-up" } },
-  { id: "candid", label: "Candid Ami", value: { shot_type: "candid friend photo", angle: "eye level, natural", perspective: "standard smartphone rear camera", distance: "medium shot, waist up" } },
+  { id: "candid", label: "Photo Candid", value: { shot_type: "candid friend photo", angle: "eye level, natural", perspective: "standard smartphone rear camera", distance: "medium shot, waist up" } },
   { id: "full_body", label: "Plein Pied", value: { shot_type: "full body photo", angle: "eye level or slightly low", perspective: "standard lens, minimal distortion", distance: "full body visible, some environment" } },
   { id: "close_up", label: "Gros Plan", value: { shot_type: "close-up portrait", angle: "eye level, intimate", perspective: "portrait mode, shallow depth of field", distance: "face and upper chest" } },
   { id: "low_angle", label: "Contre-plongée", value: { shot_type: "low angle photo", angle: "from below looking up", perspective: "dramatic low perspective, subject dominant", distance: "medium, emphasizing height and presence" } },
@@ -190,27 +191,27 @@ const CAMERA_PRESETS = [
 const NEGATIVE_PROMPT_FULL = "anatomy normalization, breast reduction, smaller bust than reference, volume compression, torso slimming, bust flattening, chest volume reduction, skin smoothing, beautification filters, depth flattening, body proportion averaging, dataset-average female anatomy, cinematic color grading, studio lighting setup, airbrushed skin texture, plastic unrealistic skin, oversaturated colors, doll-like features, cartoon proportions, symmetry enforcement, overly perfect features, digital art look, 3D render aesthetic, painting illustration style, anime style, blurry out-of-focus, lens blur artifacts, overexposed blown highlights, underexposed crushed blacks, excessive noise grain, watermark text overlay, extra limbs fingers, deformed hands, cross-eyed, asymmetric eyes, uncanny valley, wax figure look, mannequin appearance, stock photo aesthetic, magazine retouching, HDR tonemapping, vignette effect";
 
 const ANATOMICAL_PRESETS = [
-  { id: "extreme_curves", label: "Extreme Curves Preservation", value: "Exact preservation of high-volume chest-to-waist ratio, heavy natural outward projection, bust depth exceeding ribcage width, no chest volume reduction, gravity and soft tissue realism, no anatomy normalization, no proportion averaging, maintain extreme waist-to-hip differential" },
-  { id: "athletic", label: "Athletic Build Preservation", value: "Preserve visible muscle definition and low body fat percentage, maintain broad shoulders to narrow waist V-taper, no muscle smoothing, visible veins and sinew detail, athletic proportions without softening" },
-  { id: "natural_soft", label: "Natural Soft Body", value: "Preserve natural body fat distribution, visible skin folds and cellulite, no smoothing or idealization, gravity-realistic soft tissue, maintain authentic body imperfections, no toning or slimming" },
-  { id: "petite", label: "Petite Frame Preservation", value: "Maintain small frame proportions, do not scale up or average body size, preserve delicate bone structure, small hands and feet, narrow shoulders, compact proportions" },
-  { id: "voluptuous", label: "Voluptuous Preservation", value: "Maintain full-figured proportions throughout, no slimming or volume reduction anywhere, preserve heavy natural tissue weight and movement, gravity-realistic large proportions, thick thighs and full arms" },
+  { id: "extreme_curves", label: "Courbes Extrêmes", value: "Exact preservation of high-volume chest-to-waist ratio, heavy natural outward projection, bust depth exceeding ribcage width, no chest volume reduction, gravity and soft tissue realism, no anatomy normalization, no proportion averaging, maintain extreme waist-to-hip differential" },
+  { id: "athletic", label: "Physique Athlétique", value: "Preserve visible muscle definition and low body fat percentage, maintain broad shoulders to narrow waist V-taper, no muscle smoothing, visible veins and sinew detail, athletic proportions without softening" },
+  { id: "natural_soft", label: "Corps Naturel Doux", value: "Preserve natural body fat distribution, visible skin folds and cellulite, no smoothing or idealization, gravity-realistic soft tissue, maintain authentic body imperfections, no toning or slimming" },
+  { id: "petite", label: "Silhouette Menue", value: "Maintain small frame proportions, do not scale up or average body size, preserve delicate bone structure, small hands and feet, narrow shoulders, compact proportions" },
+  { id: "voluptuous", label: "Silhouette Voluptueuse", value: "Maintain full-figured proportions throughout, no slimming or volume reduction anywhere, preserve heavy natural tissue weight and movement, gravity-realistic large proportions, thick thighs and full arms" },
   { id: "custom", label: "Personnalisé", value: "" },
 ];
 
 const SIGNATURE_PRESETS = [
-  { id: "beach_girl", label: "Beach Girl", value: "candid smartphone aesthetic, raw authenticity, sun-kissed beach girl energy" },
-  { id: "instagram", label: "Instagram Influencer", value: "polished Instagram aesthetic, curated lifestyle, aspirational but relatable" },
-  { id: "editorial", label: "Editorial Raw", value: "raw editorial photography, high fashion meets street, unretouched powerful imagery" },
-  { id: "girl_next_door", label: "Girl Next Door", value: "approachable everyday beauty, natural no-makeup look, warm genuine personality" },
-  { id: "luxury", label: "Luxury Lifestyle", value: "luxury lifestyle aesthetic, designer fashion, exclusive locations, refined elegance" },
+  { id: "beach_girl", label: "Fille de Plage", value: "candid smartphone aesthetic, raw authenticity, sun-kissed beach girl energy" },
+  { id: "instagram", label: "Influenceuse Instagram", value: "polished Instagram aesthetic, curated lifestyle, aspirational but relatable" },
+  { id: "editorial", label: "Éditorial Brut", value: "raw editorial photography, high fashion meets street, unretouched powerful imagery" },
+  { id: "girl_next_door", label: "Fille d'à Côté", value: "approachable everyday beauty, natural no-makeup look, warm genuine personality" },
+  { id: "luxury", label: "Style Luxe", value: "luxury lifestyle aesthetic, designer fashion, exclusive locations, refined elegance" },
   { id: "alt_girl", label: "Alt / E-Girl", value: "alternative aesthetic, edgy makeup, bold hair colors, punk or gothic influences, expressive" },
-  { id: "fitness", label: "Fitness Model", value: "fitness lifestyle, gym selfies, progress shots, athletic and powerful, motivational energy" },
+  { id: "fitness", label: "Modèle Fitness", value: "fitness lifestyle, gym selfies, progress shots, athletic and powerful, motivational energy" },
   { id: "custom", label: "Personnalisé", value: "" },
 ];
 
 // ═══════════════════════════════════════════════════════════
-// STORAGE HELPERS
+// STOCKAGE LOCAL
 // ═══════════════════════════════════════════════════════════
 
 function loadProfiles() {
@@ -227,7 +228,7 @@ function saveHistory(h) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// JSON GENERATOR
+// GÉNÉRATEUR JSON (sortie en anglais)
 // ═══════════════════════════════════════════════════════════
 
 function buildJSON(model, scene) {
@@ -317,7 +318,7 @@ const css = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// SUB-COMPONENTS
+// SOUS-COMPOSANTS
 // ═══════════════════════════════════════════════════════════
 
 function Field({ label, value, onChange, placeholder, multi, small }) {
@@ -407,7 +408,7 @@ function Collapsible({ title, icon, children, defaultOpen = true }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MODEL EDITOR (with dropdowns)
+// ÉDITEUR DE MODÈLE (avec liste déroulante profils + import JSON)
 // ═══════════════════════════════════════════════════════════
 
 function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRandomize, onReset }) {
@@ -423,70 +424,123 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
   };
 
   const profileNames = Object.keys(profiles);
-  const [importMode, setImportMode] = useState(false);
-  const [importVal, setImportVal] = useState("");
+  const [jsonImportVal, setJsonImportVal] = useState("");
+  const [jsonImportError, setJsonImportError] = useState("");
+  const [jsonImportSuccess, setJsonImportSuccess] = useState(false);
+  const [copiedExport, setCopiedExport] = useState(false);
 
   const handleExport = () => {
     const json = JSON.stringify(model, null, 2);
     navigator.clipboard.writeText(json);
+    setCopiedExport(true);
+    setTimeout(() => setCopiedExport(false), 2200);
   };
 
-  const handleImport = () => {
+  const handleJsonImport = () => {
     try {
-      const parsed = JSON.parse(importVal);
-      if (parsed.name) { setModel(parsed); setImportMode(false); setImportVal(""); }
-    } catch { /* ignore */ }
+      const parsed = JSON.parse(jsonImportVal);
+      if (parsed.name && parsed.face && parsed.eyes) {
+        setModel(parsed);
+        setJsonImportError("");
+        setJsonImportSuccess(true);
+        setTimeout(() => { setJsonImportSuccess(false); setJsonImportVal(""); }, 2000);
+      } else {
+        setJsonImportError("JSON invalide : les champs 'name', 'face' et 'eyes' sont requis.");
+      }
+    } catch {
+      setJsonImportError("Erreur de syntaxe JSON. Vérifiez le format.");
+    }
   };
 
-  // Anatomical fidelity preset management
   const currentAnatPreset = ANATOMICAL_PRESETS.find(p => p.value === model.anatomical_fidelity);
   const [anatPresetId, setAnatPresetId] = useState(currentAnatPreset?.id || "custom");
 
-  // Signature preset management
   const currentSigPreset = SIGNATURE_PRESETS.find(p => p.value === model.signature);
   const [sigPresetId, setSigPresetId] = useState(currentSigPreset?.id || "custom");
 
   return (
     <div style={{ padding: "16px 16px 100px" }}>
-      {/* Profile Manager */}
+      {/* SECTION 1: Import rapide JSON */}
+      <Collapsible title="Import Rapide JSON" icon="📋" defaultOpen={false}>
+        <p style={{ fontSize: 11, color: theme.text3, marginBottom: 10, lineHeight: 1.5 }}>
+          Si vous avez déjà le JSON complet d'un modèle, collez-le ici pour charger instantanément toutes ses caractéristiques.
+        </p>
+        <textarea
+          value={jsonImportVal}
+          onChange={e => { setJsonImportVal(e.target.value); setJsonImportError(""); setJsonImportSuccess(false); }}
+          rows={5}
+          placeholder={'{\n  "name": "Luna",\n  "age": "23",\n  "face": { ... },\n  "eyes": { ... },\n  ...\n}'}
+          style={{ ...css.input, resize: "vertical", minHeight: 80, fontSize: 10, marginBottom: 8, fontFamily: "'DM Mono', monospace" }}
+        />
+        {jsonImportError && (
+          <div style={{ fontSize: 11, color: theme.danger, marginBottom: 8, padding: "6px 10px", background: `${theme.danger}15`, borderRadius: 6, border: `1px solid ${theme.danger}30` }}>
+            ⚠️ {jsonImportError}
+          </div>
+        )}
+        {jsonImportSuccess && (
+          <div style={{ fontSize: 11, color: theme.success, marginBottom: 8, padding: "6px 10px", background: `${theme.success}15`, borderRadius: 6, border: `1px solid ${theme.success}30` }}>
+            ✅ Modèle importé avec succès !
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleJsonImport} disabled={!jsonImportVal.trim()} style={{ ...css.btnPrimary, padding: "8px 16px", fontSize: 11, opacity: jsonImportVal.trim() ? 1 : 0.4 }}>
+            📥 Importer ce modèle
+          </button>
+          {jsonImportVal && (
+            <button onClick={() => { setJsonImportVal(""); setJsonImportError(""); }} style={{ ...css.btnGhost, fontSize: 11, padding: "8px 12px" }}>
+              ✕ Effacer
+            </button>
+          )}
+        </div>
+      </Collapsible>
+
+      {/* SECTION 2: Gestion des profils avec liste déroulante */}
       <div style={{ ...css.card, marginBottom: 16, borderColor: theme.accentBorder }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <label style={{ ...css.label, marginBottom: 0 }}>💾 Profils</label>
+          <label style={{ ...css.label, marginBottom: 0 }}>💾 Profils sauvegardés</label>
           <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={onSave} style={{ ...css.btnPrimary, padding: "7px 14px", fontSize: 11 }}>Sauvegarder</button>
+            <button onClick={handleExport} style={{ ...css.btnGhost, padding: "6px 12px", fontSize: 10, color: copiedExport ? theme.success : theme.text2, borderColor: copiedExport ? theme.success : theme.border }}>
+              {copiedExport ? "✓ Copié !" : "📤 Exporter"}
+            </button>
+            <button onClick={onSave} style={{ ...css.btnPrimary, padding: "6px 14px", fontSize: 11 }}>💾 Sauvegarder</button>
           </div>
         </div>
+
         {profileNames.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {profileNames.map(name => (
-              <div key={name} style={{ display: "flex", alignItems: "center", gap: 4, background: theme.surface2, border: `1px solid ${theme.border}`, borderRadius: 8, padding: "4px 4px 4px 10px" }}>
-                <button onClick={() => onLoad(name)} style={{ background: "none", border: "none", color: theme.text, fontSize: 12, cursor: "pointer", fontFamily: "'Outfit'", fontWeight: 500 }}>{name}</button>
-                <button onClick={() => onDelete(name)} style={{ background: "none", border: "none", color: theme.text3, fontSize: 14, cursor: "pointer", padding: "2px 6px", lineHeight: 1 }}>×</button>
-              </div>
-            ))}
+          <div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                value=""
+                onChange={e => { if (e.target.value) onLoad(e.target.value); }}
+                style={{ ...css.select, flex: 1, fontSize: 12 }}
+              >
+                <option value="" style={{ background: theme.surface, color: theme.text3 }}>— Sélectionner un profil —</option>
+                {profileNames.map(name => (
+                  <option key={name} value={name} style={{ background: theme.surface, color: theme.text }}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+              {profileNames.map(name => (
+                <div key={name} style={{ display: "flex", alignItems: "center", gap: 2, background: theme.surface2, border: `1px solid ${theme.border}`, borderRadius: 6, padding: "3px 3px 3px 8px", fontSize: 10 }}>
+                  <span style={{ color: theme.text2, fontFamily: "'Outfit'", fontWeight: 500 }}>{name}</span>
+                  <button onClick={() => onDelete(name)} style={{ background: "none", border: "none", color: theme.text3, fontSize: 12, cursor: "pointer", padding: "2px 4px", lineHeight: 1 }} title="Supprimer">×</button>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
-          <p style={{ color: theme.text3, fontSize: 11, margin: 0 }}>Aucun profil sauvegardé.</p>
+          <p style={{ color: theme.text3, fontSize: 11, margin: 0 }}>Aucun profil sauvegardé. Configurez un modèle et cliquez sur Sauvegarder.</p>
         )}
       </div>
 
-      {/* Quick Actions */}
+      {/* Actions rapides */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={onRandomize} style={{ ...css.btnGhost, borderColor: theme.info + "50", color: theme.info, fontSize: 11, padding: "6px 12px" }}>🎲 Aléatoire</button>
-        <button onClick={onReset} style={{ ...css.btnGhost, fontSize: 11, padding: "6px 12px" }}>↺ Reset Défaut</button>
-        <button onClick={handleExport} style={{ ...css.btnGhost, fontSize: 11, padding: "6px 12px" }}>📤 Exporter JSON</button>
-        <button onClick={() => setImportMode(!importMode)} style={{ ...css.btnGhost, fontSize: 11, padding: "6px 12px", borderColor: importMode ? theme.accent : theme.border, color: importMode ? theme.accent : theme.text2 }}>📥 Importer</button>
+        <button onClick={onReset} style={{ ...css.btnGhost, fontSize: 11, padding: "6px 12px" }}>↺ Réinitialiser</button>
       </div>
 
-      {importMode && (
-        <div style={{ ...css.card, marginBottom: 16, borderColor: theme.accentBorder }}>
-          <label style={css.label}>Coller le JSON du profil</label>
-          <textarea value={importVal} onChange={e => setImportVal(e.target.value)} rows={4} placeholder='{"name":"...", ...}' style={{ ...css.input, resize: "vertical", minHeight: 60, fontSize: 10, marginBottom: 8 }} />
-          <button onClick={handleImport} style={{ ...css.btnPrimary, padding: "7px 14px", fontSize: 11 }}>Importer</button>
-        </div>
-      )}
-
-      {/* Identity */}
+      {/* Identité */}
       <Collapsible title="Identité" icon="🪪">
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
           <Field label="Nom / Alias" value={model.name} onChange={v => u("name", v)} />
@@ -494,16 +548,16 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
         </div>
       </Collapsible>
 
-      {/* Face */}
+      {/* Visage */}
       <Collapsible title="Visage" icon="👤" defaultOpen={false}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <SelectField label="Forme visage" value={model.face.shape} onChange={v => u("face.shape", v)} options={MODEL_OPTIONS.face.shape} small />
+          <SelectField label="Forme du visage" value={model.face.shape} onChange={v => u("face.shape", v)} options={MODEL_OPTIONS.face.shape} small />
           <SelectField label="Mâchoire" value={model.face.jawline} onChange={v => u("face.jawline", v)} options={MODEL_OPTIONS.face.jawline} small />
         </div>
         <SelectField label="Front" value={model.face.forehead} onChange={v => u("face.forehead", v)} options={MODEL_OPTIONS.face.forehead} small />
       </Collapsible>
 
-      {/* Eyes */}
+      {/* Yeux */}
       <Collapsible title="Yeux" icon="👁️" defaultOpen={false}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <SelectField label="Couleur" value={model.eyes.color} onChange={v => u("eyes.color", v)} options={MODEL_OPTIONS.eyes.color} small />
@@ -514,43 +568,43 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
         <SelectField label="Sourcils" value={model.eyes.brows} onChange={v => u("eyes.brows", v)} options={MODEL_OPTIONS.eyes.brows} small />
       </Collapsible>
 
-      {/* Lips & Nose */}
+      {/* Bouche & Nez */}
       <Collapsible title="Bouche & Nez" icon="👄" defaultOpen={false}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <SelectField label="Forme lèvres" value={model.lips.shape} onChange={v => u("lips.shape", v)} options={MODEL_OPTIONS.lips.shape} small />
+          <SelectField label="Forme des lèvres" value={model.lips.shape} onChange={v => u("lips.shape", v)} options={MODEL_OPTIONS.lips.shape} small />
           <SelectField label="Nez" value={model.nose.shape} onChange={v => u("nose.shape", v)} options={MODEL_OPTIONS.nose.shape} small />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <SelectField label="Lèvre sup." value={model.lips.upper} onChange={v => u("lips.upper", v)} options={MODEL_OPTIONS.lips.upper} small />
-          <SelectField label="Lèvre inf." value={model.lips.lower} onChange={v => u("lips.lower", v)} options={MODEL_OPTIONS.lips.lower} small />
+          <SelectField label="Lèvre supérieure" value={model.lips.upper} onChange={v => u("lips.upper", v)} options={MODEL_OPTIONS.lips.upper} small />
+          <SelectField label="Lèvre inférieure" value={model.lips.lower} onChange={v => u("lips.lower", v)} options={MODEL_OPTIONS.lips.lower} small />
         </div>
       </Collapsible>
 
-      {/* Hair */}
+      {/* Cheveux */}
       <Collapsible title="Cheveux" icon="💇" defaultOpen={false}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <SelectField label="Couleur" value={model.hair.color} onChange={v => u("hair.color", v)} options={MODEL_OPTIONS.hair.color} small />
           <SelectField label="Longueur" value={model.hair.length} onChange={v => u("hair.length", v)} options={MODEL_OPTIONS.hair.length} small />
           <SelectField label="Texture" value={model.hair.texture} onChange={v => u("hair.texture", v)} options={MODEL_OPTIONS.hair.texture} small />
-          <SelectField label="Style" value={model.hair.style} onChange={v => u("hair.style", v)} options={MODEL_OPTIONS.hair.style} small />
+          <SelectField label="Coiffure" value={model.hair.style} onChange={v => u("hair.style", v)} options={MODEL_OPTIONS.hair.style} small />
         </div>
       </Collapsible>
 
-      {/* Skin */}
+      {/* Peau */}
       <Collapsible title="Peau" icon="✨" defaultOpen={false}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <SelectField label="Teint" value={model.skin.tone} onChange={v => u("skin.tone", v)} options={MODEL_OPTIONS.skin.tone} small />
           <SelectField label="Texture" value={model.skin.texture} onChange={v => u("skin.texture", v)} options={MODEL_OPTIONS.skin.texture} small />
         </div>
-        <SelectField label="Traits (freckles, etc)" value={model.skin.features} onChange={v => u("skin.features", v)} options={MODEL_OPTIONS.skin.features} small />
-        <SelectField label="Éclat / Sheen" value={model.skin.sheen} onChange={v => u("skin.sheen", v)} options={MODEL_OPTIONS.skin.sheen} small />
-        <SelectField label="Détails (tan lines, moles...)" value={model.skin.details} onChange={v => u("skin.details", v)} options={MODEL_OPTIONS.skin.details} small />
+        <SelectField label="Traits particuliers" value={model.skin.features} onChange={v => u("skin.features", v)} options={MODEL_OPTIONS.skin.features} small />
+        <SelectField label="Éclat de la peau" value={model.skin.sheen} onChange={v => u("skin.sheen", v)} options={MODEL_OPTIONS.skin.sheen} small />
+        <SelectField label="Détails (marques, grains de beauté...)" value={model.skin.details} onChange={v => u("skin.details", v)} options={MODEL_OPTIONS.skin.details} small />
       </Collapsible>
 
-      {/* Body */}
+      {/* Corps */}
       <Collapsible title="Corps" icon="🏋️" defaultOpen={false}>
         <SelectField label="Type de silhouette" value={model.body.type} onChange={v => u("body.type", v)} options={MODEL_OPTIONS.body.type} small />
-        <SelectField label="Buste" value={model.body.bust} onChange={v => u("body.bust", v)} options={MODEL_OPTIONS.body.bust} small />
+        <SelectField label="Poitrine" value={model.body.bust} onChange={v => u("body.bust", v)} options={MODEL_OPTIONS.body.bust} small />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <SelectField label="Taille" value={model.body.waist} onChange={v => u("body.waist", v)} options={MODEL_OPTIONS.body.waist} small />
           <SelectField label="Hanches" value={model.body.hips} onChange={v => u("body.hips", v)} options={MODEL_OPTIONS.body.hips} small />
@@ -563,8 +617,8 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
         <SelectField label="Détails corporels" value={model.body.details} onChange={v => u("body.details", v)} options={MODEL_OPTIONS.body.details} small />
       </Collapsible>
 
-      {/* Fidelity */}
-      <Collapsible title="Anatomical Fidelity" icon="🛡️" defaultOpen={false}>
+      {/* Fidélité Anatomique */}
+      <Collapsible title="Fidélité Anatomique" icon="🛡️" defaultOpen={false}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
           {ANATOMICAL_PRESETS.map(p => (
             <button key={p.id} onClick={() => {
@@ -576,7 +630,7 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
         <Field value={model.anatomical_fidelity} onChange={v => { u("anatomical_fidelity", v); setAnatPresetId("custom"); }} multi placeholder="Contraintes anti-normalisation..." />
       </Collapsible>
 
-      {/* Signature */}
+      {/* Signature / Style */}
       <Collapsible title="Signature / Style" icon="🎯" defaultOpen={false}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
           {SIGNATURE_PRESETS.map(p => (
@@ -589,7 +643,7 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
         <Field value={model.signature} onChange={v => { u("signature", v); setSigPresetId("custom"); }} placeholder="Le style unique de ce modèle..." />
       </Collapsible>
 
-      {/* Preview */}
+      {/* Aperçu */}
       <div style={{ ...css.card, borderColor: theme.border2, marginTop: 4 }}>
         <label style={{ ...css.label, marginBottom: 10 }}>👁️ Aperçu rapide du modèle</label>
         <div style={{ fontSize: 11, lineHeight: 1.7, color: theme.text2 }}>
@@ -603,7 +657,7 @@ function ModelEditor({ model, setModel, onSave, profiles, onLoad, onDelete, onRa
 }
 
 // ═══════════════════════════════════════════════════════════
-// SCENE BUILDER
+// CONSTRUCTEUR DE SCÈNE
 // ═══════════════════════════════════════════════════════════
 
 function SceneBuilder({ scene, setScene, model, onGenerate }) {
@@ -615,7 +669,7 @@ function SceneBuilder({ scene, setScene, model, onGenerate }) {
         <span style={{ fontSize: 18 }}>👤</span>
         <div>
           <div style={{ fontFamily: "'Outfit'", fontWeight: 700, color: theme.accent, fontSize: 14 }}>{model.name}</div>
-          <div style={{ fontSize: 10, color: theme.text3 }}>Modèle actif • Les specs physiques sont verrouillées</div>
+          <div style={{ fontSize: 10, color: theme.text3 }}>Modèle actif • Les caractéristiques physiques sont verrouillées</div>
         </div>
       </div>
 
@@ -638,10 +692,10 @@ function SceneBuilder({ scene, setScene, model, onGenerate }) {
       <ChipSelect label="🤸 Pose" options={POSE_PRESETS} value={scene.poseId} onChange={v => s("poseId", v)} columns={2} />
       <ChipSelect label="📷 Caméra" options={CAMERA_PRESETS} value={scene.camId} onChange={v => s("camId", v)} columns={3} />
       <ChipSelect label="💡 Éclairage" options={LIGHTING_PRESETS} value={scene.lightId} onChange={v => s("lightId", v)} columns={2} />
-      <ChipSelect label="😏 Expression / Mood" options={MOOD_PRESETS} value={scene.moodId} onChange={v => s("moodId", v)} columns={2} />
+      <ChipSelect label="😏 Expression / Humeur" options={MOOD_PRESETS} value={scene.moodId} onChange={v => s("moodId", v)} columns={2} />
 
       <div style={css.section}>
-        <label style={css.label}>📝 Notes & détails extra</label>
+        <label style={css.label}>📝 Notes & détails supplémentaires</label>
         <textarea value={scene.extra || ""} onChange={e => s("extra", e.target.value)} placeholder="Accessoires, contexte narratif, détails spécifiques..." rows={3}
           style={{ ...css.input, resize: "vertical", minHeight: 60 }} />
       </div>
@@ -652,21 +706,20 @@ function SceneBuilder({ scene, setScene, model, onGenerate }) {
       </div>
 
       <button onClick={onGenerate} style={{ ...css.btnPrimary, width: "100%", padding: 14, fontSize: 14 }}>
-        ⚡ Générer JSON Nano Banana
+        ⚡ Générer le JSON
       </button>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════
-// OUTPUT VIEW (no Higgsfield copy)
+// VUE RÉSULTAT
 // ═══════════════════════════════════════════════════════════
 
-function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson, setEditableJson }) {
+function OutputView({ json, caption, modelName, onBack, editableJson, setEditableJson }) {
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const formatted = JSON.stringify(json, null, 2);
-  const displayText = editing ? editableJson : formatted;
 
   const copy = (text) => {
     navigator.clipboard.writeText(text || formatted).then(() => {
@@ -689,10 +742,10 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
     try {
       JSON.parse(editableJson);
       setEditing(false);
-    } catch { /* invalid json, stay in edit */ }
+    } catch { /* JSON invalide, rester en édition */ }
   };
 
-  // Build Higgsfield-ready prompt (flat text, no JSON copy)
+  // Prompt texte plat pour Higgsfield
   const higgsfieldPrompt = (() => {
     const j = json;
     const parts = [
@@ -716,18 +769,20 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
     });
   };
 
+  const [copiedNeg, setCopiedNeg] = useState(false);
+
   return (
     <div style={{ padding: "16px 16px 100px" }}>
       {caption && (
         <div style={{ marginBottom: 16, fontFamily: "'Outfit'", fontSize: 15, color: theme.text, fontWeight: 500 }}>
-          {caption} <span style={{ color: theme.text3, fontSize: 12 }}>— Nano Banana Pro 🍌</span>
+          {caption} <span style={{ color: theme.text3, fontSize: 12 }}>— NanaBanana Studio 🍌</span>
         </div>
       )}
 
-      {/* JSON Section */}
+      {/* Section JSON */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 10, color: theme.text3, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'Outfit'", fontWeight: 600 }}>
-          JSON • {modelName} • Nano Banana Pro
+          JSON • {modelName} • NanaBanana Studio
         </span>
         <div style={{ display: "flex", gap: 6 }}>
           {!editing && <button onClick={startEdit} style={{ ...css.btnGhost, fontSize: 10, padding: "5px 10px", color: theme.text3 }}>✏️ Éditer</button>}
@@ -735,7 +790,7 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
             ...css.btnGhost, borderColor: copied ? theme.success : theme.border,
             color: copied ? theme.success : theme.accent, fontSize: 10, padding: "5px 10px"
           }}>
-            {copied ? "✓ Copié" : "📋 Copier JSON"}
+            {copied ? "✓ Copié !" : "📋 Copier JSON"}
           </button>
         </div>
       </div>
@@ -747,7 +802,7 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
             minHeight: "40vh", resize: "vertical", background: "#050507", color: "#b0b0bc"
           }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button onClick={applyEdit} style={{ ...css.btnPrimary, flex: 1, fontSize: 11, padding: 8 }}>✓ Valider JSON</button>
+            <button onClick={applyEdit} style={{ ...css.btnPrimary, flex: 1, fontSize: 11, padding: 8 }}>✓ Valider le JSON</button>
             <button onClick={cancelEdit} style={{ ...css.btnDanger, flex: 1, fontSize: 11, padding: 8 }}>✕ Annuler</button>
           </div>
         </div>
@@ -759,7 +814,7 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
         }}>{formatted}</pre>
       )}
 
-      {/* Higgsfield Prompt (flat text, not JSON) */}
+      {/* Prompt Higgsfield */}
       <div style={{ marginTop: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -782,18 +837,20 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
             borderColor: copiedHf ? theme.success : theme.info + "50",
             color: copiedHf ? theme.success : theme.info
           }}>
-            {copiedHf ? "✓ Copié !" : "📋 Copier prompt Higgsfield"}
+            {copiedHf ? "✓ Copié !" : "📋 Copier le prompt Higgsfield"}
           </button>
         </div>
       </div>
 
-      {/* Negative prompt quick copy */}
+      {/* Prompt négatif */}
       <div style={{ marginTop: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <span style={{ fontSize: 10, color: theme.text3, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'Outfit'", fontWeight: 600 }}>
-            Negative Prompt
+            Prompt Négatif
           </span>
-          <button onClick={() => { navigator.clipboard.writeText(json.negative_prompt); }} style={{ ...css.btnGhost, fontSize: 10, padding: "5px 10px", color: theme.danger, borderColor: theme.danger + "40" }}>📋 Copier</button>
+          <button onClick={() => { navigator.clipboard.writeText(json.negative_prompt); setCopiedNeg(true); setTimeout(() => setCopiedNeg(false), 2200); }} style={{ ...css.btnGhost, fontSize: 10, padding: "5px 10px", color: copiedNeg ? theme.success : theme.danger, borderColor: copiedNeg ? theme.success + "40" : theme.danger + "40" }}>
+            {copiedNeg ? "✓ Copié !" : "📋 Copier"}
+          </button>
         </div>
         <div style={{
           background: "#050507", border: `1px solid ${theme.danger}30`, borderRadius: 12, padding: 14,
@@ -805,17 +862,17 @@ function OutputView({ json, caption, modelName, onBack, onEditJson, editableJson
       </div>
 
       <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-        <button onClick={onBack} style={{ ...css.btnGhost, flex: 1 }}>← Modifier scène</button>
+        <button onClick={onBack} style={{ ...css.btnGhost, flex: 1 }}>← Modifier la scène</button>
       </div>
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════
-// HISTORY VIEW
+// VUE HISTORIQUE
 // ═══════════════════════════════════════════════════════════
 
-function HistoryView({ history, onReload }) {
+function HistoryView({ history, onReload, onClear }) {
   if (!history.length) return (
     <div style={{ padding: 40, textAlign: "center", color: theme.text3 }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>📜</div>
@@ -825,7 +882,10 @@ function HistoryView({ history, onReload }) {
 
   return (
     <div style={{ padding: "16px 16px 100px" }}>
-      <label style={{ ...css.label, marginBottom: 16 }}>📜 Dernières générations ({history.length})</label>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <label style={{ ...css.label, marginBottom: 0 }}>📜 Dernières générations ({history.length})</label>
+        <button onClick={onClear} style={{ ...css.btnDanger, fontSize: 10, padding: "5px 10px" }}>🗑️ Tout effacer</button>
+      </div>
       {history.map((entry, i) => (
         <div key={i} style={{ ...css.card, marginBottom: 8, padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -843,7 +903,7 @@ function HistoryView({ history, onReload }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MAIN APP
+// APPLICATION PRINCIPALE
 // ═══════════════════════════════════════════════════════════
 
 export default function PromptStudio() {
@@ -935,10 +995,15 @@ export default function PromptStudio() {
     setTab("scene");
   };
 
+  const handleClearHistory = () => {
+    setHistory([]);
+    saveHistory([]);
+  };
+
   const tabs = [
     { id: "model", label: "Modèle", icon: "👤" },
     { id: "scene", label: "Scène", icon: "🎬" },
-    { id: "output", label: "JSON", icon: "📋", badge: !!jsonOutput },
+    { id: "output", label: "Résultat", icon: "📋", badge: !!jsonOutput },
     { id: "history", label: "Historique", icon: "📜", badge: history.length > 0 },
   ];
 
@@ -953,9 +1018,10 @@ export default function PromptStudio() {
         ::selection { background: rgba(228,168,83,0.3); }
         input:focus, textarea:focus, select:focus { border-color: ${theme.accent} !important; }
         select option { background: ${theme.surface}; color: ${theme.text}; }
-      `}</style>
+      `}
+      </style>
 
-      {/* Header */}
+      {/* En-tête */}
       <div style={{ borderBottom: `1px solid ${theme.border}`, padding: "14px 18px", background: theme.surface, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 34, height: 34, borderRadius: 8, background: `linear-gradient(135deg, ${theme.accent}, #8b5e20)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: theme.bg }}>N</div>
@@ -964,12 +1030,12 @@ export default function PromptStudio() {
               NanaBanana Studio
             </h1>
             <p style={{ fontSize: 9, color: theme.text3, margin: 0, marginTop: 1, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              AI Model Prompt Engine
+              Moteur de Prompts IA
             </p>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 9, color: theme.text3, fontFamily: "'DM Mono'" }}>v3.0</span>
+          <span style={{ fontSize: 9, color: theme.text3, fontFamily: "'DM Mono'" }}>v3.1</span>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: theme.success, boxShadow: `0 0 8px ${theme.success}` }} />
         </div>
       </div>
@@ -994,13 +1060,13 @@ export default function PromptStudio() {
         ) : (
           <div style={{ padding: 40, textAlign: "center", color: theme.text3 }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🍌</div>
-            <p style={{ fontFamily: "'Outfit'", fontSize: 14 }}>Configure ta scène et génère ton premier JSON</p>
+            <p style={{ fontFamily: "'Outfit'", fontSize: 14 }}>Configurez votre scène et générez votre premier JSON</p>
             <button onClick={() => setTab("scene")} style={{ ...css.btnGhost, marginTop: 14, borderColor: theme.accent, color: theme.accent }}>→ Aller à la scène</button>
           </div>
         )
       )}
       {tab === "history" && (
-        <HistoryView history={history} onReload={handleReloadScene} />
+        <HistoryView history={history} onReload={handleReloadScene} onClear={handleClearHistory} />
       )}
     </div>
   );
