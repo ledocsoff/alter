@@ -103,3 +103,9 @@ export const DEFAULT_SCENE = {
   lighting: SCENE_OPTIONS.lighting[0].promptEN,
   expression: SCENE_OPTIONS.expression[0].promptEN,
 };
+
+// NOUVEAU : Option d'Aspect Ratio (Format)
+SCENE_OPTIONS.aspect_ratio = [
+  { labelFR: "Story / TikTok (9:16)", promptEN: "--ar 9:16", icon: "📱" },
+  { labelFR: "Feed / Carré (1:1)", promptEN: "--ar 1:1", icon: "⏹️" }
+];
