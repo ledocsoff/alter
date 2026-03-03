@@ -98,6 +98,8 @@ export const generatePromptJSON = (model, scene, activeAccount = null) => {
       anatomical_fidelity: get(model, 'anatomical_fidelity'),
       aesthetic_signature: get(model, 'signature'),
       identity_lock: "Maintain exact same face across all generations. Same person, consistent identity, no variation in facial structure or features. Consistent skin color and body proportions.",
+      seed: scene.seed || null,
+      seed_directive: scene.seed ? `Use seed ${scene.seed} for deterministic visual consistency. This seed must produce identical facial features, body proportions, and skin characteristics across every generation.` : null,
     },
     negative_prompt: [
       "worst quality, low quality, normal quality",

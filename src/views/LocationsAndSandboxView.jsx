@@ -25,17 +25,15 @@ const LockScore = ({ location }) => {
                 {Array.from({ length: total }, (_, i) => (
                     <div
                         key={i}
-                        className={`w-1.5 h-3 rounded-sm transition-colors ${
-                            i < filled
+                        className={`w-1.5 h-3 rounded-sm transition-colors ${i < filled
                                 ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
                                 : 'bg-zinc-800'
-                        }`}
+                            }`}
                     />
                 ))}
             </div>
-            <span className={`text-[10px] font-medium ${
-                filled >= 5 ? 'text-emerald-500/70' : filled >= 3 ? 'text-amber-500/70' : 'text-zinc-600'
-            }`}>{filled}/{total}</span>
+            <span className={`text-[10px] font-medium ${filled >= 5 ? 'text-emerald-500/70' : filled >= 3 ? 'text-amber-500/70' : 'text-zinc-600'
+                }`}>{filled}/{total}</span>
         </div>
     );
 };
@@ -279,11 +277,10 @@ const LocationsAndSandboxView = () => {
                                 <button
                                     onClick={handleSaveLocation}
                                     disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
-                                    className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${
-                                        isEditing
+                                    className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
                                             ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
                                             : 'bg-zinc-100 text-zinc-900 hover:bg-white'
-                                    }`}
+                                        }`}
                                 >
                                     {isEditing ? 'Mettre a jour' : 'Enregistrer'}
                                 </button>
@@ -347,17 +344,17 @@ const LocationsAndSandboxView = () => {
                                             </button>
                                             <button
                                                 onClick={(e) => handleDeleteLocation(e, loc.id)}
-                                                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${
-                                                    pendingDeleteId === loc.id
+                                                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${pendingDeleteId === loc.id
                                                         ? 'bg-red-500/20 text-red-400 opacity-100'
                                                         : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
-                                                }`}
+                                                    }`}
                                             >
                                                 {pendingDeleteId === loc.id ? '?' : '\u00D7'}
                                             </button>
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
+                                        {loc.seed && <span className="text-[10px] text-amber-400/70 bg-amber-500/8 px-2 py-0.5 rounded-md font-mono">🎲 {loc.seed}</span>}
                                         {loc.default_lighting && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Eclairage</span>}
                                         {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
                                         {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}

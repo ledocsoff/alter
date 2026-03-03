@@ -48,7 +48,7 @@ export const SCENE_OPTIONS = {
     { labelFR: "Balcon d'appartement parisien / ville", promptEN: "city apartment balcony with plants" },
     { labelFR: "Canapé classique de salon", promptEN: "casual living room couch" },
     { labelFR: "Murs blancs simples, lit défait", promptEN: "simple white bedroom walls, unmade bed" },
-    
+
     // --- LIEUX EXTÉRIEURS CLASSIQUES ---
     { labelFR: "Café de quartier (intérieur)", promptEN: "local coffee shop interior" },
     { labelFR: "Trottoir de rue classique", promptEN: "regular city street sidewalk" },
@@ -107,4 +107,5 @@ export const DEFAULT_SCENE = {
   lighting: SCENE_OPTIONS.lighting[0].promptEN,
   expression: SCENE_OPTIONS.expression[0].promptEN,
   aspect_ratio: "--ar 9:16",
+  seed: null,
 };

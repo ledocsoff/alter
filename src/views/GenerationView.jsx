@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
+import { saveLocationData, generateSeed } from '../utils/storage';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import OutputPanel from '../features/OutputPanel/OutputPanel';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
@@ -45,8 +46,12 @@ const GenerationView = () => {
 
         if (isSandbox) {
             setActiveWorkflow({ modelId: null, accountId: null });
+            // Sandbox: seed aléatoire par session
+            updateSceneEntry('seed', generateSeed());
         } else {
             setActiveWorkflow({ modelId, accountId });
+            // Charger la seed du lieu
+            if (loc?.seed) updateSceneEntry('seed', loc.seed);
             if (loc?.environment) updateSceneEntry('environment', loc.environment);
             if (loc?.default_lighting) updateSceneEntry('lighting', loc.default_lighting);
             if (loc?.default_vibe) updateSceneEntry('vibe', loc.default_vibe);
@@ -66,7 +71,7 @@ const GenerationView = () => {
     // Keyboard shortcuts
     const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
     const handleRandomize = useCallback(() => {
-        setScene({
+        setScene(prev => ({
             outfit: pickRandom(OUTFIT_PRESETS),
             vibe: pickRandom(SCENE_OPTIONS.vibe).promptEN,
             camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
@@ -76,7 +81,8 @@ const GenerationView = () => {
             aspect_ratio: scene.aspect_ratio,
             environment: scene.environment,
             location_meta: scene.location_meta,
-        });
+            seed: scene.seed, // Garder la même seed
+        }));
     }, [scene, setScene]);
 
     const handleGenerateImage = useCallback(() => {
@@ -115,6 +121,15 @@ const GenerationView = () => {
         accountHandle: currentAccount?.handle || '',
     };
 
+    const handleRegenerateSeed = () => {
+        const newSeed = generateSeed();
+        updateSceneEntry('seed', newSeed);
+        // Sauvegarder la nouvelle seed dans le lieu (si ce n'est pas le sandbox)
+        if (!isSandbox && currentLocation) {
+            saveLocationData(modelId, accountId, { ...currentLocation, seed: newSeed });
+        }
+    };
+
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
 
@@ -130,6 +145,18 @@ const GenerationView = () => {
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* SEED BADGE */}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/30">
+                        <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
+                        <span className="text-[11px] text-amber-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
+                        <button
+                            onClick={handleRegenerateSeed}
+                            className="ml-0.5 w-4 h-4 rounded flex items-center justify-center text-[9px] text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                            title="Regenerer la seed"
+                        >
+                            ↻
+                        </button>
+                    </div>
                     <button
                         onClick={() => setShowRecap(!showRecap)}
                         className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${showRecap ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
@@ -183,21 +210,19 @@ const GenerationView = () => {
                         <div className="flex items-center bg-zinc-900/80 border border-zinc-800/50 rounded-lg p-0.5">
                             <button
                                 onClick={() => setRightPanel('image')}
-                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${
-                                    rightPanel === 'image'
+                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${rightPanel === 'image'
                                         ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                                         : 'text-zinc-500 hover:text-zinc-300'
-                                }`}
+                                    }`}
                             >
                                 Image
                             </button>
                             <button
                                 onClick={() => setRightPanel('json')}
-                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${
-                                    rightPanel === 'json'
+                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${rightPanel === 'json'
                                         ? 'bg-zinc-800 text-zinc-100 shadow-sm'
                                         : 'text-zinc-500 hover:text-zinc-300'
-                                }`}
+                                    }`}
                             >
                                 JSON
                             </button>

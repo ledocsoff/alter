@@ -1,10 +1,10 @@
 # 🍌 NanaBanana Studio
 
-**Gestionnaire de prompts pour Influenceuses Virtuelles — OFM Hub v4.3**
+**Gestionnaire de prompts pour Influenceuses Virtuelles — OFM Hub v4.4**
 
 NanaBanana Studio est une application **React SPA** conçue pour les agences OFM (Only Fans Management) utilisant des mannequins IA. Elle permet de structurer, gérer et générer des **prompts Natural Language** ultra-cohérents pour Google AI Studio (Gemini), en maintenant la cohérence visuelle entre chaque génération.
 
-![Version](https://img.shields.io/badge/version-4.3.0-gold)
+![Version](https://img.shields.io/badge/version-4.4.0-gold)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![React Router](https://img.shields.io/badge/React_Router-v6-CA4245)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC)
@@ -46,8 +46,9 @@ Ce tunnel garantit qu'il est **impossible** de générer une image incohérente 
 ### 📍 Gestion des Lieux (Niveau 3)
 - CRUD complet de lieux récurrents par compte (chambre, salle de sport, etc.)
 - Chaque lieu définit : environnement, éclairage par défaut, ambiance, heure du jour, détails d'ancrage, palette de couleurs
+- **Seed persistante** par lieu (6 chiffres) — garantit la cohérence visuelle entre chaque génération
 - Score de verrouillage du lieu (indique à l'IA à quel point le décor est contraint)
-- **Mode Sandbox** : génération libre sans contexte de lieu
+- **Mode Sandbox** : génération libre sans contexte de lieu (seed aléatoire par session)
 
 ### ⚡ Générateur de Prompt (Niveau 4)
 - Studio verrouillé automatiquement sur les paramètres du lieu choisi

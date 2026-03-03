@@ -156,6 +156,10 @@ export const deleteAccountData = (modelId, accountId) => {
 // ============================================
 // NIVEAU 3 : LOCATIONS (CRUD)
 // ============================================
+
+// Génère une seed numérique 6 chiffres pour la cohérence visuelle
+export const generateSeed = () => Math.floor(100000 + Math.random() * 900000);
+
 export const saveLocationData = (modelId, accountId, locationData) => {
     const models = getSavedModels();
     const model = models.find(m => m.id === modelId);
@@ -163,6 +167,9 @@ export const saveLocationData = (modelId, accountId, locationData) => {
     if (!account) return null;
 
     const id = locationData.id || `loc_${crypto.randomUUID()}`;
+
+    // Préserver la seed existante, ou en générer une nouvelle
+    const existingLoc = account.locations.find(l => l.id === id);
     const location = {
         ...locationData,
         id,
@@ -173,6 +180,7 @@ export const saveLocationData = (modelId, accountId, locationData) => {
         time_of_day: locationData.time_of_day || "",
         anchor_details: locationData.anchor_details || "",
         color_palette: locationData.color_palette || "",
+        seed: locationData.seed || existingLoc?.seed || generateSeed(),
     };
 
     const index = account.locations.findIndex(l => l.id === id);

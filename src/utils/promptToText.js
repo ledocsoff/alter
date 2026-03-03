@@ -76,6 +76,7 @@ export const promptToText = (promptJSON) => {
     if (d.anatomical_fidelity) parts.push(d.anatomical_fidelity);
     if (d.aesthetic_signature) parts.push(d.aesthetic_signature);
     if (d.spatial_lock) parts.push(d.spatial_lock);
+    if (d.seed_directive) parts.push(d.seed_directive);
   }
 
   // Platform compliance
