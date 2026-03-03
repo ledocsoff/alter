@@ -76,28 +76,99 @@ La clé API Google AI Studio est saisie par l'utilisateur via la modale "API" da
 
 ## 🚀 Installation & Lancement
 
+### Prérequis
+
+Avant de commencer, assurez-vous d'avoir installé sur votre machine :
+
+| Outil | Version minimale | Vérification | Téléchargement |
+|---|---|---|---|
+| **Node.js** | v18 ou supérieure | `node -v` | [nodejs.org](https://nodejs.org) |
+| **npm** | v9 ou supérieure | `npm -v` | (inclus avec Node.js) |
+| **Git** | — | `git --version` | [git-scm.com](https://git-scm.com) *(optionnel)* |
+
+---
+
+### Méthode 1 — Téléchargement ZIP (sans Git)
+
+1. Rendez-vous sur **[github.com/ledocsoff/nanabanana-studio](https://github.com/ledocsoff/nanabanana-studio)**
+2. Cliquez sur le bouton vert **`<> Code`** → **`Download ZIP`**
+3. Décompressez l'archive **où vous voulez** sur votre ordinateur (Bureau, Documents, `C:\Dev\`, `/home/user/projets/`, etc.)
+4. Ouvrez un terminal dans le dossier décompressé
+
+### Méthode 2 — Clonage Git (recommandé)
+
 ```bash
-# 1. Cloner le repository
+# Cloner dans le dossier de votre choix
+# Exemple : dans ~/Documents/mes-projets/
+cd ~/Documents/mes-projets
+
+# Cloner le projet (crée automatiquement le sous-dossier nanabanana-studio/)
 git clone https://github.com/ledocsoff/nanabanana-studio.git
 
-# 2. Accéder au dossier
+# Entrer dans le dossier du projet
 cd nanabanana-studio
+```
 
-# 3. Installer les dépendances
+> 💡 Remplacez `~/Documents/mes-projets` par n'importe quel chemin de votre choix. Le dossier `nanabanana-studio/` sera créé à l'intérieur.
+
+---
+
+### Installation des dépendances
+
+Depuis le dossier du projet, exécutez :
+
+```bash
 npm install
+```
 
-# 4. Lancer en mode développement
+Cette commande télécharge toutes les librairies nécessaires (React, Vite, TailwindCSS...) dans un dossier `node_modules/`. Cela peut prendre 1 à 2 minutes selon votre connexion.
+
+---
+
+### Lancer l'application
+
+```bash
 npm run dev
 ```
 
-L'application s'ouvre sur `http://localhost:5173/`
+Vous devriez voir apparaître dans le terminal :
 
-### Build production
+```
+  VITE v6.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+```
+
+**Ouvrez votre navigateur** et rendez-vous sur **`http://localhost:5173/`** — l'application est prête.
+
+> 📌 **L'onglet du terminal doit rester ouvert** pendant toute l'utilisation. C'est le serveur local qui fait tourner l'app. Pour arrêter, appuyez sur `Ctrl+C` dans le terminal.
+
+> 🔄 **Rechargement automatique :** toute modification de fichier source relancera automatiquement l'app dans le navigateur.
+
+---
+
+### Configurer la clé API (pour la génération d'images)
+
+Au premier lancement, pour utiliser la génération d'images directement dans le studio :
+
+1. Créez une clé API sur **[aistudio.google.com](https://aistudio.google.com)**
+2. Dans NanaBanana Studio, cliquez sur le bouton **`API`** dans la barre de navigation (en haut à droite)
+3. Collez votre clé → **Sauvegarder**
+
+La clé est stockée localement dans votre navigateur et n'est jamais envoyée ailleurs.
+
+---
+
+### Build production *(optionnel)*
+
+Pour compiler une version optimisée de l'application à déployer sur un serveur :
 
 ```bash
 npm run build
-# Les fichiers compilés sont dans /dist
 ```
+
+Les fichiers compilés sont générés dans le dossier `/dist`. Vous pouvez les héberger sur n'importe quel hébergeur statique (Netlify, Vercel, GitHub Pages...).
 
 ---
 
