@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { DEFAULT_MODEL } from "../constants/modelOptions";
 import { DEFAULT_SCENE } from "../constants/sceneOptions";
 import { generatePromptJSON } from "../utils/promptGenerators";
-import { getSavedModels } from "../utils/storage";
+import { getSavedModels, loadFromServer } from "../utils/storage";
 
 // =============================================
 // CONTEXT 1 : DATABASE (Modèles, Comptes, Lieux)
@@ -13,13 +13,17 @@ export const useDatabase = () => useContext(DatabaseContext);
 
 export const DatabaseProvider = ({ children }) => {
   const [allModelsDatabase, setAllModelsDatabase] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeWorkflow, setActiveWorkflow] = useState({
     modelId: null,
     accountId: null,
   });
 
   useEffect(() => {
-    setAllModelsDatabase(getSavedModels());
+    loadFromServer().then(models => {
+      setAllModelsDatabase(models);
+      setIsLoading(false);
+    });
   }, []);
 
   const value = useMemo(() => ({
@@ -27,7 +31,8 @@ export const DatabaseProvider = ({ children }) => {
     setAllModelsDatabase,
     activeWorkflow,
     setActiveWorkflow,
-  }), [allModelsDatabase, activeWorkflow]);
+    isLoading,
+  }), [allModelsDatabase, activeWorkflow, isLoading]);
 
   return (
     <DatabaseContext.Provider value={value}>

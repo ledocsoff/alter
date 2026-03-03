@@ -34,3 +34,6 @@ yarn-error.log*
 
 # Agent workspace
 .claude/
+
+# User data (sauvegarde locale)
+sauvegarde/*.json

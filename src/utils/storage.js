@@ -4,26 +4,62 @@ const TEMPLATES_KEY = 'nanabanana_templates';
 const API_KEY_KEY = 'nanabanana_api_key';
 
 // ============================================
-// STORAGE HEALTH CHECK
+// FILE SYNC — Sauvegarde automatique vers le serveur
 // ============================================
-const isLocalStorageAvailable = () => {
+let syncTimeout = null;
+
+const syncToServer = () => {
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(async () => {
+        try {
+            const payload = {
+                models: getSavedModels(),
+                templates: getSceneTemplates(),
+                history: getPromptHistory(),
+            };
+            await fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        } catch (err) {
+            console.warn('[NanaBanana] Sync serveur echoue:', err.message);
+        }
+    }, 300);
+};
+
+/**
+ * Charge les données depuis le serveur (sauvegarde/) dans localStorage.
+ * Appelé une seule fois au démarrage de l'app.
+ * Retourne les modèles chargés.
+ */
+export const loadFromServer = async () => {
     try {
-        const testKey = '__nanabanana_test__';
-        localStorage.setItem(testKey, '1');
-        const ok = localStorage.getItem(testKey) === '1';
-        localStorage.removeItem(testKey);
-        return ok;
-    } catch {
-        return false;
+        const res = await fetch('/api/load');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // Populate localStorage from server data
+        if (data.models && data.models.length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.models));
+        }
+        if (data.templates && data.templates.length > 0) {
+            localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates));
+        }
+        if (data.history && data.history.length > 0) {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
+        }
+
+        console.log(`[NanaBanana] Charge depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
+        return data.models || [];
+    } catch (err) {
+        console.warn('[NanaBanana] Serveur indisponible, fallback localStorage');
+        return getSavedModels();
     }
 };
 
-if (!isLocalStorageAvailable()) {
-    console.error('[NanaBanana] localStorage is NOT available. Data will be lost on reload. Check browser settings (private mode?).');
-}
-
 // ============================================
-// API KEY
+// API KEY (localStorage only — jamais dans les fichiers)
 // ============================================
 export const getApiKey = () => {
     try { return localStorage.getItem(API_KEY_KEY) || ''; } catch { return ''; }
@@ -45,17 +81,16 @@ export const getSavedModels = () => {
         const data = localStorage.getItem(STORAGE_KEY);
         const parsed = data ? JSON.parse(data) : [];
         if (!Array.isArray(parsed)) return [];
-        console.log(`[NanaBanana] ${parsed.length} modele(s) charge(s) depuis localStorage`);
         return parsed;
     } catch (error) {
-        console.error("[NanaBanana] Erreur de lecture du localStorage :", error);
+        console.error("[NanaBanana] Erreur lecture localStorage:", error);
         return [];
     }
 };
 
-
 const _saveAll = (data) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    syncToServer();
 };
 
 // ============================================
@@ -184,11 +219,13 @@ export const savePromptToHistory = (promptJSON, meta = {}) => {
     history.unshift(entry);
     if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    syncToServer();
     return history;
 };
 
 export const clearPromptHistory = () => {
     localStorage.removeItem(HISTORY_KEY);
+    syncToServer();
     return [];
 };
 
@@ -213,6 +250,7 @@ export const saveSceneTemplate = (name, scene) => {
     };
     templates.unshift(entry);
     localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    syncToServer();
     return templates;
 };
 
@@ -220,6 +258,7 @@ export const deleteSceneTemplate = (templateId) => {
     let templates = getSceneTemplates();
     templates = templates.filter(t => t.id !== templateId);
     localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    syncToServer();
     return templates;
 };
 
@@ -248,6 +287,7 @@ export const importAllData = (jsonString) => {
     if (data.history) {
         localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
     }
+    syncToServer();
     return data.models;
 };
 
