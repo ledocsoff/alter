@@ -87,20 +87,18 @@ export const MODEL_OPTIONS = {
   },
 };
 
+// Modèle minimal par défaut — les vrais traits sont définis par le JSON collé
 export const DEFAULT_MODEL = {
-  name: "Jessi", age: "22",
-  ethnicity: "Latina, delicate and defined features",
-  face: { shape: MODEL_OPTIONS.face.shape[0], jawline: MODEL_OPTIONS.face.jawline[0], forehead: MODEL_OPTIONS.face.forehead[0] },
-  eyes: { color: MODEL_OPTIONS.eyes.color[0], shape: MODEL_OPTIONS.eyes.shape[0], size: MODEL_OPTIONS.eyes.size[0], lashes: MODEL_OPTIONS.eyes.lashes[0], brows: MODEL_OPTIONS.eyes.brows[0] },
-  lips: { shape: MODEL_OPTIONS.lips.shape[0], upper: MODEL_OPTIONS.lips.upper[0], lower: MODEL_OPTIONS.lips.lower[0] },
-  nose: { shape: MODEL_OPTIONS.nose.shape[0] },
-  hair: { color: MODEL_OPTIONS.hair.color[0], length: MODEL_OPTIONS.hair.length[0], texture: MODEL_OPTIONS.hair.texture[0], style: MODEL_OPTIONS.hair.style[0] },
-  skin: { tone: MODEL_OPTIONS.skin.tone[0], texture: MODEL_OPTIONS.skin.texture[0], features: MODEL_OPTIONS.skin.features[0], sheen: MODEL_OPTIONS.skin.sheen[0], details: MODEL_OPTIONS.skin.details[0] },
-  body: {
-    type: MODEL_OPTIONS.body.type[0], bust: MODEL_OPTIONS.body.bust[0], waist: MODEL_OPTIONS.body.waist[0],
-    hips: MODEL_OPTIONS.body.hips[0], glutes: MODEL_OPTIONS.body.glutes[0], height: MODEL_OPTIONS.body.height[2],
-    limbs: MODEL_OPTIONS.body.limbs[0], details: MODEL_OPTIONS.body.details[0],
-  },
-  anatomical_fidelity: "Exact preservation of high-volume chest-to-waist ratio, heavy natural outward projection, bust depth exceeding ribcage width, no chest volume reduction, gravity and soft tissue realism, no anatomy normalization, no proportion averaging, maintain extreme waist-to-hip differential",
-  signature: "candid smartphone aesthetic, raw authenticity, sun-kissed beach girl energy",
+  name: "",
+  age: "",
+  ethnicity: "",
+  face: {},
+  eyes: {},
+  lips: {},
+  nose: {},
+  hair: {},
+  skin: {},
+  body: {},
+  anatomical_fidelity: "",
+  signature: "",
 };

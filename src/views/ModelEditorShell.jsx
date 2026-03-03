@@ -1,35 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveModelData, getSavedModels } from '../utils/storage';
-import ModelEditor from '../features/ModelEditor/ModelEditor';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
-
-const ETHNICITY_PRESETS = [
-  "Latina, delicate and defined features",
-  "Caucasian, European soft features",
-  "East Asian, smooth delicate features",
-  "Southeast Asian, warm toned features",
-  "African, rich dark features",
-  "Middle Eastern, defined striking features",
-  "Mixed race, unique blended features",
-  "Scandinavian, fair sharp features",
-  "Mediterranean, olive toned features",
-  "South Asian, warm golden features",
-];
-
-const inputClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700";
-const labelClass = "text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block";
+import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
 
 const ModelEditorShell = ({ mode }) => {
   const navigate = useNavigate();
   const { modelId } = useParams();
-  const { model, setModel, updateModelField, allModelsDatabase, setAllModelsDatabase } = useStudio();
+  const { model, setModel, allModelsDatabase, setAllModelsDatabase } = useStudio();
   const toast = useToast();
 
   const [modelName, setModelName] = useState('');
-  const [customEthnicity, setCustomEthnicity] = useState('');
+  const [jsonText, setJsonText] = useState('');
+  const [showTemplate, setShowTemplate] = useState(false);
+
+  // JSON validation
+  const jsonStatus = useMemo(() => {
+    if (!jsonText.trim()) return { valid: false, empty: true, error: null, parsed: null };
+    try {
+      const parsed = JSON.parse(jsonText);
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { valid: false, empty: false, error: 'Le JSON doit etre un objet {}', parsed: null };
+      }
+      return { valid: true, empty: false, error: null, parsed };
+    } catch (e) {
+      return { valid: false, empty: false, error: e.message, parsed: null };
+    }
+  }, [jsonText]);
+
+  // Build JSON text from model traits (excluding meta fields)
+  const modelToJsonText = (modelData) => {
+    const { id, name, accounts, ...traits } = modelData;
+    return JSON.stringify(traits, null, 2);
+  };
 
   useEffect(() => {
     if (mode === 'edit' && modelId) {
@@ -39,20 +44,23 @@ const ModelEditorShell = ({ mode }) => {
         setModelName(existingModel.name);
         const { id, accounts, ...modelFeatures } = existingModel;
         setModel({ ...modelFeatures, name: existingModel.name });
-        if (!ETHNICITY_PRESETS.includes(existingModel.ethnicity)) {
-          setCustomEthnicity(existingModel.ethnicity || '');
-        }
+        setJsonText(modelToJsonText(existingModel));
       }
     } else {
       setModel(DEFAULT_MODEL);
       setModelName('');
-      setCustomEthnicity('');
+      setJsonText('');
     }
   }, [mode, modelId, setModel]);
 
   const handleSave = () => {
     if (!modelName.trim()) {
       toast.error("Donnez un nom a cette influenceuse.");
+      return;
+    }
+
+    if (!jsonStatus.valid) {
+      toast.error("Le JSON est invalide. Corrigez-le avant de sauvegarder.");
       return;
     }
 
@@ -63,13 +71,30 @@ const ModelEditorShell = ({ mode }) => {
       existingAccounts = existing?.accounts || [];
     }
 
-    const updatedDB = saveModelData({ ...model, name: modelName.trim(), id, accounts: existingAccounts });
+    // Merge: JSON traits + name + id + accounts — strict, no over-interpretation
+    const modelData = {
+      ...jsonStatus.parsed,
+      name: modelName.trim(),
+      id,
+      accounts: existingAccounts,
+    };
+
+    // Also update the context model for downstream use
+    const { id: _id, accounts: _acc, ...traits } = modelData;
+    setModel({ ...traits, name: modelName.trim() });
+
+    const updatedDB = saveModelData(modelData);
     setAllModelsDatabase(updatedDB);
     toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'}`);
     navigate('/');
   };
 
-  const isCustomEthnicity = !ETHNICITY_PRESETS.includes(model.ethnicity);
+  const handleFormat = () => {
+    if (jsonStatus.valid) {
+      setJsonText(JSON.stringify(jsonStatus.parsed, null, 2));
+      toast.success('JSON formate');
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -85,20 +110,29 @@ const ModelEditorShell = ({ mode }) => {
             {mode === 'edit' ? 'Editer' : 'Nouveau modele'}
           </span>
         </div>
-        <button
-          onClick={handleSave}
-          className="h-8 px-4 rounded-lg text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-colors"
-        >
-          Sauvegarder
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowTemplate(true)}
+            className="h-8 px-3 rounded-lg text-[12px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+          >
+            ✦ Template AI Studio
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!jsonStatus.valid || !modelName.trim()}
+            className="h-8 px-4 rounded-lg text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Sauvegarder
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-4xl mx-auto px-6 py-8">
 
-          {/* IDENTITY */}
-          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 mb-6">
-            <div className="flex items-center gap-4 mb-6">
+          {/* MODEL NAME */}
+          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 mb-4">
+            <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-amber-500/10">
                 {modelName ? modelName.charAt(0).toUpperCase() : '?'}
               </div>
@@ -109,79 +143,82 @@ const ModelEditorShell = ({ mode }) => {
                 className="flex-1 bg-transparent text-zinc-100 text-xl font-semibold outline-none placeholder-zinc-700 border-b border-zinc-800 pb-2 focus:border-zinc-600 transition-colors"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                onKeyDown={(e) => e.key === 'Enter' && jsonStatus.valid && handleSave()}
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          {/* JSON INPUT */}
+          <div className={`bg-zinc-900/60 border rounded-xl p-5 transition-colors ${jsonStatus.empty
+              ? 'border-zinc-800/60'
+              : jsonStatus.valid
+                ? 'border-emerald-500/40'
+                : 'border-red-500/40'
+            }`}>
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <label className={labelClass}>Age</label>
-                <input
-                  type="number" min="18" max="60"
-                  className={inputClass}
-                  value={model.age}
-                  onChange={(e) => updateModelField('age', e.target.value)}
-                />
+                <h2 className="text-sm font-semibold text-zinc-200">Profil JSON</h2>
+                <p className="text-[12px] text-zinc-600 mt-0.5">
+                  Collez le JSON genere par AI Studio. Il sera injecte strictement dans les prompts.
+                </p>
               </div>
-              <div>
-                <label className={labelClass}>Ethnicite</label>
-                <select
-                  className={inputClass}
-                  value={isCustomEthnicity ? '__custom__' : model.ethnicity}
-                  onChange={(e) => {
-                    if (e.target.value !== '__custom__') {
-                      updateModelField('ethnicity', e.target.value);
-                      setCustomEthnicity('');
-                    }
-                  }}
-                >
-                  {ETHNICITY_PRESETS.map(eth => <option key={eth} value={eth}>{eth.split(',')[0]}</option>)}
-                  <option value="__custom__">Personnalise...</option>
-                </select>
-                {isCustomEthnicity && (
-                  <input
-                    type="text"
-                    className={inputClass + " mt-2"}
-                    placeholder="Ethnicite en anglais..."
-                    value={customEthnicity}
-                    onChange={(e) => {
-                      setCustomEthnicity(e.target.value);
-                      if (e.target.value.trim()) updateModelField('ethnicity', e.target.value);
-                    }}
-                  />
+              <div className="flex items-center gap-2">
+                {jsonStatus.valid && (
+                  <button
+                    onClick={handleFormat}
+                    className="text-[11px] text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors"
+                  >
+                    Formater
+                  </button>
+                )}
+                {!jsonStatus.empty && (
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${jsonStatus.valid
+                      ? 'text-emerald-400 bg-emerald-500/10'
+                      : 'text-red-400 bg-red-500/10'
+                    }`}>
+                    {jsonStatus.valid ? '✓ Valide' : '✗ Invalide'}
+                  </span>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-5 border-t border-zinc-800/40">
-              <div>
-                <label className={labelClass}>Directives anatomiques <span className="text-red-400/50 normal-case font-normal">important</span></label>
-                <textarea
-                  rows={3}
-                  className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
-                  placeholder="Ex: Exact preservation of high-volume chest-to-waist ratio..."
-                  value={model.anatomical_fidelity}
-                  onChange={(e) => updateModelField('anatomical_fidelity', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Signature esthetique</label>
-                <textarea
-                  rows={3}
-                  className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
-                  placeholder="Ex: candid smartphone aesthetic, raw authenticity..."
-                  value={model.signature}
-                  onChange={(e) => updateModelField('signature', e.target.value)}
-                />
-              </div>
+            <textarea
+              rows={22}
+              className="w-full bg-zinc-950 border border-zinc-800/60 text-zinc-300 text-[12px] font-mono rounded-lg px-4 py-3 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700 resize-none leading-relaxed custom-scrollbar"
+              placeholder={`{\n  "age": "22",\n  "ethnicity": "Latina, delicate and defined features",\n  "face": { ... },\n  "eyes": { ... },\n  "hair": { ... },\n  "body": { ... },\n  "skin": { ... },\n  "anatomical_fidelity": "...",\n  "signature": "..."\n}`}
+              value={jsonText}
+              onChange={(e) => setJsonText(e.target.value)}
+              spellCheck={false}
+            />
+
+            {jsonStatus.error && !jsonStatus.empty && (
+              <p className="text-[11px] text-red-400/80 mt-2 font-mono">
+                Erreur: {jsonStatus.error}
+              </p>
+            )}
+          </div>
+
+          {/* HELP */}
+          <div className="mt-4 px-1">
+            <div className="flex items-start gap-3 text-[11px] text-zinc-600">
+              <span className="text-amber-500/60 mt-0.5">i</span>
+              <p>
+                Utilisez le bouton <strong className="text-zinc-400">"Template AI Studio"</strong> pour obtenir
+                le prompt a coller dans Google AI Studio avec une photo de la modele.
+                Le JSON retourne sera injecte <strong className="text-zinc-400">strictement</strong> dans
+                chaque generation — aucune sur-interpretation, coherence maximale.
+              </p>
             </div>
           </div>
 
-          {/* PHYSICAL EDITOR */}
-          <ModelEditor />
-
         </div>
       </div>
+
+      {/* TEMPLATE MODAL */}
+      <ModelTemplateModal
+        isOpen={showTemplate}
+        onClose={() => setShowTemplate(false)}
+      />
     </div>
   );
 };

@@ -1,6 +1,18 @@
 // promptGenerators.js
 // Moteur de génération JSON structuré pour NANO BANANA PRO
-// Chaque champ est explicite — aucune ambiguïté, cohérence maximale
+// Injection STRICTE du JSON modèle — aucune sur-interprétation, cohérence maximale
+
+// Helper: accès safe aux propriétés imbriquées
+const get = (obj, path, fallback = null) => {
+  if (!obj) return fallback;
+  const keys = path.split('.');
+  let current = obj;
+  for (const key of keys) {
+    if (current == null || typeof current !== 'object') return fallback;
+    current = current[key];
+  }
+  return current != null ? current : fallback;
+};
 
 export const generatePromptJSON = (model, scene, activeAccount = null) => {
   const aspectRatio = scene.aspect_ratio || "--ar 9:16";
@@ -21,48 +33,52 @@ export const generatePromptJSON = (model, scene, activeAccount = null) => {
     subject: {
       type: "1girl, solo",
       age: parseInt(model.age) || 22,
-      ethnicity: model.ethnicity,
-      body_type: model.body.type,
-      height: model.body.height,
+      ethnicity: get(model, 'ethnicity'),
+      body_type: get(model, 'body.type'),
+      height: get(model, 'body.height'),
     },
+    // STRICT: pass face data exactly as provided in JSON
     face: {
-      shape: model.face.shape,
-      jawline: model.face.jawline,
-      forehead: model.face.forehead,
+      shape: get(model, 'face.shape'),
+      jawline: get(model, 'face.jawline'),
+      forehead: get(model, 'face.forehead'),
       eyes: {
-        color: model.eyes.color,
-        shape: model.eyes.shape,
-        size: model.eyes.size,
-        lashes: model.eyes.lashes,
-        brows: model.eyes.brows,
+        color: get(model, 'eyes.color'),
+        shape: get(model, 'eyes.shape'),
+        size: get(model, 'eyes.size'),
+        lashes: get(model, 'eyes.lashes'),
+        brows: get(model, 'eyes.brows'),
       },
-      nose: model.nose.shape,
+      nose: get(model, 'nose.shape'),
       lips: {
-        shape: model.lips.shape,
-        upper: model.lips.upper,
-        lower: model.lips.lower,
+        shape: get(model, 'lips.shape'),
+        upper: get(model, 'lips.upper'),
+        lower: get(model, 'lips.lower'),
       },
     },
+    // STRICT: pass hair data exactly as provided
     hair: {
-      color: model.hair.color,
-      length: model.hair.length,
-      texture: model.hair.texture,
-      style: model.hair.style,
+      color: get(model, 'hair.color'),
+      length: get(model, 'hair.length'),
+      texture: get(model, 'hair.texture'),
+      style: get(model, 'hair.style'),
     },
+    // STRICT: pass body data exactly as provided
     body: {
-      bust: model.body.bust,
-      waist: model.body.waist,
-      hips: model.body.hips,
-      glutes: model.body.glutes,
-      limbs: model.body.limbs,
-      details: model.body.details,
+      bust: get(model, 'body.bust'),
+      waist: get(model, 'body.waist'),
+      hips: get(model, 'body.hips'),
+      glutes: get(model, 'body.glutes'),
+      limbs: get(model, 'body.limbs'),
+      details: get(model, 'body.details'),
     },
+    // STRICT: pass skin data exactly as provided
     skin: {
-      tone: model.skin.tone,
-      texture: model.skin.texture,
-      features: model.skin.features,
-      sheen: model.skin.sheen,
-      details: model.skin.details,
+      tone: get(model, 'skin.tone'),
+      texture: get(model, 'skin.texture'),
+      features: get(model, 'skin.features'),
+      sheen: get(model, 'skin.sheen'),
+      details: get(model, 'skin.details'),
     },
     outfit: scene.outfit?.value || "casual outfit",
     scene: {
@@ -79,8 +95,8 @@ export const generatePromptJSON = (model, scene, activeAccount = null) => {
       anchor_details: meta.anchor_details || null,
     },
     directives: {
-      anatomical_fidelity: model.anatomical_fidelity || null,
-      aesthetic_signature: model.signature || null,
+      anatomical_fidelity: get(model, 'anatomical_fidelity'),
+      aesthetic_signature: get(model, 'signature'),
       identity_lock: "Maintain exact same face across all generations. Same person, consistent identity, no variation in facial structure or features. Consistent skin color and body proportions.",
     },
     negative_prompt: [

@@ -1,10 +1,10 @@
 # 🍌 NanaBanana Studio
 
-**Gestionnaire de prompts pour Influenceuses Virtuelles — OFM Hub v4.1**
+**Gestionnaire de prompts pour Influenceuses Virtuelles — OFM Hub v4.3**
 
 NanaBanana Studio est une application **React SPA** conçue pour les agences OFM (Only Fans Management) utilisant des mannequins IA. Elle permet de structurer, gérer et générer des **prompts Natural Language** ultra-cohérents pour Google AI Studio (Gemini), en maintenant la cohérence visuelle entre chaque génération.
 
-![Version](https://img.shields.io/badge/version-4.1.0-gold)
+![Version](https://img.shields.io/badge/version-4.3.0-gold)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![React Router](https://img.shields.io/badge/React_Router-v6-CA4245)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC)
@@ -33,11 +33,11 @@ Ce tunnel garantit qu'il est **impossible** de générer une image incohérente 
 ## ✨ Fonctionnalités
 
 ### 👱‍♀️ Gestion des Modèles (Niveau 1)
-- Création de fiches modèles complètes : âge, ethnie, morphologie, visage, cheveux
-- Éditeur physique détaillé (type de corps, taille, seins, fesses, hanches)
-- Descripteurs de visage (forme, yeux, lèvres, teint, maquillage)
-- Notes libres et directives anatomiques personnalisées
-- Sauvegarde automatique dans le navigateur
+- **Import JSON** : collez directement le JSON généré par Google AI Studio
+- **Template AI Studio** : prompt prêt à copier pour extraire les caractéristiques physiques d'une photo avec une précision chirurgicale
+- Validation JSON en temps réel (bordure verte/rouge + badge)
+- Injection **stricte** dans les niveaux inférieurs — aucune sur-interprétation, cohérence maximale
+- Sauvegarde automatique (serveur local + localStorage)
 
 ### 📱 Gestion des Comptes (Niveau 2)
 - Multi-comptes par modèle (Instagram, TikTok, OnlyFans, etc.)
@@ -196,7 +196,7 @@ nanabanana-studio/
 │   ├── features/              # Composants métier isolés et réutilisables
 │   │   ├── ApiKeyModal/       # Modale de saisie/validation de clé API Google
 │   │   ├── ImagePreview/      # Panneau génération image (appel API Gemini)
-│   │   ├── ModelEditor/       # Formulaire des attributs physiques du modèle
+│   │   ├── ModelTemplateModal/ # Template/Prompt pour Google AI Studio
 │   │   ├── OutputPanel/       # Panneau JSON du prompt (copie clipboard)
 │   │   └── SceneEditor/       # Formulaire de personnalisation de scène
 │   │
@@ -232,10 +232,12 @@ nanabanana-studio/
 
 ## 🔄 Workflow d'Utilisation
 
-1. **Créez un modèle** → Définissez tous les attributs physiques DNA de votre influenceuse
-2. **Ajoutez un compte** → Associez un ou plusieurs comptes sociaux au modèle (ex: `@clara_officiel`)
-3. **Créez des lieux** → Définissez les décors récurrents du compte (ex: `Studio Paris`, `Chambre Bohème`)
-4. **Générez** → Entrez dans un lieu → personnalisez la scène → copiez le JSON ou générez l'image directement
+1. **Copiez le Template** → Utilisez le bouton "Template AI Studio" pour obtenir le prompt d'extraction
+2. **Générez le JSON** → Collez le prompt dans Google AI Studio avec une photo de la modèle
+3. **Créez un modèle** → Collez le JSON retourné dans NanaBanana Studio
+4. **Ajoutez un compte** → Associez un ou plusieurs comptes sociaux au modèle (ex: `@clara_officiel`)
+5. **Créez des lieux** → Définissez les décors récurrents du compte (ex: `Studio Paris`, `Chambre Bohème`)
+6. **Générez** → Entrez dans un lieu → personnalisez la scène → copiez le JSON ou générez l'image directement
 
 ---
 
