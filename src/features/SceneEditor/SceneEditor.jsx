@@ -1,128 +1,247 @@
-import React from 'react';
-import { SCENE_OPTIONS } from '../../constants/sceneOptions';
+import React, { useState } from 'react';
+import { useStudio } from '../../store/StudioContext';
+import { useToast } from '../../store/ToastContext';
+import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE } from '../../constants/sceneOptions';
+import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate } from '../../utils/storage';
 
-const SceneEditor = ({ sceneState, updateSceneState }) => {
-    
+const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+const selectClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-zinc-600 transition-colors";
+const labelClass = "text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block";
+
+const SceneEditor = ({ isSandbox = false }) => {
+    const { scene, updateSceneEntry, setScene } = useStudio();
+    const toast = useToast();
+    const [showTemplates, setShowTemplates] = useState(false);
+    const [templateName, setTemplateName] = useState('');
+    const [templates, setTemplates] = useState(() => getSceneTemplates());
+
+    const handleRandomize = () => {
+        setScene({
+            outfit: pickRandom(OUTFIT_PRESETS),
+            vibe: pickRandom(SCENE_OPTIONS.vibe).promptEN,
+            camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
+            pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
+            lighting: pickRandom(SCENE_OPTIONS.lighting).promptEN,
+            expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
+            aspect_ratio: scene.aspect_ratio,
+            environment: scene.environment,
+            location_meta: scene.location_meta,
+        });
+    };
+
+    const handleSaveTemplate = () => {
+        if (!templateName.trim()) return;
+        const updated = saveSceneTemplate(templateName.trim(), scene);
+        setTemplates(updated);
+        setTemplateName('');
+        toast.success(`Template "${templateName.trim()}" sauvegarde`);
+    };
+
+    const handleLoadTemplate = (tpl) => {
+        setScene({
+            ...tpl.scene,
+            environment: scene.environment,
+            location_meta: scene.location_meta,
+        });
+        setShowTemplates(false);
+        toast.info(`Template "${tpl.name}" charge`);
+    };
+
+    const handleDeleteTemplate = (e, id) => {
+        e.stopPropagation();
+        const updated = deleteSceneTemplate(id);
+        setTemplates(updated);
+    };
+
     return (
-        <div className="bg-[#050505] border border-gray-800 rounded-2xl p-6 shadow-sm flex flex-col h-full overflow-hidden">
-            <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3 border-b border-gray-800 pb-4">
-                <span className="text-orange-500">🎬</span> Scène & Action
-            </h3>
-            
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
-                
-                {/* OUTFIT (Dressing / Pilules Cliquables) */}
-                <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-800/60">
-                    <label className="text-xs uppercase font-bold text-gray-400 tracking-wider mb-3 block flex items-center gap-2">👗 <span className="text-gray-300">Garde-robe (Tenue)</span></label>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
-                        {[
-                            { id: "casual", label: "Casual / Été", prompt: "casual summer dress, flowing fabric" },
-                            { id: "gym", label: "Sport (Yoga)", prompt: "tight yoga pants and sports bra set, gym wear" },
-                            { id: "bikini", label: "Bikini", prompt: "triangle bikini, minimal fabric" },
-                            { id: "lingerie", label: "Lingerie", prompt: "delicate lace lingerie set" },
-                            { id: "office", label: "Bureau Chic", prompt: "fitted skirt, white silk blouse" },
-                            { id: "night", label: "Robe Soirée", prompt: "tight bodycon dress, elegant" }
-                        ].map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => updateSceneState('outfit', item.prompt)}
-                                className={`text-[11px] py-2 px-2 rounded-lg border text-center transition-all duration-200 ${
-                                    sceneState?.outfit === item.prompt
-                                        ? 'bg-orange-500/20 border-orange-500 text-orange-400 font-bold shadow-[0_0_10px_rgba(249,115,22,0.15)] scale-[1.02]'
-                                        : 'bg-black/50 border-gray-700/50 text-gray-400 hover:border-gray-500 hover:text-gray-200'
-                                }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
+        <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 flex flex-col h-full overflow-hidden">
+            {/* HEADER */}
+            <div className="flex items-center justify-between mb-4 shrink-0">
+                <h3 className="text-sm font-semibold text-zinc-200">Scene</h3>
+                <div className="flex gap-1">
+                    <button
+                        onClick={() => setShowTemplates(!showTemplates)}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${showTemplates ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
+                    >
+                        Templates
+                    </button>
+                    <button
+                        onClick={handleRandomize}
+                        className="text-[11px] font-medium text-amber-500 hover:text-amber-400 hover:bg-amber-500/8 px-2.5 py-1 rounded-md transition-colors"
+                    >
+                        Surprise
+                    </button>
+                    <button
+                        onClick={() => setScene({ ...DEFAULT_SCENE, environment: scene.environment, location_meta: scene.location_meta })}
+                        className="text-[11px] font-medium text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50 px-2.5 py-1 rounded-md transition-colors"
+                    >
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            {/* TEMPLATES PANEL */}
+            {showTemplates && (
+                <div className="mb-4 p-3 bg-zinc-950/80 border border-zinc-800/60 rounded-lg shrink-0">
+                    <div className="flex gap-1.5 mb-2">
+                        <input
+                            type="text"
+                            placeholder="Nom du template..."
+                            className="flex-1 bg-zinc-900 border border-zinc-800/60 text-zinc-300 text-[12px] rounded-md px-2.5 py-1.5 outline-none focus:border-zinc-600"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveTemplate()}
+                        />
+                        <button
+                            onClick={handleSaveTemplate}
+                            disabled={!templateName.trim()}
+                            className="text-[11px] font-medium px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-900 hover:bg-white disabled:opacity-20 transition-colors shrink-0"
+                        >
+                            Sauver
+                        </button>
                     </div>
-                    <textarea 
-                        className="w-full bg-[#0a0a0a] border border-gray-800/80 text-gray-300 text-xs rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 transition-colors custom-scrollbar placeholder-gray-600"
-                        rows="1"
-                        placeholder="...ou taper une tenue sur-mesure manuellement"
-                        value={sceneState?.outfit || ""}
-                        onChange={(e) => updateSceneState('outfit', e.target.value)}
-                    ></textarea>
+                    {templates.length === 0 ? (
+                        <p className="text-[11px] text-zinc-600 py-2">Aucun template. Configurez une scene puis sauvegardez-la.</p>
+                    ) : (
+                        <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                            {templates.map(tpl => (
+                                <div
+                                    key={tpl.id}
+                                    onClick={() => handleLoadTemplate(tpl)}
+                                    className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-zinc-800/50 cursor-pointer group transition-colors"
+                                >
+                                    <div>
+                                        <span className="text-[12px] text-zinc-300 font-medium">{tpl.name}</span>
+                                        <span className="text-[10px] text-zinc-600 ml-2">{tpl.scene.outfit?.label || ''}</span>
+                                    </div>
+                                    <button
+                                        onClick={(e) => handleDeleteTemplate(e, tpl.id)}
+                                        className="text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 text-xs transition-all"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+
+                {/* FORMAT */}
+                <div className="flex gap-1.5">
+                    {SCENE_OPTIONS.aspect_ratio.map(ratio => (
+                        <button
+                            key={ratio.promptEN}
+                            onClick={() => updateSceneEntry('aspect_ratio', ratio.promptEN)}
+                            className={`flex-1 text-[12px] py-2 rounded-lg border transition-all font-medium ${
+                                scene.aspect_ratio === ratio.promptEN
+                                    ? 'bg-zinc-800 border-zinc-700 text-zinc-100'
+                                    : 'bg-transparent border-zinc-800/60 text-zinc-600 hover:text-zinc-300 hover:border-zinc-700'
+                            }`}
+                        >
+                            {ratio.labelFR}
+                        </button>
+                    ))}
                 </div>
 
-                {/* POSE (Attitude / Boutons Pilules) */}
-                <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-800/60">
-                    <label className="text-xs uppercase font-bold text-gray-400 tracking-wider mb-3 block flex items-center gap-2">🧍‍♀️ <span className="text-gray-300">Posture du Modèle</span></label>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {[
-                            { label: "Debout", prompt: "casual standing, hand on hip" },
-                            { label: "Selfie", prompt: "holding phone for selfie" },
-                            { label: "Assise", prompt: "sitting casually, legs crossed" },
-                            { label: "De Dos", prompt: "looking over shoulder" },
-                            { label: "Allongée", prompt: "laying down" }
-                        ].map(item => (
+                {/* ENVIRONMENT */}
+                <div className={`p-3 rounded-lg border ${isSandbox ? 'border-amber-500/15 bg-amber-500/[0.03]' : 'border-zinc-800/40 bg-zinc-950/50'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className={labelClass + " mb-0"}>Environnement</span>
+                        {!isSandbox && <span className="text-[10px] text-indigo-400/50 font-medium">verrouille</span>}
+                    </div>
+                    <select
+                        className={selectClass + (isSandbox ? '' : ' opacity-40 cursor-not-allowed')}
+                        value={scene.environment || ""}
+                        onChange={(e) => updateSceneEntry('environment', e.target.value)}
+                        disabled={!isSandbox}
+                    >
+                        {SCENE_OPTIONS.environment.map(env => (
+                            <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
+                        ))}
+                    </select>
+                    {isSandbox && (
+                        <input
+                            className="w-full mt-1.5 bg-zinc-950 border border-zinc-800/40 text-zinc-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-amber-500/40 transition-colors placeholder-zinc-700"
+                            type="text"
+                            placeholder="...ou decor custom en anglais"
+                            onChange={(e) => { if (e.target.value.trim()) updateSceneEntry('environment', e.target.value); }}
+                        />
+                    )}
+                </div>
+
+                {/* OUTFIT */}
+                <div>
+                    <span className={labelClass}>Tenue</span>
+                    <div className="grid grid-cols-3 gap-1.5 mb-2">
+                        {OUTFIT_PRESETS.map(item => (
                             <button
-                                key={item.label}
-                                onClick={() => updateSceneState('pose', item.prompt)}
-                                className={`text-xs py-1.5 px-3 rounded-full border transition-all duration-200 ${
-                                    sceneState?.pose === item.prompt
-                                        ? 'bg-orange-500/20 border-orange-500 text-orange-400 font-bold shadow-[0_0_8px_rgba(249,115,22,0.15)]'
-                                        : 'bg-black/50 border-gray-700/50 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                                key={item.id}
+                                onClick={() => updateSceneEntry('outfit', item)}
+                                className={`text-[11px] py-1.5 px-1 rounded-lg border text-center transition-all ${
+                                    scene.outfit?.id === item.id
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 font-semibold'
+                                        : 'bg-transparent border-zinc-800/40 text-zinc-600 hover:text-zinc-300 hover:border-zinc-700'
                                 }`}
                             >
                                 {item.label}
                             </button>
                         ))}
                     </div>
-                    <input 
-                        className="w-full bg-[#0a0a0a] border border-gray-800/80 text-gray-300 text-xs rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 transition-colors placeholder-gray-600"
+                    <input
+                        className="w-full bg-zinc-950 border border-zinc-800/40 text-zinc-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700"
                         type="text"
-                        placeholder="...ou éditer la pose spécifiquement (main hanche, regard ciel...)"
-                        value={sceneState?.pose || ""}
-                        onChange={(e) => updateSceneState('pose', e.target.value)}
+                        placeholder="Tenue sur-mesure..."
+                        value={scene.outfit?.value || ""}
+                        onChange={(e) => updateSceneEntry('outfit', { id: 'custom', label: 'Custom', value: e.target.value, icon: '' })}
                     />
                 </div>
 
-                {/* ASPECT RATIO */}
+                {/* POSE */}
                 <div>
-                    <label className="text-xs uppercase font-bold text-gray-500 mb-3 block tracking-wider mt-5">📱 Format (Aspect Ratio)</label>
-                    <div className="grid grid-cols-2 gap-3">
-                        {SCENE_OPTIONS.aspect_ratio.map(ratio => (
-                            <button 
-                                key={ratio.promptEN}
-                                onClick={() => updateSceneState('aspect_ratio', ratio.promptEN)}
-                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${
-                                    sceneState?.aspect_ratio === ratio.promptEN 
-                                        ? 'bg-orange-500/10 border-orange-500 text-orange-400 font-bold' 
-                                        : 'bg-gray-900/40 border-gray-800 text-gray-400 hover:border-gray-600 hover:text-white hover:bg-gray-800/60'
+                    <span className={labelClass}>Pose</span>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                        {SCENE_OPTIONS.pose.map(item => (
+                            <button
+                                key={item.promptEN}
+                                onClick={() => updateSceneEntry('pose', item.promptEN)}
+                                className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${
+                                    scene.pose === item.promptEN
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 font-semibold'
+                                        : 'bg-transparent border-zinc-800/40 text-zinc-600 hover:text-zinc-300 hover:border-zinc-700'
                                 }`}
                             >
-                                <span className="text-xl mb-1.5">{ratio.icon}</span>
-                                <span className="text-[10px] uppercase font-bold text-center">{ratio.labelFR}</span>
+                                {item.labelFR}
                             </button>
                         ))}
                     </div>
+                    <input
+                        className="w-full bg-zinc-950 border border-zinc-800/40 text-zinc-300 text-sm rounded-lg px-3 py-2 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700"
+                        type="text"
+                        placeholder="Pose personnalisee..."
+                        value={scene.pose || ""}
+                        onChange={(e) => updateSceneEntry('pose', e.target.value)}
+                    />
                 </div>
 
-                {/* PLANS ET FACIAL EXPR (Grille 2 colonnes) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="bg-black/20 p-3 rounded-xl border border-gray-800/40">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block tracking-wider">📸 Angle de Caméra</label>
-                        <select 
-                            className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState?.camera_angle || ""}
-                            onChange={(e) => updateSceneState('camera_angle', e.target.value)}
-                        >
-                            <option value="">-- Automatique --</option>
+                {/* CAMERA + EXPRESSION */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <span className={labelClass}>Camera</span>
+                        <select className={selectClass} value={scene.camera_angle || ""} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)}>
+                            <option value="">Auto</option>
                             {SCENE_OPTIONS.camera_angle?.map(shot => (
                                 <option key={shot.promptEN} value={shot.promptEN}>{shot.labelFR}</option>
                             ))}
                         </select>
                     </div>
-                    
-                    <div className="bg-black/20 p-3 rounded-xl border border-gray-800/40">
-                        <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block tracking-wider">🎭 Expression Faciale</label>
-                        <select 
-                            className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState?.expression || ""}
-                            onChange={(e) => updateSceneState('expression', e.target.value)}
-                        >
-                            <option value="">-- Automatique --</option>
+                    <div>
+                        <span className={labelClass}>Expression</span>
+                        <select className={selectClass} value={scene.expression || ""} onChange={(e) => updateSceneEntry('expression', e.target.value)}>
+                            <option value="">Auto</option>
                             {SCENE_OPTIONS.expression?.map(eff => (
                                 <option key={eff.promptEN} value={eff.promptEN}>{eff.labelFR}</option>
                             ))}
@@ -130,38 +249,29 @@ const SceneEditor = ({ sceneState, updateSceneState }) => {
                     </div>
                 </div>
 
-                {/* VIBE & LIGHTING (Grille 2 colonnes) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-900/30 p-3 rounded-xl border border-gray-800/50 mt-2">
+                {/* VIBE + LIGHTING */}
+                <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block tracking-wider">✨ Vibe & Rendu</label>
-                        <select 
-                            className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState?.vibe || ""}
-                            onChange={(e) => updateSceneState('vibe', e.target.value)}
-                        >
-                            <option value="">-- Neutre --</option>
+                        <span className={labelClass}>Vibe</span>
+                        <select className={selectClass} value={scene.vibe || ""} onChange={(e) => updateSceneEntry('vibe', e.target.value)}>
+                            <option value="">Neutre</option>
                             {SCENE_OPTIONS.vibe?.map(v => (
                                 <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
                             ))}
                         </select>
                     </div>
                     <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block tracking-wider">💡 Éclairage</label>
-                        <select 
-                            className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-300 text-xs rounded-lg px-3 py-2 outline-none focus:border-orange-500 transition-colors"
-                            value={sceneState?.lighting || ""}
-                            onChange={(e) => updateSceneState('lighting', e.target.value)}
-                        >
-                            <option value="">-- Automatique --</option>
+                        <span className={labelClass}>Eclairage</span>
+                        <select className={selectClass} value={scene.lighting || ""} onChange={(e) => updateSceneEntry('lighting', e.target.value)}>
+                            <option value="">Auto</option>
                             {SCENE_OPTIONS.lighting?.map(l => (
                                 <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
                             ))}
                         </select>
                     </div>
                 </div>
-                
+
             </div>
-            
         </div>
     );
 };

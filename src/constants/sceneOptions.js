@@ -91,6 +91,10 @@ export const SCENE_OPTIONS = {
     { labelFR: "Rire franc", promptEN: "laughing candidly" },
     { labelFR: "Air surpris / joueur", promptEN: "surprised playful look" },
     { labelFR: "Bouche légèrement entrouverte", promptEN: "mouth slightly open, relaxed" }
+  ],
+  aspect_ratio: [
+    { labelFR: "Story / TikTok (9:16)", promptEN: "--ar 9:16", icon: "📱" },
+    { labelFR: "Feed / Carré (1:1)", promptEN: "--ar 1:1", icon: "⏹️" }
   ]
 };
 
@@ -102,10 +106,5 @@ export const DEFAULT_SCENE = {
   environment: SCENE_OPTIONS.environment[0].promptEN,
   lighting: SCENE_OPTIONS.lighting[0].promptEN,
   expression: SCENE_OPTIONS.expression[0].promptEN,
+  aspect_ratio: "--ar 9:16",
 };
-
-// NOUVEAU : Option d'Aspect Ratio (Format)
-SCENE_OPTIONS.aspect_ratio = [
-  { labelFR: "Story / TikTok (9:16)", promptEN: "--ar 9:16", icon: "📱" },
-  { labelFR: "Feed / Carré (1:1)", promptEN: "--ar 1:1", icon: "⏹️" }
-];

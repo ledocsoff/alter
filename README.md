@@ -1,35 +1,76 @@
-# 🍌 NanaBanana Studio (OFM Hub v4.1)
+# 🍌 NanaBanana Studio
 
-**Le système d'opérations ultime pour les Agences IA (OFM).**
+**Gestionnaire de prompts pour Influenceuses Virtuelles — OFM Hub v4.1**
 
-NanaBanana Studio v4.1 est une application **SaaS Multi-Pages** conçue spécifiquement pour structurer et générer des prompts ultra-réalistes (Natural Language) destinés à **Google Nano Banana Pro** et autres modèles IA haut-de-gamme. Fini les générateurs "une page" désorganisés : place à une véritable gestion de base de données relationnelle locale pour vos Influenceuses Virtuelles.
+NanaBanana Studio est une application **React SPA** conçue pour les agences OFM (Only Fans Management) utilisant des mannequins IA. Elle permet de structurer, gérer et générer des **prompts Natural Language** ultra-cohérents pour Google AI Studio (Gemini), en maintenant la cohérence visuelle entre chaque génération.
 
 ![Version](https://img.shields.io/badge/version-4.1.0-gold)
-![React](https://img.shields.io/badge/ReactRouter-v6-red)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![React Router](https://img.shields.io/badge/React_Router-v6-CA4245)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🎯 Philosophie de l'Outil : Le "Tunnel OFM"
+## 🎯 Philosophie : Le Tunnel OFM
 
-Le défi majeur d'une agence est la **Cohérence Narrative**. Si un profil Instagram est censé être celui d'une étudiante modeste, l’IA ne doit jamais générer un décor de yacht de luxe par erreur.
+Le défi principal d'une agence OFM IA est la **cohérence narrative**. Si un profil Instagram est celui d'une étudiante, l'IA ne doit jamais générer un décor de yacht par erreur.
 
-L'application est structurée en un **Entonnoir strict (4 Niveaux)** garanti par le routeur :
+L'application impose un **entonnoir strict en 4 niveaux** via React Router :
 
-1.  👱‍♀️ **Niveau 1 : Base d'Influenceuses** — Un CRM de vos Fiches Modèles. Vous sculptez leur visage, leur corps (Face ID / Body Type) dans l'éditeur pleine page.
-2.  📱 **Niveau 2 : Architecture Réseaux Sociaux** — Pour un modèle donné (ex: *Clara*), vous gérez sa flotte d'avatars numériques (Son Instagram officiel, son TikTok, son Tinder...).
-3.  📍 **Niveau 3 : Les Lieux Récurrents & Sandbox** — Pour un compte donné (ex: *TikTok @clara*), vous créez ses lieux de vie habituels (Chambre, Salle de sport). Un **Mode Bac à sable (Sandbox)** est dispo pour les fictions ponctuelles.
-4.  ⚡ **Niveau 4 : Générateur Intelligent (Nano Banana Pro)** — Selon le Lieu d'où vous venez, le studio **se verrouille automatiquement** (ex: impossible de choisir une ambiance Cyberpunk si vous avez cliqué sur "Salle de Bain de Clara"). Le rendu textuel sort sous forme de "Natural Language" ultra-structuré.
+```
+👱‍♀️ Niveau 1 : Modèles      →  Créez les fiches DNA de vos influenceuses
+📱 Niveau 2 : Comptes       →  TikTok, Instagram, Tinder... par modèle
+📍 Niveau 3 : Lieux          →  Décors récurrents + Mode Sandbox
+⚡ Niveau 4 : Générateur     →  Studio verrouillé sur le contexte du lieu
+```
+
+Ce tunnel garantit qu'il est **impossible** de générer une image incohérente avec l'univers du personnage.
 
 ---
 
-## ✨ Fonctionnalités Clés
+## ✨ Fonctionnalités
 
-- 🏗️ **Architecture Feature-Based :** Code modulaire (Features, Views, Store, Constants). Fini le composant monolithique de 2000 lignes.
-- 🌑 **Dark Mode UI :** Propulsé par TailwindCSS pour un confort visuel pendant les longues sessions de prompt.
-- 💾 **Persistance Locale :** Toutes vos fiches modèles, comptes et restrictions de décors sont sauvegardés dans votre navigateur (`localStorage`).
-- 🤖 **Prompt Generator "Natural Language" :** Optimisé pour Google AI Studio, structurant parfaitement le Base Subject > Setting > Face > Body > Rigid Directives.
+### 👱‍♀️ Gestion des Modèles (Niveau 1)
+- Création de fiches modèles complètes : âge, ethnie, morphologie, visage, cheveux
+- Éditeur physique détaillé (type de corps, taille, seins, fesses, hanches)
+- Descripteurs de visage (forme, yeux, lèvres, teint, maquillage)
+- Notes libres et directives anatomiques personnalisées
+- Sauvegarde automatique dans le navigateur
+
+### 📱 Gestion des Comptes (Niveau 2)
+- Multi-comptes par modèle (Instagram, TikTok, OnlyFans, etc.)
+- Handle de compte pour identifier chaque persona
+
+### 📍 Gestion des Lieux (Niveau 3)
+- CRUD complet de lieux récurrents par compte (chambre, salle de sport, etc.)
+- Chaque lieu définit : environnement, éclairage par défaut, ambiance, heure du jour, détails d'ancrage, palette de couleurs
+- Score de verrouillage du lieu (indique à l'IA à quel point le décor est contraint)
+- **Mode Sandbox** : génération libre sans contexte de lieu
+
+### ⚡ Générateur de Prompt (Niveau 4)
+- Studio verrouillé automatiquement sur les paramètres du lieu choisi
+- Personnalisation de la scène : tenue, pose, angle caméra, lumière, expression, ambiance
+- Vue **JSON** du prompt structuré (prêt à copier dans Google AI Studio)
+- Vue **Image** : génération directe via l'API Gemini (nécessite une clé API)
+- Randomisation de scène (raccourci `Cmd+R`)
+- Génération directe (raccourci `Cmd+G`)
+- Historique des 50 derniers prompts générés
+- Sauvegarde de templates de scènes réutilisables
+
+### 🔧 Outils Globaux
+- **Export / Import** de toute la base de données (JSON backup)
+- **Gestion de clé API** Google AI Studio (stockée dans `localStorage`, jamais dans le code)
+- Dark Mode UI
+
+---
+
+## 🔒 Sécurité
+
+> **Aucune clé API n'est stockée dans le code source.**
+
+La clé API Google AI Studio est saisie par l'utilisateur via la modale "API" dans la barre de navigation. Elle est sauvegardée **uniquement dans `localStorage` de votre navigateur**, locallement sur votre machine. Elle n'est jamais envoyée à un serveur tiers ni commitée dans git.
 
 ---
 
@@ -42,51 +83,91 @@ git clone https://github.com/ledocsoff/nanabanana-studio.git
 # 2. Accéder au dossier
 cd nanabanana-studio
 
-# 3. Installer les dépendances (React Router DOM, Tailwind...)
+# 3. Installer les dépendances
 npm install
 
-# 4. Lancer l'application
+# 4. Lancer en mode développement
 npm run dev
 ```
 
-L'application s'ouvrira en `http://localhost:5173/`.
+L'application s'ouvre sur `http://localhost:5173/`
 
----
+### Build production
 
-## 🛠️ Stack technique v4
-
-| Technologie | Usage |
-|-------------|-------|
-| **React 19** | Cœur Applicatif |
-| **React Router v6** | Navigation SPA en Entonnoir (URLs propres) |
-| **TailwindCSS 3** | UI Systèm, Grilles, Dark Mode |
-| **Context API** | State Global (StudioContext.jsx) |
-| **Vite 6** | Build & Dev Server fulgurant |
-
----
-
-## 📁 Structure du projet
-
-La nouvelle arborescence est taillée pour la scalabilité :
-
-```text
-src/
-├── constants/         # Listes déroulantes brutes (Yeux, Cheveux, Poses...)
-├── features/          # Composants métier isolés
-│   ├── ModelEditor/   # Les curseurs physiques
-│   ├── OutputPanel/   # Le bloc noir copiable
-│   └── SceneEditor/   # L'éditeur de décors/lumières
-├── store/
-│   └── StudioContext.jsx # Le Cerveau : Base de données en mémoire
-├── utils/
-│   ├── promptGenerators.js # Assembleur de chaînes Nano Banana Pro
-│   └── storage.js          # Helpers LocalStorage relationnels
-├── views/             # Les "Pages" du Routeur
-│   ├── ModelsView.jsx     # (Niveau 1) Liste des modèles
-│   ├── ModelEditorShell   # (Niveau 1b) Création
-│   ├── AccountsView       # (Niveau 2) Les réseaux du modèle
-│   ├── LocationsAnd...    # (Niveau 3) CRUD des lieux + Sandbox Launcher
-│   └── GenerationView     # (Niveau 4) L'éditeur de scène intelligent
-├── App.jsx            # Shell React Router (Navbar)
-└── main.jsx           # Point d'entrée
+```bash
+npm run build
+# Les fichiers compilés sont dans /dist
 ```
+
+---
+
+## 🛠️ Stack Technique
+
+| Technologie | Version | Usage |
+|---|---|---|
+| **React** | 19 | Cœur applicatif, composants |
+| **React Router DOM** | v6 | Navigation SPA en entonnoir (URLs propres) |
+| **TailwindCSS** | 3 | UI système, grilles, dark mode |
+| **Context API** | — | State global (`DatabaseContext` + `PromptContext`) |
+| **Vite** | 6 | Dev server et build ultrarapide |
+
+---
+
+## 📁 Structure du Projet
+
+```
+nanabanana-studio/
+├── src/
+│   ├── constants/
+│   │   ├── modelOptions.js    # Options physiques (corps, visage, cheveux...)
+│   │   └── sceneOptions.js    # Options de scène (poses, lumières, ambiances...)
+│   │
+│   ├── features/              # Composants métier isolés et réutilisables
+│   │   ├── ApiKeyModal/       # Modale de saisie/validation de clé API Google
+│   │   ├── ImagePreview/      # Panneau génération image (appel API Gemini)
+│   │   ├── ModelEditor/       # Formulaire des attributs physiques du modèle
+│   │   ├── OutputPanel/       # Panneau JSON du prompt (copie clipboard)
+│   │   └── SceneEditor/       # Formulaire de personnalisation de scène
+│   │
+│   ├── store/
+│   │   ├── StudioContext.jsx  # Deux contexts : DatabaseContext + PromptContext
+│   │   └── ToastContext.jsx   # Notifications toast globales
+│   │
+│   ├── utils/
+│   │   ├── googleAI.js        # Wrapper API Gemini (validation + génération image)
+│   │   ├── promptGenerators.js # Assembleur de prompts JSON structurés
+│   │   ├── promptToText.js    # Convertisseur JSON → Natural Language
+│   │   └── storage.js         # CRUD localStorage (modèles, comptes, lieux, templates)
+│   │
+│   ├── views/                 # Pages du routeur React Router
+│   │   ├── ModelsView.jsx          # (Niveau 1) Liste des modèles
+│   │   ├── ModelEditorShell.jsx    # (Niveau 1b) Création / édition modèle
+│   │   ├── AccountsView.jsx        # (Niveau 2) Comptes du modèle
+│   │   ├── LocationsAndSandboxView.jsx  # (Niveau 3) Lieux + Sandbox
+│   │   └── GenerationView.jsx      # (Niveau 4) Studio de génération
+│   │
+│   ├── App.jsx                # Shell React Router + Navbar globale
+│   ├── main.jsx               # Point d'entrée React
+│   └── index.css              # Styles globaux
+│
+├── index.html                 # Template HTML Vite
+├── vite.config.js             # Configuration Vite
+├── tailwind.config.js         # Configuration TailwindCSS
+├── postcss.config.js          # Configuration PostCSS
+└── package.json               # Dépendances et scripts npm
+```
+
+---
+
+## 🔄 Workflow d'Utilisation
+
+1. **Créez un modèle** → Définissez tous les attributs physiques DNA de votre influenceuse
+2. **Ajoutez un compte** → Associez un ou plusieurs comptes sociaux au modèle (ex: `@clara_officiel`)
+3. **Créez des lieux** → Définissez les décors récurrents du compte (ex: `Studio Paris`, `Chambre Bohème`)
+4. **Générez** → Entrez dans un lieu → personnalisez la scène → copiez le JSON ou générez l'image directement
+
+---
+
+## 📄 License
+
+MIT © 2025 — [ledocsoff](https://github.com/ledocsoff)

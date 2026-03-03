@@ -1,74 +1,139 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
-import { saveLocationData, deleteLocationData } from '../utils/storage';
+import { useToast } from '../store/ToastContext';
+import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore } from '../utils/storage';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
+
+const TIME_OF_DAY_OPTIONS = [
+    { labelFR: "Matin (lumiere douce)", promptEN: "morning, soft early light" },
+    { labelFR: "Apres-midi", promptEN: "afternoon, bright ambient light" },
+    { labelFR: "Golden hour", promptEN: "golden hour, warm sunset light" },
+    { labelFR: "Soiree / Nuit", promptEN: "evening, night time, artificial indoor lighting" },
+    { labelFR: "Nuit club", promptEN: "late night, club atmosphere, colored lights" },
+];
+
+const inputClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700";
+const selectClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-zinc-600 transition-colors";
+const labelClass = "text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block";
+
+const LockScore = ({ location }) => {
+    const { filled, total } = getLocationLockScore(location);
+    return (
+        <div className="flex items-center gap-1.5">
+            <div className="flex gap-px">
+                {Array.from({ length: total }, (_, i) => (
+                    <div
+                        key={i}
+                        className={`w-1.5 h-3 rounded-sm transition-colors ${
+                            i < filled
+                                ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
+                                : 'bg-zinc-800'
+                        }`}
+                    />
+                ))}
+            </div>
+            <span className={`text-[10px] font-medium ${
+                filled >= 5 ? 'text-emerald-500/70' : filled >= 3 ? 'text-amber-500/70' : 'text-zinc-600'
+            }`}>{filled}/{total}</span>
+        </div>
+    );
+};
 
 const LocationsAndSandboxView = () => {
     const { modelId, accountId } = useParams();
     const navigate = useNavigate();
     const { allModelsDatabase, setAllModelsDatabase } = useStudio();
+    const toast = useToast();
 
-    // ETATS FORMULAIRE (Mode "Création" OU "Édition")
-    const [locFormMode, setLocFormMode] = useState('create'); 
+    const [locFormMode, setLocFormMode] = useState('create');
     const [newLocName, setNewLocName] = useState('');
-    // State pour savoir s'il tape manuellement son lieu custom ou non
     const [isCustomEnv, setIsCustomEnv] = useState(false);
-    
-    // CORRECTION : On instancie bien avec le premier élément EN de la liste options
     const [newLocEnvDrop, setNewLocEnvDrop] = useState(SCENE_OPTIONS.environment[0].promptEN);
     const [newLocEnvCustom, setNewLocEnvCustom] = useState('');
+    const [newLocLighting, setNewLocLighting] = useState('');
+    const [newLocVibe, setNewLocVibe] = useState('');
+    const [newLocTimeOfDay, setNewLocTimeOfDay] = useState('');
+    const [newLocAnchorDetails, setNewLocAnchorDetails] = useState('');
+    const [newLocColorPalette, setNewLocColorPalette] = useState('');
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
-    // Retrouver Modèle > Compte
     const currentModel = allModelsDatabase.find(m => m.id === modelId);
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
 
     if (!currentModel || !currentAccount) {
-        return <div className="p-8 text-center text-gray-500">Compte introuvable. <button onClick={() => navigate('/')} className="text-blue-500 underline">Retour</button></div>;
+        return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Compte introuvable. <button onClick={() => navigate('/')} className="text-amber-500 ml-1 underline">Retour</button></div>;
     }
 
-    // Extraction d'un tableau contenant uniquement les env en String EN pour les comparaisons futures (Custom vs Preset)
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
-    // --- ACTIONS DU FORMULAIRE ---
+    // Get all other accounts for duplication target
+    const otherAccounts = [];
+    allModelsDatabase.forEach(m => {
+        m.accounts?.forEach(a => {
+            if (!(m.id === modelId && a.id === accountId)) {
+                otherAccounts.push({ modelId: m.id, modelName: m.name, accountId: a.id, handle: a.handle, platform: a.platform });
+            }
+        });
+    });
+
     const handleSaveLocation = () => {
         if (!newLocName.trim()) return;
-        
         const finalEnvironment = isCustomEnv ? newLocEnvCustom.trim() : newLocEnvDrop;
-        if (!finalEnvironment) return; // Sécurité
+        if (!finalEnvironment) return;
 
         const locationData = {
             name: newLocName.trim(),
-            environment: finalEnvironment, 
+            environment: finalEnvironment,
+            default_lighting: newLocLighting,
+            default_vibe: newLocVibe,
+            time_of_day: newLocTimeOfDay,
+            anchor_details: newLocAnchorDetails.trim(),
+            color_palette: newLocColorPalette.trim(),
         };
-
-        // Si on est Mode Edition, on donne le même ID pour écraser
-        if (locFormMode !== 'create') {
-            locationData.id = locFormMode; 
-        }
+        if (locFormMode !== 'create') locationData.id = locFormMode;
 
         const updated = saveLocationData(modelId, accountId, locationData);
         if (updated) {
             setAllModelsDatabase(updated);
+            toast.success(locFormMode === 'create' ? `"${locationData.name}" cree` : `Lieu mis a jour`);
             resetForm();
         }
     };
 
     const handleDeleteLocation = (e, locId) => {
         e.stopPropagation();
-        if(confirm(`Supprimer définitivement ce lieu ?`)) {
-             const updated = deleteLocationData(modelId, accountId, locId);
-             if (updated) setAllModelsDatabase(updated);
-             if (locFormMode === locId) resetForm();
+        if (pendingDeleteId === locId) {
+            const loc = currentAccount.locations.find(l => l.id === locId);
+            const updated = deleteLocationData(modelId, accountId, locId);
+            if (updated) setAllModelsDatabase(updated);
+            if (locFormMode === locId) resetForm();
+            setPendingDeleteId(null);
+            toast.success(`"${loc?.name || 'Lieu'}" supprime`);
+        } else {
+            setPendingDeleteId(locId);
+            setTimeout(() => setPendingDeleteId(null), 3000);
+        }
+    };
+
+    const handleDuplicateLocation = (e, locId, targetModelId, targetAccountId) => {
+        e.stopPropagation();
+        const updated = duplicateLocation(modelId, accountId, locId, targetModelId, targetAccountId);
+        if (updated) {
+            setAllModelsDatabase(updated);
+            toast.success('Lieu duplique');
         }
     };
 
     const enterEditMode = (e, loc) => {
-        e.stopPropagation(); // Évite le clic sur la carte = navigation niveau 4
+        e.stopPropagation();
         setLocFormMode(loc.id);
         setNewLocName(loc.name);
-        
-        // Si le prompt du lieu en base N'EST PAS dans notre liste des preset (en Anglais), c'est un Custom
+        setNewLocLighting(loc.default_lighting || '');
+        setNewLocVibe(loc.default_vibe || '');
+        setNewLocTimeOfDay(loc.time_of_day || '');
+        setNewLocAnchorDetails(loc.anchor_details || '');
+        setNewLocColorPalette(loc.color_palette || '');
         if (!presetEnvironmentsEN.includes(loc.environment)) {
             setIsCustomEnv(true);
             setNewLocEnvCustom(loc.environment);
@@ -76,9 +141,7 @@ const LocationsAndSandboxView = () => {
             setIsCustomEnv(false);
             setNewLocEnvDrop(loc.environment);
         }
-        
-        // Scroll vers le haut fluide (Pour voir le formulaire que l'on vient de remplir avec la donnée)
-        document.getElementById('espace-lieux-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('loc-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const resetForm = () => {
@@ -87,172 +150,218 @@ const LocationsAndSandboxView = () => {
         setIsCustomEnv(false);
         setNewLocEnvCustom('');
         setNewLocEnvDrop(SCENE_OPTIONS.environment[0].promptEN);
+        setNewLocLighting('');
+        setNewLocVibe('');
+        setNewLocTimeOfDay('');
+        setNewLocAnchorDetails('');
+        setNewLocColorPalette('');
     };
 
+    const isEditing = locFormMode !== 'create';
+
     return (
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-[#0a0a0a]">
-            
-            {/* ========================================================= */}
-            {/* ESPACE A (GAUCHE - ~70%) : GESTION DES LIEUX (CRUD)       */}
-            {/* ========================================================= */}
-            <div id="espace-lieux-scroll" className="flex-1 md:w-2/3 lg:w-3/4 flex flex-col border-r border-gray-800 overflow-y-auto custom-scrollbar">
-                <div className="p-6 md:p-8">
-                    
-                    {/* BREADCRUMB / HEADER */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+
+            {/* LEFT: LOCATIONS */}
+            <div id="loc-scroll" className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="max-w-3xl mx-auto px-6 py-10">
+
                     <div className="mb-8">
-                        <button onClick={() => navigate(`/models/${modelId}/accounts`)} className="text-gray-500 hover:text-white text-sm mb-4 transition-colors">
-                            ← Retour aux Comptes
-                        </button>
-                        <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                            <span className="text-indigo-500">📍</span> Lieux & Décors
-                        </h2>
-                        <p className="text-gray-400 mt-1 text-sm">Créez des "Lieux" récurrents hyper-crédibles pour assurer une cohérence d'un post à l'autre.</p>
+                        <h2 className="text-xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
+                        <p className="text-zinc-500 text-sm mt-1">Definissez des lieux precis pour garantir la coherence visuelle.</p>
                     </div>
 
-                    {/* L'EDITEUR : FORMULAIRE D'AJOUT OU MODIFICATION DE LIEU */}
-                    <div className={`border p-6 rounded-2xl mb-8 shadow-inner transition-colors duration-500 ${locFormMode === 'create' ? 'bg-gray-900 border-gray-800' : 'bg-indigo-950/20 border-indigo-500/50'}`}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-white">
-                                {locFormMode === 'create' ? <span className="text-indigo-400">➕ Créer un Lieu</span> : <span className="text-orange-400">✏️ Édition du Lieu</span>}
+                    {/* FORM */}
+                    <div className={`rounded-xl border p-5 mb-10 transition-colors ${isEditing ? 'bg-amber-500/[0.03] border-amber-500/20' : 'bg-zinc-900/60 border-zinc-800/60'}`}>
+                        <div className="flex justify-between items-center mb-5">
+                            <h3 className="text-sm font-semibold text-zinc-300">
+                                {isEditing ? 'Modifier le lieu' : 'Nouveau lieu'}
                             </h3>
-                            {locFormMode !== 'create' && (
-                                <button onClick={resetForm} className="text-xs text-gray-500 hover:text-gray-300">Annuler l'édition ✕</button>
+                            {isEditing && (
+                                <button onClick={resetForm} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Annuler</button>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                            
-                            {/* NOM */}
-                            <div className="lg:col-span-4">
-                                <label className="text-xs text-gray-500 mb-2 block font-bold">Nom usuel métier (ex: Chambre Emma)</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Nom du décor..." 
-                                    className="w-full bg-[#050505] border border-gray-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors"
-                                    value={newLocName}
-                                    onChange={(e) => setNewLocName(e.target.value)}
-                                    autoFocus={locFormMode !== 'create'}
-                                />
-                            </div>
-
-                            {/* ENVIRONNEMENT IA */}
-                            <div className="lg:col-span-8 rounded-xl border border-gray-800 bg-[#050505] p-1 flex flex-col items-stretch">
-                                
-                                {/* 1) Togle Type Standard VS Custom */}
-                                <div className="flex w-full mb-3 p-1">
-                                    <button 
-                                        onClick={() => setIsCustomEnv(false)} 
-                                        className={`flex-1 text-xs py-1.5 rounded-lg font-bold transition-colors ${!isCustomEnv ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-900'}`}
-                                    >
-                                        Sélection (Presets Normaux)
-                                    </button>
-                                    <button 
-                                        onClick={() => setIsCustomEnv(true)} 
-                                        className={`flex-1 text-xs py-1.5 rounded-lg font-bold transition-colors ${isCustomEnv ? 'bg-blue-900/40 text-blue-400 border border-blue-800' : 'text-gray-500 hover:bg-gray-900'}`}
-                                    >
-                                        Manuel (Texte Libre 📝)
-                                    </button>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Nom du lieu</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Ex: Chambre, SDB Miroir..."
+                                        className={inputClass}
+                                        value={newLocName}
+                                        onChange={(e) => setNewLocName(e.target.value)}
+                                    />
                                 </div>
-
-                                {/* 2) L'Input en fonction du toggle */}
-                                <div className="px-2 pb-2">
-                                     {!isCustomEnv ? (
-                                        <select 
-                                            value={newLocEnvDrop} 
-                                            onChange={(e) => setNewLocEnvDrop(e.target.value)}
-                                            className="w-full bg-gray-900 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-indigo-500 focus:bg-gray-800 transition-colors"
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Environnement</span>
+                                        <button
+                                            onClick={() => setIsCustomEnv(!isCustomEnv)}
+                                            className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${isCustomEnv ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
                                         >
-                                            {/* CORRECTION : L'option renvoie bien promptEN, mais on affiche le labelFR */}
+                                            {isCustomEnv ? 'Preset' : 'Custom'}
+                                        </button>
+                                    </div>
+                                    {isCustomEnv ? (
+                                        <textarea
+                                            placeholder="Description detaillee en anglais..."
+                                            value={newLocEnvCustom}
+                                            onChange={(e) => setNewLocEnvCustom(e.target.value)}
+                                            rows={2}
+                                            className={inputClass + " resize-none"}
+                                        />
+                                    ) : (
+                                        <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className={selectClass}>
                                             {SCENE_OPTIONS.environment.map(env => (
                                                 <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
                                             ))}
                                         </select>
-                                    ) : (
-                                        <textarea 
-                                            placeholder="Ex: Small student apartment bathroom with a dirty mirror and makeup tools on the sink..."
-                                            value={newLocEnvCustom}
-                                            onChange={(e) => setNewLocEnvCustom(e.target.value)}
-                                            rows={2}
-                                            className="w-full bg-gray-900 border border-blue-900/60 text-blue-100 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors custom-scrollbar resize-none placeholder-blue-900/50"
-                                        />
                                     )}
                                 </div>
                             </div>
 
-                            {/* BOUTON VALIDATION */}
-                            <div className="lg:col-span-12 mt-1 border-t border-gray-800/50 pt-5 flex justify-end">
-                                <button 
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label className={labelClass}>Eclairage</label>
+                                    <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className={selectClass}>
+                                        <option value="">Libre</option>
+                                        {SCENE_OPTIONS.lighting.map(l => (
+                                            <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Vibe</label>
+                                    <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className={selectClass}>
+                                        <option value="">Libre</option>
+                                        {SCENE_OPTIONS.vibe.map(v => (
+                                            <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Moment</label>
+                                    <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className={selectClass}>
+                                        <option value="">Libre</option>
+                                        {TIME_OF_DAY_OPTIONS.map(t => (
+                                            <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Details d'ancrage <span className="text-amber-500/60 normal-case font-normal">coherence</span></label>
+                                    <textarea
+                                        placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."
+                                        value={newLocAnchorDetails}
+                                        onChange={(e) => setNewLocAnchorDetails(e.target.value)}
+                                        rows={3}
+                                        className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Palette couleurs</label>
+                                    <textarea
+                                        placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
+                                        value={newLocColorPalette}
+                                        onChange={(e) => setNewLocColorPalette(e.target.value)}
+                                        rows={3}
+                                        className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-2">
+                                <button
                                     onClick={handleSaveLocation}
                                     disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
-                                    className={`py-2 px-8 rounded-lg font-bold transition-all disabled:opacity-50 ${locFormMode === 'create' ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(234,88,12,0.3)]'}`}
+                                    className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${
+                                        isEditing
+                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                                    }`}
                                 >
-                                    {locFormMode === 'create' ? '+ Enregistrer' : '💾 Mettre à jour'}
+                                    {isEditing ? 'Mettre a jour' : 'Enregistrer'}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-
-                    {/* ======================================================== */}
-                    {/* GRILLE D'AFFICHAGE DES LIEUX (CARTES)                    */}
-                    {/* ======================================================== */}
-                    
-                    <h3 className="text-xl font-bold text-white mb-4 mt-10">Lieux Enregistrés</h3>
+                    {/* SAVED LOCATIONS */}
+                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Lieux enregistres</h3>
 
                     {(currentAccount.locations || []).length === 0 ? (
-                        <div className="text-center py-16 bg-gray-900/30 border border-dashed border-gray-800 rounded-3xl">
-                            <span className="text-5xl block mb-3 opacity-30">🛋️</span>
-                            <p className="text-lg font-bold text-gray-400 mb-1">C'est encore vide.</p>
-                            <p className="text-sm text-gray-500">Ajoutez le "Domicile" de votre modèle ci-dessus.</p>
+                        <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800">
+                            <p className="text-zinc-500 text-sm">Aucun lieu. Creez-en un ci-dessus.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
                             {currentAccount.locations.map(loc => (
-                                <div 
+                                <div
                                     key={loc.id}
-                                    // LA NAVIGATION : Un clic sur la carte (hors des potits boutons) va au Niveau 4
                                     onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                    className="bg-gray-900 border border-gray-800 hover:border-indigo-500/50 rounded-xl p-5 cursor-pointer group hover:bg-gradient-to-br from-gray-900 to-indigo-900/20 transition-all shadow-sm flex flex-col justify-between min-h-[160px] relative overflow-hidden"
+                                    className="group bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-4 cursor-pointer hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all duration-200"
                                 >
-                                    <div className="flex justify-between items-start mb-2 relative z-10 w-full">
-                                        <h4 className="font-bold text-white text-lg leading-tight group-hover:text-indigo-400 transition-colors flex items-center gap-2 w-[70%]">
-                                             <span className="text-indigo-500">📍</span> <span className="truncate">{loc.name}</span>
-                                        </h4>
-                                        <div className="flex gap-2">
-                                            {/* BOUTON EDITION (EMPECHE LA NAVIGATION VUE 4) */}
-                                             <button 
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2.5 mb-0.5">
+                                                <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
+                                                <LockScore location={loc} />
+                                            </div>
+                                            <p className="text-[12px] text-zinc-500 mt-0.5 truncate">{loc.environment}</p>
+                                        </div>
+                                        <div className="flex gap-1 ml-3 shrink-0">
+                                            {/* Duplicate dropdown */}
+                                            {otherAccounts.length > 0 && (
+                                                <div className="relative">
+                                                    <select
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={(e) => {
+                                                            if (!e.target.value) return;
+                                                            const [tModelId, tAccountId] = e.target.value.split('::');
+                                                            handleDuplicateLocation(e, loc.id, tModelId, tAccountId);
+                                                            e.target.value = '';
+                                                        }}
+                                                        className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-zinc-700/50"
+                                                        defaultValue=""
+                                                        title="Dupliquer vers..."
+                                                    >
+                                                        <option value="" disabled>D</option>
+                                                        {otherAccounts.map(oa => (
+                                                            <option key={`${oa.modelId}::${oa.accountId}`} value={`${oa.modelId}::${oa.accountId}`}>
+                                                                {oa.modelName} / {oa.handle}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                            <button
                                                 onClick={(e) => enterEditMode(e, loc)}
-                                                className="text-gray-500 hover:text-orange-400 bg-[#050505] hover:bg-gray-800 border border-gray-800 p-2 rounded-lg transition-colors shadow-sm"
-                                                title="Modifier ce lieu"
+                                                className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors opacity-0 group-hover:opacity-100 text-xs"
                                             >
-                                                ✏️
+                                                E
                                             </button>
-                                            {/* BOUTON SUPPRESSION */}
-                                            <button 
+                                            <button
                                                 onClick={(e) => handleDeleteLocation(e, loc.id)}
-                                                className="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 p-2 bg-[#050505] rounded-lg transition-opacity border border-gray-800"
-                                                title="Supprimer"
+                                                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${
+                                                    pendingDeleteId === loc.id
+                                                        ? 'bg-red-500/20 text-red-400 opacity-100'
+                                                        : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
+                                                }`}
                                             >
-                                                🗑️
+                                                {pendingDeleteId === loc.id ? '?' : '\u00D7'}
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="mt-auto relative z-10">
-                                        <div className="text-[10px] uppercase font-bold text-gray-500 mb-1.5 tracking-widest flex justify-between items-end">
-                                            <span>Environnement IA Prompté :</span>
-                                            {/* CORRECTION : vérifie par rapport au tableau extrait 'presetEnvironmentsEN' */}
-                                            {!presetEnvironmentsEN.includes(loc.environment) && <span className="bg-blue-900/30 text-blue-400 px-1.5 py-0.5 rounded border border-blue-900">Custom Tool</span>}
-                                        </div>
-                                        <p className="text-xs text-indigo-300 leading-relaxed bg-[#050505] px-3 py-3 rounded-lg border border-gray-800 h-[60px] overflow-hidden text-ellipsis">
-                                            {loc.environment}
-                                        </p>
-                                    </div>
-
-                                    {/* EFFET SURVOL */}
-                                    <div className="absolute inset-0 bg-indigo-500/0 group-hover:bg-indigo-500/5 transition-colors z-0 flex items-center justify-center">
-                                         <span className="opacity-0 group-hover:opacity-100 text-indigo-400 font-black text-xl tracking-wider transition-all scale-75 group-hover:scale-100 drop-shadow-md">
-                                            LANCER STUDIO →
-                                         </span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {loc.default_lighting && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Eclairage</span>}
+                                        {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
+                                        {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}
+                                        {loc.color_palette && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Palette</span>}
                                     </div>
                                 </div>
                             ))}
@@ -261,27 +370,18 @@ const LocationsAndSandboxView = () => {
                 </div>
             </div>
 
-            {/* ========================================================= */}
-            {/* ESPACE B (DROITE - ~30%) : BAC À SABLE (SANDBOX)          */}
-            {/* ========================================================= */}
-            <div className="md:w-1/3 lg:w-1/4 bg-[#050505] border-t md:border-t-0 md:border-l border-gray-800 p-6 md:p-8 flex flex-col justify-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl -mr-24 -mt-24 pointer-events-none"></div>
-                
-                <div className="relative z-10 mx-auto w-full max-w-sm">
-                    <h3 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
-                        <span className="text-orange-500 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)]">🏖️</span> Bac à sable
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-10 leading-relaxed">
-                        Studio 100% déverrouillé. Utile pour une story éphémère (ex: aéroport), sans besoin de créer un "Lieu" récurrent dans la base de données.
+            {/* RIGHT: SANDBOX */}
+            <div className="lg:w-72 bg-zinc-950/50 border-t lg:border-t-0 lg:border-l border-zinc-800/50 p-6 lg:p-8 flex flex-col justify-center">
+                <div className="max-w-xs mx-auto w-full">
+                    <h3 className="text-base font-bold text-zinc-200 mb-2">Bac a sable</h3>
+                    <p className="text-[13px] text-zinc-500 mb-8 leading-relaxed">
+                        Mode libre pour du contenu ponctuel, sans creer de lieu.
                     </p>
-
-                    {/* NAVIGATION NIVEAU 4 -> GENERATION SANDBOX */}
-                    <button 
+                    <button
                         onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/sandbox/generate`)}
-                        className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xl py-6 px-6 rounded-2xl transition-all shadow-[0_10px_30px_rgba(249,115,22,0.15)] hover:shadow-orange-500/30 hover:-translate-y-1 active:scale-95 flex flex-col items-center gap-2 group border border-orange-500/50"
+                        className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/10 active:scale-[0.98]"
                     >
-                        <span>🎬 Lancer Générateur</span>
-                        <span className="text-[10px] uppercase font-bold opacity-70 tracking-widest leading-none bg-black/20 px-3 py-1 rounded-full group-hover:bg-black/30 w-max">Zero Limitation</span>
+                        Lancer le studio
                     </button>
                 </div>
             </div>
