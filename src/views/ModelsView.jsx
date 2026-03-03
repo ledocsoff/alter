@@ -18,21 +18,10 @@ const getModelColor = (index) => MODEL_COLORS[index % MODEL_COLORS.length];
 
 const ModelsView = () => {
   const navigate = useNavigate();
-  const { allModelsDatabase, setAllModelsDatabase, setModel, isLoading } = useStudio();
+  const { allModelsDatabase, setAllModelsDatabase, setModel } = useStudio();
   const toast = useToast();
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [search, setSearch] = useState('');
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-5 h-5 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-zinc-600 text-xs">Chargement des donnees...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleDelete = (e, id) => {
     e.stopPropagation();
@@ -140,8 +129,8 @@ const ModelsView = () => {
                       <button
                         onClick={(e) => handleDelete(e, m.id)}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors ${pendingDeleteId === m.id
-                            ? 'bg-red-500/20 text-red-400'
-                            : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
+                          ? 'bg-red-500/20 text-red-400'
+                          : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
                           }`}
                       >
                         {pendingDeleteId === m.id ? '?' : '\u00D7'}

@@ -4,13 +4,17 @@ import App from './App.jsx'
 import './index.css'
 import { StudioProvider } from './store/StudioContext.jsx'
 import { ToastProvider } from './store/ToastContext.jsx'
+import { loadFromServer } from './utils/storage.js'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <ToastProvider>
-      <StudioProvider>
-        <App />
-      </StudioProvider>
-    </ToastProvider>
-  </React.StrictMode>,
-)
+// Load data from server (sauvegarde/) into localStorage BEFORE React boots
+loadFromServer().then(() => {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <ToastProvider>
+        <StudioProvider>
+          <App />
+        </StudioProvider>
+      </ToastProvider>
+    </React.StrictMode>,
+  )
+})
