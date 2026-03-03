@@ -4,6 +4,25 @@ const TEMPLATES_KEY = 'nanabanana_templates';
 const API_KEY_KEY = 'nanabanana_api_key';
 
 // ============================================
+// STORAGE HEALTH CHECK
+// ============================================
+const isLocalStorageAvailable = () => {
+    try {
+        const testKey = '__nanabanana_test__';
+        localStorage.setItem(testKey, '1');
+        const ok = localStorage.getItem(testKey) === '1';
+        localStorage.removeItem(testKey);
+        return ok;
+    } catch {
+        return false;
+    }
+};
+
+if (!isLocalStorageAvailable()) {
+    console.error('[NanaBanana] localStorage is NOT available. Data will be lost on reload. Check browser settings (private mode?).');
+}
+
+// ============================================
 // API KEY
 // ============================================
 export const getApiKey = () => {
@@ -25,12 +44,15 @@ export const getSavedModels = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
         const parsed = data ? JSON.parse(data) : [];
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+        console.log(`[NanaBanana] ${parsed.length} modele(s) charge(s) depuis localStorage`);
+        return parsed;
     } catch (error) {
-        console.error("Erreur de lecture du localStorage :", error);
+        console.error("[NanaBanana] Erreur de lecture du localStorage :", error);
         return [];
     }
 };
+
 
 const _saveAll = (data) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

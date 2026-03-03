@@ -1,9 +1,10 @@
 {
     "name": "nanabanana-studio",
     "private": true,
-    "version": "3.1.0",
+    "version": "4.1.1",
     "type": "module",
     "scripts": {
+        "predev": "lsof -ti:5173 | xargs kill -9 2>/dev/null || true",
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview"
