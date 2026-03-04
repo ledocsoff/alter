@@ -49,16 +49,19 @@ const SceneEditor = ({ isSandbox = false }) => {
         setScene(prev => ({
             ...prev,
             ...preset.scene,
-            // Keep location-locked values in non-sandbox mode
+            // In location mode: keep ALL location-locked values
             ...(isSandbox ? {} : {
                 environment: prev.environment,
                 location_meta: prev.location_meta,
+                vibe: prev.vibe,
+                lighting: prev.lighting,
             }),
             // Always keep these
             outfit: prev.outfit,
             aspect_ratio: prev.aspect_ratio,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
+            custom_details: prev.custom_details,
         }));
         setActivePresetId(preset.id);
         toast.info(`${preset.label}`);
@@ -75,10 +78,13 @@ const SceneEditor = ({ isSandbox = false }) => {
             ...(isSandbox ? {} : {
                 environment: prev.environment,
                 location_meta: prev.location_meta,
+                vibe: prev.vibe,
+                lighting: prev.lighting,
             }),
             aspect_ratio: prev.aspect_ratio,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
+            custom_details: prev.custom_details,
         }));
         setActivePresetId(preset.id);
         toast.info(`🎲 ${preset.label} + ${outfit.label}`);
