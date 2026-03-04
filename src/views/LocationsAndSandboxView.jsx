@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations } from '../utils/storage';
-import { autoFillLocation, generateLocationPresets } from '../utils/googleAI';
-import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
+import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations, uploadLocationRefs } from '../utils/storage';
+import { autoFillLocation, generateLocationPresets, generateLocationImage } from '../utils/googleAI';
+import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon, CameraIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 import LocationRefUpload from '../features/LocationRefUpload/LocationRefUpload';
@@ -59,6 +59,9 @@ const LocationsAndSandboxView = () => {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isAutoFilling, setIsAutoFilling] = useState(false);
     const [isGeneratingPresets, setIsGeneratingPresets] = useState(false);
+    const [pendingLocPhotos, setPendingLocPhotos] = useState([]);
+    const [isGeneratingLocImage, setIsGeneratingLocImage] = useState(false);
+    const pendingPhotosInputRef = useRef(null);
     const dragItem = useRef(null);
     const dragOverItem = useRef(null);
     const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -112,25 +115,47 @@ const LocationsAndSandboxView = () => {
                 toast.success(isCreating ? `"${locationData.name}" créé` : `Lieu mis à jour`);
                 resetForm();
 
-                // Generate AI presets on CREATION only
+                // Generate AI presets + location image on CREATION only
                 if (isCreating) {
                     const apiKey = getApiKey();
-                    if (apiKey) {
+                    const savedModel = updated.find(m => m.id === modelId);
+                    const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
+                    const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
+
+                    // Upload pending photos if any
+                    if (savedLoc && pendingLocPhotos.length > 0) {
+                        try {
+                            await uploadLocationRefs(savedLoc.id, pendingLocPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType })));
+                            toast.success(`${pendingLocPhotos.length} photo(s) du lieu sauvegardée(s)`);
+                        } catch { /* silent */ }
+                        setPendingLocPhotos([]);
+                    }
+
+                    if (apiKey && savedLoc) {
                         setIsGeneratingPresets(true);
                         try {
-                            const savedModel = updated.find(m => m.id === modelId);
-                            const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
-                            const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
-                            if (savedLoc) {
-                                const result = await generateLocationPresets(apiKey, savedLoc);
-                                const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
-                                if (updated2) setAllModelsDatabase(updated2);
-                                toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses générées`);
-                            }
+                            const result = await generateLocationPresets(apiKey, savedLoc);
+                            const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
+                            if (updated2) setAllModelsDatabase(updated2);
+                            toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses générées`);
                         } catch (err) {
                             toast.error(`Presets IA: ${err.message}`);
                         } finally {
                             setIsGeneratingPresets(false);
+                        }
+
+                        // Auto-generate AI location image (if no photos were uploaded manually)
+                        if (pendingLocPhotos.length === 0) {
+                            setIsGeneratingLocImage(true);
+                            try {
+                                const locImg = await generateLocationImage(apiKey, savedLoc);
+                                await uploadLocationRefs(savedLoc.id, [{ base64: locImg.imageBase64, mimeType: locImg.mimeType }]);
+                                toast.success('🖼️ Image du lieu générée et sauvegardée');
+                            } catch (err) {
+                                toast.error(`Image lieu: ${err.message}`);
+                            } finally {
+                                setIsGeneratingLocImage(false);
+                            }
                         }
                     }
                 }
@@ -197,6 +222,7 @@ const LocationsAndSandboxView = () => {
         setNewLocAnchorDetails('');
         setNewLocColorPalette('');
         setNewLocNegativePrompt('');
+        setPendingLocPhotos([]);
     };
 
     const isEditing = locFormMode !== 'create' && locFormMode !== 'review' && locFormMode !== 'manual';
@@ -277,6 +303,69 @@ const LocationsAndSandboxView = () => {
                                             onChange={(e) => setNewLocName(e.target.value)}
                                             rows={2}
                                         />
+                                    </div>
+
+                                    {/* Photo upload zone */}
+                                    <div>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                            📷 Photos du lieu <span className="text-zinc-600 normal-case font-normal">optionnel — pour un ancrage visuel précis</span>
+                                        </label>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {pendingLocPhotos.map((img, i) => (
+                                                <div key={i} className="relative group">
+                                                    <img src={img.dataUrl} alt={`Lieu ${i + 1}`} className="w-14 h-14 rounded-lg object-cover border border-white/[0.08] ring-1 ring-violet-500/10" />
+                                                    <button
+                                                        onClick={() => setPendingLocPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                                                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity leading-none shadow-lg"
+                                                    >
+                                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {pendingLocPhotos.length < 3 && (
+                                                <button
+                                                    onClick={() => pendingPhotosInputRef.current?.click()}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')).slice(0, 3 - pendingLocPhotos.length);
+                                                        Promise.all(files.map(f => new Promise((res, rej) => {
+                                                            const reader = new FileReader();
+                                                            reader.onload = () => res({ base64: reader.result.split(',')[1], mimeType: f.type, dataUrl: reader.result });
+                                                            reader.onerror = rej;
+                                                            reader.readAsDataURL(f);
+                                                        }))).then(imgs => setPendingLocPhotos(prev => [...prev, ...imgs].slice(0, 3)));
+                                                    }}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    className="w-14 h-14 rounded-lg border-2 border-dashed border-white/[0.08] hover:border-violet-500/30 bg-white/[0.015] hover:bg-violet-500/[0.03] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
+                                                >
+                                                    <CameraIcon size={14} className="text-zinc-600" />
+                                                    <span className="text-[8px] text-zinc-600 font-medium">{pendingLocPhotos.length}/3</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                        <input
+                                            ref={pendingPhotosInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/')).slice(0, 3 - pendingLocPhotos.length);
+                                                Promise.all(files.map(f => new Promise((res, rej) => {
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => res({ base64: reader.result.split(',')[1], mimeType: f.type, dataUrl: reader.result });
+                                                    reader.onerror = rej;
+                                                    reader.readAsDataURL(f);
+                                                }))).then(imgs => setPendingLocPhotos(prev => [...prev, ...imgs].slice(0, 3)));
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <p className="text-[10px] text-zinc-600 mt-1">
+                                            {pendingLocPhotos.length > 0
+                                                ? `${pendingLocPhotos.length} photo(s) prête(s) — seront sauvegardées à l'enregistrement`
+                                                : 'Sans photo, l\'IA en générera une automatiquement'
+                                            }
+                                        </p>
                                     </div>
                                     <div className="flex justify-end">
                                         <button
@@ -432,6 +521,18 @@ const LocationsAndSandboxView = () => {
                                     <div>
                                         <p className="text-sm font-semibold text-violet-300">Génération des ambiances IA...</p>
                                         <p className="text-[11px] text-zinc-500">8 ambiances + 8 tenues + 8 poses adaptées seront générées</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {isGeneratingLocImage && (
+                            <div className="mb-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] animate-fade-in-up">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-amber-300">🖼️ Génération de l'image du lieu...</p>
+                                        <p className="text-[11px] text-zinc-500">L'IA crée une photo de référence pour l'ancrage visuel</p>
                                     </div>
                                 </div>
                             </div>

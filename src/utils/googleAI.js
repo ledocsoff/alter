@@ -695,3 +695,97 @@ export const generateLocationPresets = async (apiKey, location) => {
   }
 };
 
+/* ─── LOCATION IMAGE GENERATION ─── */
+
+/**
+ * Generate a photorealistic image of a location environment (no person).
+ * Used as visual reference anchor for consistent scene generation.
+ * @param {string} apiKey
+ * @param {object} location - { environment, anchor_details, default_lighting, default_vibe, color_palette, time_of_day, name }
+ * @returns {Promise<{ imageBase64: string, mimeType: string }>}
+ */
+export const generateLocationImage = async (apiKey, location) => {
+  return withRetry(async () => {
+    const locationDesc = [
+      `Location name: "${location.name}"`,
+      `Environment: ${location.environment}`,
+      location.anchor_details ? `Key details/props: ${location.anchor_details}` : null,
+      location.default_lighting ? `Lighting: ${location.default_lighting}` : null,
+      location.default_vibe ? `Vibe/mood: ${location.default_vibe}` : null,
+      location.color_palette ? `Color palette: ${location.color_palette}` : null,
+      location.time_of_day ? `Time of day: ${location.time_of_day}` : null,
+    ].filter(Boolean).join('\n');
+
+    const prompt = `Generate a photorealistic EMPTY environment photograph based on this description:
+
+${locationDesc}
+
+CRITICAL RULES:
+- Absolutely NO person, NO human, NO silhouette, NO body parts in the image
+- Show ONLY the environment, background, decor, furniture, props
+- Must be photorealistic (not illustration, not painting, not 3D render)
+- High quality, sharp focus on the environment details
+- The image should feel like a "before" shot where a model will be placed later
+- Include all specific props and details mentioned above`;
+
+    logger.info('generation', `Generating location image for "${location.name}"`);
+
+    const body = {
+      system_instruction: {
+        parts: [{ text: `You are a photorealistic environment photographer. You generate images of EMPTY locations — no people. Focus on accurately reproducing the described space with correct lighting, colors, props, and atmosphere. The images will be used as visual references for consistent scene reproduction.` }]
+      },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+        imageConfig: { aspectRatio: '16:9' },
+      },
+    };
+
+    const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const t0 = Date.now();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(fetchErr => {
+      const e = new Error(`Erreur réseau: ${fetchErr.message}`);
+      e._retryable = true;
+      throw e;
+    });
+
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `Erreur ${res.status}`;
+      logger.error('api', `Location image HTTP ${res.status} (${elapsed}s)`, msg);
+      if (RETRYABLE_CODES.includes(res.status)) {
+        const e = new Error(res.status === 429 ? 'Quota dépassé.' : `Serveur saturé (${res.status})`);
+        e._retryable = true;
+        throw e;
+      }
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    let imageBase64 = null;
+    let mimeType = 'image/png';
+
+    for (const part of parts) {
+      if (part.inlineData) {
+        imageBase64 = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || 'image/png';
+      }
+    }
+
+    if (!imageBase64) {
+      const textParts = parts.filter(p => p.text).map(p => p.text).join(' ');
+      throw new Error('Aucune image générée. ' + (textParts || 'Réessaie.'));
+    }
+
+    logger.success('generation', `Image lieu "${location.name}" générée en ${elapsed}s`);
+    return { imageBase64, mimeType };
+  }, 'location-image');
+};
+

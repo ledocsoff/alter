@@ -54,27 +54,58 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
 
     const promptToSend = customPrompt || generatedPrompt;
 
-    // Build reference anchor if images are uploaded
-    const refAnchor = referenceImages.length > 0 ? [{
-      role: 'user',
-      parts: [
-        { text: 'REFERENCE IMAGES — This is the EXACT person to reproduce. Match this face, body proportions, skin tone, and features precisely in EVERY generation. This person\'s identity is LOCKED.' },
-        ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-      ],
-    }] : [];
+    // Build visual anchoring based on available references
+    let anchorHistory = [];
 
-    // Build location reference anchor for environment consistency
-    const locationAnchor = locationRefImages.length > 0 ? [{
-      role: 'user',
-      parts: [
-        { text: 'LOCATION REFERENCE — This is the EXACT environment/location to reproduce. Match this background, architecture, décor, lighting, colors, and atmosphere precisely. The model should be placed IN this environment.' },
-        ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-      ],
-    }] : [];
+    if (referenceImages.length > 0 && locationRefImages.length > 0) {
+      // DUAL ANCHOR — unified cross-reference for strongest consistency
+      anchorHistory = [{
+        role: 'user',
+        parts: [
+          {
+            text: `DUAL VISUAL ANCHOR — IDENTITY + ENVIRONMENT LOCK:
+
+1. PERSON IDENTITY REFERENCE (photos below): This is the EXACT person to reproduce.
+   Match this face, body proportions, skin tone, hair, and features precisely.
+   This person's identity is LOCKED — she must be recognizable as the SAME individual.
+
+2. ENVIRONMENT REFERENCE (photos after person refs): This is the EXACT location/environment.
+   Match this background, architecture, décor, furniture, lighting, colors, and atmosphere.
+
+3. CROSS-ANCHOR RULE: The person from the identity references MUST appear INSIDE
+   the environment from the location references. Both must be reproduced simultaneously
+   and precisely. The person is placed naturally within this exact setting.` },
+          { text: '--- PERSON REFERENCE PHOTOS ---' },
+          ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+          { text: '--- LOCATION REFERENCE PHOTOS ---' },
+          ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+        ],
+      }];
+    } else {
+      // Single anchor fallbacks
+      if (referenceImages.length > 0) {
+        anchorHistory.push({
+          role: 'user',
+          parts: [
+            { text: 'REFERENCE IMAGES — This is the EXACT person to reproduce. Match this face, body proportions, skin tone, and features precisely in EVERY generation. This person\'s identity is LOCKED.' },
+            ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+          ],
+        });
+      }
+      if (locationRefImages.length > 0) {
+        anchorHistory.push({
+          role: 'user',
+          parts: [
+            { text: 'LOCATION REFERENCE — This is the EXACT environment/location to reproduce. Match this background, architecture, décor, lighting, colors, and atmosphere precisely. The model should be placed IN this environment.' },
+            ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+          ],
+        });
+      }
+    }
 
     try {
       const aspectRatio = anchorMatrix?.aspect_ratio_and_output?.ratio === '1:1' ? '1:1' : '9:16';
-      const fullHistory = [...refAnchor, ...locationAnchor, ...conversationHistory];
+      const fullHistory = [...anchorHistory, ...conversationHistory];
       const seed = galleryMetaRef.current?.seed || null;
       const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory, { seed });
 
