@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
-import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData } from '../../utils/storage';
+import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData, getSavedModels } from '../../utils/storage';
 import { generateLocationPresets, regenerateSection } from '../../utils/googleAI';
 import { TrashIcon, SparklesIcon } from '../../components/Icons';
 import { pickRandom } from '../../utils/helpers';
@@ -107,13 +107,14 @@ const SceneEditor = ({ location = null }) => {
         setIsGeneratingPresets(true);
         try {
             const result = await generateLocationPresets(apiKey, location);
-            const updated = saveLocationData(modelId, accountId, {
+            saveLocationData(modelId, accountId, {
                 ...location,
                 ai_presets: result.presets,
                 ai_outfits: result.outfits,
                 ai_poses: result.poses,
             });
-            if (updated) setAllModelsDatabase(updated);
+            const freshModels = JSON.parse(JSON.stringify(getSavedModels()));
+            setAllModelsDatabase(freshModels);
             toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses`);
         } catch (err) {
             toast.error(`Erreur: ${err.message}`);
@@ -132,8 +133,12 @@ const SceneEditor = ({ location = null }) => {
         setRegenLoading(section);
         try {
             const items = await regenerateSection(apiKey, location, section);
-            const updated = saveLocationData(modelId, accountId, { ...location, [sectionKey]: items });
-            if (updated) setAllModelsDatabase(updated);
+            console.log(`[Velvet] Regen ${section}:`, items.length, 'items');
+            // Save and force React to detect the change via deep copy
+            saveLocationData(modelId, accountId, { ...location, [sectionKey]: items });
+            // Re-read from localStorage to get a guaranteed fresh deep copy
+            const freshModels = JSON.parse(JSON.stringify(getSavedModels()));
+            setAllModelsDatabase(freshModels);
             toast.success(`${items.length} ${sectionLabel} régénérées`);
         } catch (err) {
             toast.error(`Erreur: ${err.message}`);

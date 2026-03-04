@@ -17,4 +17,7 @@ loadFromServer().then(() => {
       </ToastProvider>
     </React.StrictMode>,
   )
+}).catch(err => {
+  console.error('[Velvet] Fatal:', err);
+  document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:50px;font-family:system-ui"><h1>Erreur de démarrage</h1><p>' + err.message + '</p></div>';
 })
