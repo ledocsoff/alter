@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
-import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate } from '../../utils/storage';
-import { TrashIcon } from '../../components/Icons';
+import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData } from '../../utils/storage';
+import { generateLocationPresets } from '../../utils/googleAI';
+import { TrashIcon, SparklesIcon } from '../../components/Icons';
 import { pickRandom } from '../../utils/helpers';
 
 /* ─── Stable sub-components (defined outside render to avoid focus loss) ─── */
@@ -24,17 +25,17 @@ const Section = ({ id, label, children, isOpen, onToggle }) => (
 /* ─── Main Component ─── */
 
 const SceneEditor = ({ isSandbox = false, location = null }) => {
-    const { scene, updateSceneEntry, setScene } = useStudio();
+    const { scene, updateSceneEntry, setScene, allModelsDatabase, setAllModelsDatabase, modelId, accountId } = useStudio();
     const toast = useToast();
     const [showTemplates, setShowTemplates] = useState(false);
     const [templateName, setTemplateName] = useState('');
     const [templates, setTemplates] = useState(() => getSceneTemplates());
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [activePresetId, setActivePresetId] = useState(null);
+    const [isGeneratingPresets, setIsGeneratingPresets] = useState(false);
 
-    // Use location-specific presets when available, fallback to generic
+    // Use location-specific presets when available
     const hasAiPresets = !isSandbox && location?.ai_presets?.length > 0;
-    const waitingForPresets = !isSandbox && location && !hasAiPresets;
     const presets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
 
     /* ─── Detect active preset ─── */
@@ -223,42 +224,64 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                             <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
                         )}
                     </div>
-                    {waitingForPresets ? (
-                        <div className="flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-violet-500/15 bg-violet-500/[0.02]">
-                            <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mb-3" />
-                            <p className="text-[12px] text-violet-300 font-medium">Génération des ambiances IA...</p>
-                            <p className="text-[10px] text-zinc-600 mt-1">8 presets adaptés à ce lieu</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-1.5">
-                            {presets.map(preset => {
-                                const isActive = detectedPreset === preset.id;
-                                return (
-                                    <button
-                                        key={preset.id}
-                                        onClick={() => applyPreset(preset)}
-                                        className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
-                                            ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
-                                            : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-[13px]">{preset.label.split(' ')[0]}</span>
-                                            <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
-                                                {preset.label.split(' ').slice(1).join(' ')}
-                                            </span>
-                                        </div>
-                                        <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
-                                            {preset.desc}
-                                        </p>
-                                        {isActive && (
-                                            <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
-                                        )}
-                                    </button>
-                                );
-                            })}
+                    {!isSandbox && location && !hasAiPresets && (
+                        <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
+                            <p className="text-[11px] text-zinc-500">Aucune ambiance IA pour ce lieu</p>
+                            <button
+                                onClick={async () => {
+                                    const apiKey = getApiKey();
+                                    if (!apiKey) { toast.error('Clé API requise'); return; }
+                                    setIsGeneratingPresets(true);
+                                    try {
+                                        const presets = await generateLocationPresets(apiKey, location);
+                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: presets });
+                                        if (updated) setAllModelsDatabase(updated);
+                                        toast.success(`${presets.length} ambiances IA générées`);
+                                    } catch (err) {
+                                        toast.error(`Erreur: ${err.message}`);
+                                    } finally {
+                                        setIsGeneratingPresets(false);
+                                    }
+                                }}
+                                disabled={isGeneratingPresets}
+                                className={`text-[11px] velvet-btn-primary py-1.5 px-3 flex items-center gap-1.5 ${isGeneratingPresets ? 'opacity-50 cursor-wait' : ''}`}
+                            >
+                                {isGeneratingPresets ? (
+                                    <><div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Génération...</>
+                                ) : (
+                                    <><SparklesIcon size={12} /> Générer les ambiances IA</>
+                                )}
+                            </button>
                         </div>
                     )}
+                    <div className="grid grid-cols-2 gap-1.5">
+                        {presets.map(preset => {
+                            const isActive = detectedPreset === preset.id;
+                            return (
+                                <button
+                                    key={preset.id}
+                                    onClick={() => applyPreset(preset)}
+                                    className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
+                                        ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
+                                        : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[13px]">{preset.label.split(' ')[0]}</span>
+                                        <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
+                                            {preset.label.split(' ').slice(1).join(' ')}
+                                        </span>
+                                    </div>
+                                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
+                                        {preset.desc}
+                                    </p>
+                                    {isActive && (
+                                        <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* ═══ ZONE 2: TENUE ═══ */}

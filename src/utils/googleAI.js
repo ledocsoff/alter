@@ -525,7 +525,7 @@ export const autoFillLocation = async (apiKey, locationName) => {
       parts: [{ text: `Location concept: "${locationName}"\n\n${LOCATION_AUTOFILL_PROMPT}` }],
     }],
     generationConfig: {
-      responseModalities: ['TEXT'],
+      responseMimeType: 'application/json',
       temperature: 0.3,
       maxOutputTokens: 1024,
     },
@@ -621,9 +621,9 @@ export const generateLocationPresets = async (apiKey, location) => {
       parts: [{ text: `${locationContext}\n\n${LOCATION_PRESETS_PROMPT}` }],
     }],
     generationConfig: {
-      responseModalities: ['TEXT'],
+      responseMimeType: 'application/json',
       temperature: 0.7,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
     },
   };
 
