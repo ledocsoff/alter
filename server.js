@@ -302,11 +302,11 @@ app.post('/api/restore/:n', (req, res) => {
 });
 
 // ============================================
-// GALLERY — Images stored on filesystem
+// GALLERY — Optimized: metadata-only list + URL-based image serving
 // ============================================
 const GALLERY_DIR = path.join(SAVE_DIR, 'gallery');
 const GALLERY_INDEX = path.join(GALLERY_DIR, 'index.json');
-const MAX_GALLERY = 100;
+const MAX_GALLERY = 200;
 
 if (!fs.existsSync(GALLERY_DIR)) {
     fs.mkdirSync(GALLERY_DIR, { recursive: true });
@@ -329,24 +329,59 @@ const writeGalleryIndex = (entries) => {
     writeDataAtomic(GALLERY_INDEX, entries);
 };
 
-// List gallery (returns metadata + base64 data)
-app.get('/api/gallery', (_req, res) => {
+// List gallery — returns metadata ONLY (no base64), with pagination
+// Query params: ?page=1&limit=20&starred=true
+app.get('/api/gallery', (req, res) => {
     const entries = readGalleryIndex();
-    const result = entries.map(entry => {
-        try {
-            // Prevent path traversal
-            const safeName = path.basename(entry.filename);
-            const imgPath = path.join(GALLERY_DIR, safeName);
-            if (fs.existsSync(imgPath)) {
-                const base64 = fs.readFileSync(imgPath, 'base64');
-                return { ...entry, base64 };
-            }
-            return { ...entry, base64: null };
-        } catch {
-            return { ...entry, base64: null };
-        }
+    const starred = req.query.starred === 'true';
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+
+    let filtered = starred ? entries.filter(e => e.starred) : entries;
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+    const paged = filtered.slice(offset, offset + limit);
+
+    // Return metadata only — images fetched via /api/gallery/:id/image
+    const items = paged.map(({ prompt, scene, ...meta }) => ({
+        ...meta,
+        hasPrompt: !!prompt,
+        // Include image URL for direct <img src> usage
+        imageUrl: `/api/gallery/${meta.id}/image`,
+    }));
+
+    res.json({
+        items,
+        pagination: { page, limit, total, totalPages },
     });
-    res.json(result);
+});
+
+// Get single gallery entry metadata + prompt (for lightbox detail view)
+app.get('/api/gallery/:id', (req, res) => {
+    if (!isValidGalleryId(req.params.id)) return res.status(400).json({ error: 'ID invalide' });
+    const entries = readGalleryIndex();
+    const entry = entries.find(e => e.id === req.params.id);
+    if (!entry) return res.status(404).json({ error: 'Image introuvable' });
+    res.json({ ...entry, imageUrl: `/api/gallery/${entry.id}/image` });
+});
+
+// Serve gallery image as binary (for <img src="/api/gallery/:id/image">)
+app.get('/api/gallery/:id/image', (req, res) => {
+    if (!isValidGalleryId(req.params.id)) return res.status(400).end();
+    const entries = readGalleryIndex();
+    const entry = entries.find(e => e.id === req.params.id);
+    if (!entry) return res.status(404).end();
+
+    const safeName = path.basename(entry.filename);
+    const imgPath = path.join(GALLERY_DIR, safeName);
+    if (!fs.existsSync(imgPath)) return res.status(404).end();
+
+    // Set cache headers — images are immutable (ID-based filenames)
+    res.setHeader('Content-Type', entry.mimeType || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Content-Length', fs.statSync(imgPath).size);
+    fs.createReadStream(imgPath).pipe(res);
 });
 
 // Save a new gallery image
@@ -386,7 +421,7 @@ app.post('/api/gallery', (req, res) => {
             id,
             filename,
             mimeType: safeMime,
-            prompt: (prompt || '').slice(0, 5000), // Limit prompt length
+            prompt: (prompt || '').slice(0, 5000),
             scene: scene || {},
             modelName: (modelName || '').slice(0, 100),
             locationName: (locationName || 'Sandbox').slice(0, 100),
@@ -394,6 +429,7 @@ app.post('/api/gallery', (req, res) => {
             seed: seed || null,
             timestamp: Date.now(),
             starred: false,
+            fileSize: imgBuffer.length,
         };
         entries.unshift(entry);
 
@@ -431,7 +467,6 @@ app.delete('/api/gallery/:id', (req, res) => {
     const idx = entries.findIndex(e => e.id === req.params.id);
     if (idx === -1) return res.status(404).json({ error: 'Image introuvable' });
     const [removed] = entries.splice(idx, 1);
-    // path.basename prevents path traversal
     const removedPath = path.join(GALLERY_DIR, path.basename(removed.filename));
     try { fs.unlinkSync(removedPath); } catch { /* ignore */ }
     writeGalleryIndex(entries);

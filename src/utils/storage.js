@@ -455,16 +455,34 @@ export const getLocationLockScore = (location) => {
 // GALERIE D'IMAGES — Server filesystem API
 // ============================================
 
-export const getGallery = async () => {
+export const getGallery = async (options = {}) => {
     try {
-        const res = await fetch(`${API_BASE}/api/gallery`);
+        const params = new URLSearchParams();
+        if (options.page) params.set('page', options.page);
+        if (options.limit) params.set('limit', options.limit);
+        if (options.starred) params.set('starred', 'true');
+        const url = `${API_BASE}/api/gallery${params.toString() ? '?' + params : ''}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
         console.warn('[Velvet] Erreur chargement galerie:', err.message);
-        return [];
+        return { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
     }
 };
+
+export const getGalleryImage = async (imageId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/gallery/${imageId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur chargement image:', err.message);
+        return null;
+    }
+};
+
+export const galleryImageUrl = (imageId) => `${API_BASE}/api/gallery/${imageId}/image`;
 
 export const saveToGallery = async (imageData, meta = {}) => {
     try {

@@ -92,7 +92,7 @@ const GenerationView = () => {
             locationId,
             modelName: mdl.name,
             locationName: isSandbox ? 'Sandbox' : loc?.name,
-            path: `/models/${modelId}/accounts/${accountId}/${isSandbox ? 'sandbox' : `locations/${locationId}/studio`}`,
+            path: `/models/${modelId}/accounts/${accountId}/locations/${isSandbox ? 'sandbox' : locationId}/generate`,
         });
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
