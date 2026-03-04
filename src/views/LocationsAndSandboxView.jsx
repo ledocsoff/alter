@@ -83,9 +83,9 @@ const LocationsAndSandboxView = () => {
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
     const handleSaveLocation = async () => {
-        if (!newLocName.trim()) return;
-        const finalEnvironment = newLocEnvCustom.trim() || (isCustomEnv ? '' : newLocEnvDrop);
-        if (!finalEnvironment) return;
+        if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
+        const finalEnvironment = newLocEnvCustom.trim() || newLocEnvDrop;
+        if (!finalEnvironment) { toast.error('Environnement requis'); return; }
 
         const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
 
@@ -113,13 +113,11 @@ const LocationsAndSandboxView = () => {
                 if (apiKey) {
                     setIsGeneratingPresets(true);
                     try {
-                        // Find the newly created location
                         const savedModel = updated.find(m => m.id === modelId);
                         const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
                         const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
                         if (savedLoc) {
                             const presets = await generateLocationPresets(apiKey, savedLoc);
-                            // Save presets back to location
                             const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: presets });
                             if (updated2) setAllModelsDatabase(updated2);
                             toast.success(`${presets.length} ambiances IA générées`);
@@ -131,6 +129,8 @@ const LocationsAndSandboxView = () => {
                     }
                 }
             }
+        } else {
+            toast.error('Erreur: impossible de sauvegarder');
         }
     };
 
