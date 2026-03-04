@@ -1,3 +1,4 @@
+// v5.0.0 — CRUD buttons always visible, navigation separated
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
