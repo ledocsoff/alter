@@ -7,6 +7,30 @@ import logger from './logger';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODEL_ID = 'gemini-3-pro-image-preview';
 
+// ============================================
+// RETRY — backoff exponentiel pour erreurs transitoires
+// ============================================
+const RETRYABLE_CODES = [429, 500, 502, 503, 504];
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 2000;
+
+const withRetry = async (fn, context = 'api') => {
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const isRetryable = err._retryable || err.message?.includes('fetch') || err.message?.includes('network');
+      if (!isRetryable || attempt === MAX_RETRIES) throw err;
+      const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      logger.warn(context, `Tentative ${attempt}/${MAX_RETRIES} echouee, retry dans ${delay / 1000}s...`, err.message);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+};
+
 export const validateApiKey = async (apiKey) => {
   logger.info('api', `Validation de cle API (...${apiKey.slice(-4)})`);
   try {
@@ -34,23 +58,24 @@ export const validateApiKey = async (apiKey) => {
 
 // conversationHistory: array of { role: 'user'|'model', parts: [...] }
 export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', conversationHistory = []) => {
-  const historyTurns = Math.floor(conversationHistory.length / 2);
-  logger.info('generation', `Lancement generation (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
-    model: MODEL_ID,
-    aspectRatio,
-    historyTurns,
-    promptLength: promptText.length,
-  });
+  return withRetry(async () => {
+    const historyTurns = Math.floor(conversationHistory.length / 2);
+    logger.info('generation', `Lancement generation (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
+      model: MODEL_ID,
+      aspectRatio,
+      historyTurns,
+      promptLength: promptText.length,
+    });
 
-  const contents = [
-    ...conversationHistory,
-    { role: 'user', parts: [{ text: promptText }] },
-  ];
+    const contents = [
+      ...conversationHistory,
+      { role: 'user', parts: [{ text: promptText }] },
+    ];
 
-  const body = {
-    system_instruction: {
-      parts: [{
-        text: `You are a photorealistic image generator that receives JSON anchor matrices.
+    const body = {
+      system_instruction: {
+        parts: [{
+          text: `You are a photorealistic image generator that receives JSON anchor matrices.
 
 ABSOLUTE RULES — VIOLATION IS FORBIDDEN:
 1. Reproduce EVERY field of the JSON literally. Each key describes a precise visual attribute.
@@ -65,86 +90,96 @@ ABSOLUTE RULES — VIOLATION IS FORBIDDEN:
 10. If reference images were provided earlier in this conversation, the generated person MUST match that exact face and body.
 
 OUTPUT: Generate a single photorealistic image matching ALL specifications above.` }]
-    },
-    contents,
-    generationConfig: {
-      responseModalities: ['IMAGE'],
-      imageConfig: {
-        aspectRatio: aspectRatio,
       },
-    },
-  };
+      contents,
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+        imageConfig: {
+          aspectRatio: aspectRatio,
+        },
+      },
+    };
 
-  const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
+    const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
 
-  const t0 = Date.now();
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+    const t0 = Date.now();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(fetchErr => {
+      const e = new Error(`Erreur reseau: ${fetchErr.message}`);
+      e._retryable = true;
+      throw e;
+    });
 
-  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `Erreur ${res.status}`;
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `Erreur ${res.status}`;
 
-    logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
+      logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
 
-    if (res.status === 503) throw new Error('Serveurs satures (503). Essayez de switcher sur votre autre cle API dans les reglages.');
-    if (res.status === 429) throw new Error('Quota depasse. Essayez votre autre cle API, ou attendez quelques minutes.');
-    if (res.status === 400 && msg.includes('safety')) throw new Error('Contenu filtre par les regles de securite.');
-    if (res.status === 403) {
-      if (msg.includes('Generative Language API')) {
-        throw new Error('Activez la "Generative Language API" dans votre projet GCP.');
+      if (RETRYABLE_CODES.includes(res.status)) {
+        const e = new Error(res.status === 429
+          ? 'Quota depasse. Essayez votre autre cle API, ou attendez quelques minutes.'
+          : `Serveurs satures (${res.status}). Retry automatique en cours...`);
+        e._retryable = true;
+        throw e;
       }
-      throw new Error('Cle API invalide ou acces refuse.');
+      if (res.status === 400 && msg.includes('safety')) throw new Error('Contenu filtre par les regles de securite.');
+      if (res.status === 403) {
+        if (msg.includes('Generative Language API')) {
+          throw new Error('Activez la "Generative Language API" dans votre projet GCP.');
+        }
+        throw new Error('Cle API invalide ou acces refuse.');
+      }
+      throw new Error(msg);
     }
-    throw new Error(msg);
-  }
 
-  logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
+    logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
 
-  const data = await res.json();
+    const data = await res.json();
 
-  const candidates = data.candidates || [];
-  if (candidates.length === 0) {
-    logger.warn('generation', 'Aucun candidat dans la reponse', data);
-    throw new Error('Aucun resultat genere. Le contenu a peut-etre ete filtre.');
-  }
-
-  const parts = candidates[0]?.content?.parts || [];
-  let imageBase64 = null;
-  let mimeType = 'image/png';
-  let textResponse = '';
-
-  for (const part of parts) {
-    if (part.inlineData) {
-      imageBase64 = part.inlineData.data;
-      mimeType = part.inlineData.mimeType || 'image/png';
+    const candidates = data.candidates || [];
+    if (candidates.length === 0) {
+      logger.warn('generation', 'Aucun candidat dans la reponse', data);
+      throw new Error('Aucun resultat genere. Le contenu a peut-etre ete filtre.');
     }
-    if (part.text) {
-      textResponse += part.text;
+
+    const parts = candidates[0]?.content?.parts || [];
+    let imageBase64 = null;
+    let mimeType = 'image/png';
+    let textResponse = '';
+
+    for (const part of parts) {
+      if (part.inlineData) {
+        imageBase64 = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || 'image/png';
+      }
+      if (part.text) {
+        textResponse += part.text;
+      }
     }
-  }
 
-  if (!imageBase64) {
-    logger.error('generation', 'Pas d\'image dans la reponse', { textResponse, partsCount: parts.length });
-    throw new Error('Aucune image dans la reponse. ' + (textResponse || 'Essayez un prompt different.'));
-  }
+    if (!imageBase64) {
+      logger.error('generation', 'Pas d\'image dans la reponse', { textResponse, partsCount: parts.length });
+      throw new Error('Aucune image dans la reponse. ' + (textResponse || 'Essayez un prompt different.'));
+    }
 
-  const imgSizeKb = Math.round((imageBase64.length * 3) / 4 / 1024);
-  logger.success('generation', `Image generee: ${mimeType} (~${imgSizeKb} KB) en ${elapsed}s`);
+    const imgSizeKb = Math.round((imageBase64.length * 3) / 4 / 1024);
+    logger.success('generation', `Image generee: ${mimeType} (~${imgSizeKb} KB) en ${elapsed}s`);
 
-  return {
-    imageBase64,
-    mimeType,
-    textResponse,
-    dataUrl: `data:${mimeType};base64,${imageBase64}`,
-    modelParts: [{ inlineData: { mimeType, data: imageBase64 } }],
-  };
+    return {
+      imageBase64,
+      mimeType,
+      textResponse,
+      dataUrl: `data:${mimeType};base64,${imageBase64}`,
+      modelParts: [{ inlineData: { mimeType, data: imageBase64 } }],
+    };
+  }, 'generation'); // end withRetry
 };
 
 // ============================================

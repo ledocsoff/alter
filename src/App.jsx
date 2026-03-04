@@ -254,11 +254,11 @@ const App = () => (
       <Suspense fallback={<AppLayout><LoadingFallback /></AppLayout>}>
         <Routes>
           <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
-          <Route path="/models/new" element={<AppLayout><ModelEditorShell mode="create" /></AppLayout>} />
-          <Route path="/models/:modelId/edit" element={<AppLayout><ModelEditorShell mode="edit" /></AppLayout>} />
-          <Route path="/models/:modelId/accounts" element={<AppLayout><AccountsView /></AppLayout>} />
-          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><LocationsAndSandboxView /></AppLayout>} />
-          <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><GenerationView /></AppLayout>} />
+          <Route path="/models/new" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="create" /></ErrorBoundary></AppLayout>} />
+          <Route path="/models/:modelId/edit" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="edit" /></ErrorBoundary></AppLayout>} />
+          <Route path="/models/:modelId/accounts" element={<AppLayout><ErrorBoundary><AccountsView /></ErrorBoundary></AppLayout>} />
+          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><ErrorBoundary><LocationsAndSandboxView /></ErrorBoundary></AppLayout>} />
+          <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><ErrorBoundary><GenerationView /></ErrorBoundary></AppLayout>} />
           <Route path="*" element={<AppLayout><ModelsView /></AppLayout>} />
         </Routes>
       </Suspense>

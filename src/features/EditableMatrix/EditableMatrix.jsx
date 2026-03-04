@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { PencilIcon } from '../../components/Icons';
 
 // Render JSON with editable null fields
@@ -99,9 +99,19 @@ const EditableMatrix = ({ matrix, onChange }) => {
         return <span className="text-zinc-400">{String(value)}</span>;
     };
 
+    const estimatedTokens = useMemo(() => {
+        const jsonStr = JSON.stringify(matrix);
+        return Math.ceil(jsonStr.length / 4); // ~4 chars per token
+    }, [matrix]);
+
     return (
         <div className="text-[11px] font-mono leading-relaxed">
             {renderValue(matrix, '$', 0)}
+            <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center gap-2 text-[10px] text-zinc-600">
+                <span>~{estimatedTokens.toLocaleString()} tokens estimes</span>
+                <span>·</span>
+                <span>{JSON.stringify(matrix).length.toLocaleString()} chars</span>
+            </div>
         </div>
     );
 };

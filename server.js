@@ -47,7 +47,7 @@ const corsMiddleware = (req, res, next) => {
 };
 
 // ============================================
-// VALIDATION — vérifie la structure du payload
+// VALIDATION — vérifie + sanitise la structure du payload
 // ============================================
 const validatePayload = (data) => {
     if (!data || typeof data !== 'object') return 'Payload invalide: objet attendu';
@@ -55,12 +55,26 @@ const validatePayload = (data) => {
     if (data.templates !== undefined && !Array.isArray(data.templates)) return 'Payload invalide: templates doit être un tableau';
     if (data.history !== undefined && !Array.isArray(data.history)) return 'Payload invalide: history doit être un tableau';
 
-    // Validate models have required fields
+    // Validate and sanitize models
     for (let i = 0; i < data.models.length; i++) {
         const m = data.models[i];
         if (!m || typeof m !== 'object') return `Modèle #${i + 1}: objet invalide`;
         if (!m.id || typeof m.id !== 'string') return `Modèle #${i + 1}: id manquant`;
         if (!m.name || typeof m.name !== 'string') return `Modèle #${i + 1}: nom manquant`;
+        // Auto-fix missing arrays
+        if (!Array.isArray(m.accounts)) m.accounts = [];
+        // Validate accounts
+        for (let j = 0; j < m.accounts.length; j++) {
+            const a = m.accounts[j];
+            if (!a || typeof a !== 'object') { m.accounts.splice(j--, 1); continue; }
+            if (!a.id) { m.accounts.splice(j--, 1); continue; }
+            if (!Array.isArray(a.locations)) a.locations = [];
+            // Validate locations
+            for (let k = 0; k < a.locations.length; k++) {
+                const l = a.locations[k];
+                if (!l || typeof l !== 'object' || !l.id) { a.locations.splice(k--, 1); continue; }
+            }
+        }
     }
 
     return null;

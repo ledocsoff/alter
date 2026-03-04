@@ -4,6 +4,7 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { getSavedModels, saveModelData, getApiKey, uploadModelRefs, getModelRefs, deleteModelRef, refImageUrl } from '../utils/storage';
 import { extractModelFromPhotos } from '../utils/googleAI';
+import { compressImage } from '../utils/imageCompression';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
 import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
 import { SparklesIcon, FileTextIcon, CameraIcon } from '../components/Icons';
@@ -71,6 +72,14 @@ const ModelEditorShell = ({ mode }) => {
     }
   }, [mode, modelId, setModel]);
 
+  // #10: Cleanup ObjectURLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      photos.forEach(p => { if (p.preview) URL.revokeObjectURL(p.preview); });
+      pendingRefs.forEach(r => { if (r.dataUrl) URL.revokeObjectURL(r.dataUrl); });
+    };
+  }, []); // only on unmount
+
   // Reference photo handlers
   const handleRefUpload = async (e) => {
     const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
@@ -79,15 +88,12 @@ const ModelEditorShell = ({ mode }) => {
     if (toAdd.length === 0) { toast.info('Maximum 5 photos de reference'); return; }
 
     const newRefs = await Promise.all(toAdd.map(async (file) => {
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(file);
-      });
-      return { base64, mimeType: file.type || 'image/jpeg', dataUrl: URL.createObjectURL(file) };
+      const compressed = await compressImage(file);
+      return { base64: compressed.base64, mimeType: compressed.mimeType, dataUrl: URL.createObjectURL(compressed.file) };
     }));
     setPendingRefs(prev => [...prev, ...newRefs]);
-    toast.success(`${newRefs.length} photo(s) ajoutee(s)`);
+    const saved = newRefs.some(r => r.compressed) ? ' (compressees)' : '';
+    toast.success(`${newRefs.length} photo(s) ajoutee(s)${saved}`);
     e.target.value = '';
   };
 
@@ -172,16 +178,12 @@ const ModelEditorShell = ({ mode }) => {
     if (files.length === 0) return;
 
     const newPhotos = await Promise.all(files.map(async (file) => {
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(file);
-      });
+      const compressed = await compressImage(file);
       return {
-        file,
-        preview: URL.createObjectURL(file),
-        base64,
-        mimeType: file.type || 'image/jpeg',
+        file: compressed.file,
+        preview: URL.createObjectURL(compressed.file),
+        base64: compressed.base64,
+        mimeType: compressed.mimeType,
       };
     }));
 

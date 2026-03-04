@@ -31,7 +31,9 @@ const GenerationView = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [showRecap, setShowRecap] = useState(false);
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-    const [rightPanel, setRightPanel] = useState('image');
+    const [rightPanel, setRightPanel] = useState(() => {
+        try { return sessionStorage.getItem('velvet_last_tab') || 'image'; } catch { return 'image'; }
+    });
     const [enrichedMatrix, setEnrichedMatrix] = useState(null);
     const [isEnriching, setIsEnriching] = useState(false);
     const [galleryKey, setGalleryKey] = useState(0);
@@ -96,6 +98,23 @@ const GenerationView = () => {
         });
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
+
+    // Quick Win B: Persist last tab
+    useEffect(() => {
+        try { sessionStorage.setItem('velvet_last_tab', rightPanel); } catch { }
+    }, [rightPanel]);
+
+    // Quick Win D: Ctrl+G to generate
+    useEffect(() => {
+        const handler = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+                e.preventDefault();
+                if (imagePreviewRef.current?.handleGenerate) imagePreviewRef.current.handleGenerate();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, []);
 
     // Auto-load persistent model reference photos
     useEffect(() => {

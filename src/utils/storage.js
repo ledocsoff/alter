@@ -596,15 +596,28 @@ export const getModelRefs = async (modelId) => {
 
 /**
  * Load a single reference photo as base64 (for prompt generation)
+ * Uses in-memory cache to avoid redundant server calls
  * @param {string} modelId
  * @param {string} refId
  * @returns {Promise<{base64: string, mimeType: string}|null>}
  */
+const _refCache = new Map();
+let _refCacheModelId = null;
+
 export const loadModelRefBase64 = async (modelId, refId) => {
+    // Invalidate cache if model changed
+    if (_refCacheModelId !== modelId) {
+        _refCache.clear();
+        _refCacheModelId = modelId;
+    }
+    const cacheKey = `${modelId}:${refId}`;
+    if (_refCache.has(cacheKey)) return _refCache.get(cacheKey);
     try {
         const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}/${encodeURIComponent(refId)}/base64`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
+        const data = await res.json();
+        _refCache.set(cacheKey, data);
+        return data;
     } catch (err) {
         console.warn('[Velvet] Erreur load ref base64:', err.message);
         return null;
