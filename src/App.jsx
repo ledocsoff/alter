@@ -175,7 +175,7 @@ const AppLayout = ({ children }) => {
           >
             <div className={`w-1.5 h-1.5 rounded-full transition-colors ${!serverOnline ? 'bg-red-500 animate-pulse' : savedFlash ? 'bg-emerald-400' : 'bg-emerald-500'}`}></div>
             <span className={`text-[10px] font-medium transition-colors ${!serverOnline ? 'text-red-400' : savedFlash ? 'text-emerald-400' : 'text-zinc-600'}`}>
-              {!serverOnline ? 'Hors ligne' : savedFlash ? '✓' : 'Sync'}
+              {!serverOnline ? 'Hors ligne' : savedFlash ? 'OK' : 'Sync'}
             </span>
           </div>
           <div className="h-3 w-px bg-zinc-800/60"></div>

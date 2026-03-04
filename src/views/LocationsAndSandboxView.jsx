@@ -174,7 +174,7 @@ const LocationsAndSandboxView = () => {
             if (result.anchor_details) setNewLocAnchorDetails(result.anchor_details);
             if (result.color_palette) setNewLocColorPalette(result.color_palette);
             if (result.negative_prompt) setNewLocNegativePrompt(result.negative_prompt);
-            toast.success('Lieu auto-rempli par l\'IA ✨');
+            toast.success('Lieu auto-rempli par l\'IA');
         } catch (err) {
             toast.error(`Auto-fill echoue: ${err.message}`);
         } finally {
@@ -416,7 +416,7 @@ const LocationsAndSandboxView = () => {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 pl-[22px]">
-                                            {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">🎲 {loc.seed}</span>}
+                                            {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
                                             {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
                                             {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
                                             {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}

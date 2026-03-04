@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'velvet_studio_v4';
 const HISTORY_KEY = 'velvet_history';
 const TEMPLATES_KEY = 'velvet_templates';
-const GALLERY_KEY = 'velvet_gallery';
+
 const API_KEY_KEY = 'velvet_api_key';
 const API_PROVIDER_KEY = 'velvet_api_provider'; // 'ai_studio' | 'vertex_ai'
 
@@ -54,7 +54,7 @@ export const syncNow = () => {
         const sent = navigator.sendBeacon(`${API_BASE}/api/save`, new Blob([payload], { type: 'application/json' }));
         if (sent) hasPendingSync = false;
     } catch (err) {
-        console.warn('[NanaBanana] Sync beacon echoue:', err.message);
+        console.warn('[Velvet] Sync beacon echoue:', err.message);
     }
 };
 
@@ -85,10 +85,10 @@ export const loadFromServer = async () => {
             localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
         }
 
-        console.log(`[NanaBanana] Charge depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
+        console.log(`[Velvet] Charge depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
         return data.models || [];
     } catch (err) {
-        console.warn('[NanaBanana] Serveur indisponible, fallback localStorage');
+        console.warn('[Velvet] Serveur indisponible, fallback localStorage');
         return getSavedModels();
     }
 };
@@ -171,7 +171,7 @@ const _saveAll = (data) => {
 // ============================================
 export const saveModelData = (newModel) => {
     const models = getSavedModels();
-    const id = newModel.id || `mod_${crypto.randomUUID()}`;
+    const id = newModel.id || `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const modelData = {
         ...newModel,
         id,
@@ -201,7 +201,7 @@ export const saveAccountData = (modelId, accountData) => {
     const model = models.find(m => m.id === modelId);
     if (!model) return null;
 
-    const id = accountData.id || `acc_${crypto.randomUUID()}`;
+    const id = accountData.id || `acc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const account = {
         ...accountData,
         id,
@@ -239,7 +239,7 @@ export const saveLocationData = (modelId, accountId, locationData) => {
     const account = model?.accounts.find(a => a.id === accountId);
     if (!account) return null;
 
-    const id = locationData.id || `loc_${crypto.randomUUID()}`;
+    const id = locationData.id || `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
     // Préserver la seed existante, ou en générer une nouvelle
     const existingLoc = account.locations.find(l => l.id === id);
@@ -413,7 +413,7 @@ export const duplicateLocation = (fromModelId, fromAccountId, locationId, toMode
     const { id, ...locWithoutId } = location;
     const newLoc = {
         ...locWithoutId,
-        id: `loc_${crypto.randomUUID()}`,
+        id: `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         name: `${location.name} (copie)`,
     };
     toAccount.locations.push(newLoc);
