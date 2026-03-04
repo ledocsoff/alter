@@ -1,26 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
-import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
+import { SCENE_OPTIONS, OUTFIT_PRESETS, SCENE_PRESETS } from '../../constants/sceneOptions';
 import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData, getSavedModels } from '../../utils/storage';
 import { generateLocationPresets } from '../../utils/googleAI';
 import { TrashIcon, SparklesIcon } from '../../components/Icons';
-
-
-/* ─── Stable sub-components (defined outside render to avoid focus loss) ─── */
-
-const Section = ({ id, label, children, isOpen, onToggle }) => (
-    <div className="border-b border-white/[0.04] last:border-0">
-        <button
-            onClick={() => onToggle(id)}
-            className="w-full flex items-center justify-between py-2.5 group"
-        >
-            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{label}</span>
-            <span className={`text-[9px] text-zinc-600 transition-transform ${isOpen?.[id] ? 'rotate-0' : '-rotate-90'}`}>▼</span>
-        </button>
-        {isOpen?.[id] && <div className="pb-3">{children}</div>}
-    </div>
-);
 
 /* ─── Main Component ─── */
 
@@ -129,7 +113,7 @@ const SceneEditor = ({ location = null }) => {
         setTemplates(updated);
     };
 
-    const toggleSection = (key) => setShowAdvanced(prev => prev === key ? false : key);
+
 
     return (
         <div className="bg-[#0e0e10] border border-white/[0.05] rounded-xl p-4 flex flex-col h-full overflow-hidden animate-fade-in">
@@ -216,16 +200,13 @@ const SceneEditor = ({ location = null }) => {
 
                 {/* ═══ ZONE 1: AMBIANCE PRESETS ═══ */}
                 <div className="mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                                {hasAiPresets ? `🧠 Ambiances` : '📸 Ambiance'}
-                            </span>
-                            {hasAiPresets && (
-                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
-                            )}
-                        </div>
-
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                            {hasAiPresets ? `🧠 Ambiances` : '📸 Ambiance'}
+                        </span>
+                        {hasAiPresets && (
+                            <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                        )}
                     </div>
                     {location && !hasAiPresets && (
                         <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
@@ -275,14 +256,11 @@ const SceneEditor = ({ location = null }) => {
 
                 {/* ═══ ZONE 2: TENUE ═══ */}
                 <div className="mb-3 border-t border-white/[0.04] pt-3">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">👗 Tenues</span>
-                            {location?.ai_outfits?.length > 0 && (
-                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
-                            )}
-                        </div>
-
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">👗 Tenues</span>
+                        {location?.ai_outfits?.length > 0 && (
+                            <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                         {(location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS).map(item => {
@@ -321,16 +299,13 @@ const SceneEditor = ({ location = null }) => {
                     />
                 </div>
 
-                {/* ═══ ZONE 3: POSE (promoted to main section) ═══ */}
+                {/* ═══ ZONE 3: POSE ═══ */}
                 <div className="mb-3 border-t border-white/[0.04] pt-3">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">🤸 Poses</span>
-                            {location?.ai_poses?.length > 0 && (
-                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
-                            )}
-                        </div>
-
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">🤸 Poses</span>
+                        {location?.ai_poses?.length > 0 && (
+                            <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                         {(location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => {
@@ -415,10 +390,8 @@ const SceneEditor = ({ location = null }) => {
                         </div>
                         <span className={`text-[9px] text-zinc-600 transition-transform ${showAdvanced ? 'rotate-0' : '-rotate-90'}`}>▼</span>
                     </button>
-
                     {showAdvanced && (
                         <div className="pb-3 space-y-3 animate-fade-in">
-
                             {/* CAMERA + EXPRESSION */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -440,8 +413,6 @@ const SceneEditor = ({ location = null }) => {
                                     </select>
                                 </div>
                             </div>
-
-
                             {/* NEGATIVE PROMPT */}
                             <div>
                                 <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Éléments à éviter</span>
@@ -458,7 +429,7 @@ const SceneEditor = ({ location = null }) => {
                 </div>
 
             </div>
-        </div >
+        </div>
     );
 };
 

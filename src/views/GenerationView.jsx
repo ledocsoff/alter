@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE } from '../constants/sceneOptions';
-import { saveLocationData, generateSeed, getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
+import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
