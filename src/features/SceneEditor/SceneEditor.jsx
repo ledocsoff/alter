@@ -3,7 +3,7 @@ import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
 import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData } from '../../utils/storage';
-import { generateLocationPresets } from '../../utils/googleAI';
+import { generateLocationPresets, regenerateSection } from '../../utils/googleAI';
 import { TrashIcon, SparklesIcon } from '../../components/Icons';
 import { pickRandom } from '../../utils/helpers';
 
@@ -104,7 +104,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
         toast.info(`🎲 ${preset.label} + ${outfit.label}`);
     };
 
-    /* ─── Generate AI presets ─── */
+    /* ─── Generate ALL AI data ─── */
     const handleGenerateAI = async () => {
         const apiKey = getApiKey();
         if (!apiKey) { toast.error('Clé API requise'); return; }
@@ -125,6 +125,29 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
             setIsGeneratingPresets(false);
         }
     };
+
+    /* ─── Regenerate a single section ─── */
+    const [regenLoading, setRegenLoading] = useState(null); // 'presets' | 'outfits' | 'poses' | null
+    const handleRegenSection = async (section) => {
+        const apiKey = getApiKey();
+        if (!apiKey) { toast.error('Clé API requise'); return; }
+        const sectionKey = section === 'presets' ? 'ai_presets' : section === 'outfits' ? 'ai_outfits' : 'ai_poses';
+        const sectionLabel = section === 'presets' ? 'ambiances' : section === 'outfits' ? 'tenues' : 'poses';
+        setRegenLoading(section);
+        try {
+            const items = await regenerateSection(apiKey, location, section);
+            const updated = saveLocationData(modelId, accountId, { ...location, [sectionKey]: items });
+            if (updated) setAllModelsDatabase(updated);
+            toast.success(`${items.length} ${sectionLabel} régénérées`);
+        } catch (err) {
+            toast.error(`Erreur: ${err.message}`);
+        } finally {
+            setRegenLoading(null);
+        }
+    };
+
+    /* ─── Collapsible details ─── */
+    const [showDetails, setShowDetails] = useState(false);
 
     /* ─── Templates ─── */
     const handleSaveTemplate = () => {
@@ -246,27 +269,32 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
 
                 {/* ═══ ZONE 1: AMBIANCE PRESETS ═══ */}
-                <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : (!isSandbox && location) ? `📸 Ambiance — ${location.name}` : '📸 Ambiance'}
-                        </span>
+                <div className="mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                                {hasAiPresets ? `🧠 Ambiances` : '📸 Ambiance'}
+                            </span>
+                            {hasAiPresets && (
+                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                            )}
+                        </div>
                         {hasAiPresets && (
                             <button
-                                onClick={handleGenerateAI}
-                                disabled={isGeneratingPresets}
-                                className="text-[9px] text-zinc-600 hover:text-violet-400 transition-colors flex items-center gap-1"
-                                title="Régénérer les ambiances, tenues et poses IA"
+                                onClick={() => handleRegenSection('presets')}
+                                disabled={regenLoading === 'presets'}
+                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
+                                title="Régénérer les ambiances"
                             >
-                                {isGeneratingPresets ? (
+                                {regenLoading === 'presets' ? (
                                     <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
-                                ) : '♻️'}
+                                ) : (<><span className="text-[11px]">♻️</span></>)}
                             </button>
                         )}
                     </div>
                     {!isSandbox && location && !hasAiPresets && (
                         <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
-                            <p className="text-[11px] text-zinc-500">Aucune ambiance IA pour ce lieu</p>
+                            <p className="text-[11px] text-zinc-500">Aucune ambiance IA</p>
                             <button
                                 onClick={handleGenerateAI}
                                 disabled={isGeneratingPresets}
@@ -275,7 +303,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                                 {isGeneratingPresets ? (
                                     <><div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Génération...</>
                                 ) : (
-                                    <><SparklesIcon size={12} /> Générer les ambiances IA</>
+                                    <><SparklesIcon size={12} /> Générer tout avec l'IA</>
                                 )}
                             </button>
                         </div>
@@ -311,13 +339,25 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 </div>
 
                 {/* ═══ ZONE 2: TENUE ═══ */}
-                <div className="mb-4 border-t border-white/[0.04] pt-3">
-                    <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                            {(!isSandbox && location?.ai_outfits?.length > 0) ? `👗 Tenues — ${location.name}` : '👗 Tenue'}
-                        </span>
+                <div className="mb-3 border-t border-white/[0.04] pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">👗 Tenue</span>
+                            {!isSandbox && location?.ai_outfits?.length > 0 && (
+                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                            )}
+                        </div>
                         {!isSandbox && location?.ai_outfits?.length > 0 && (
-                            <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
+                            <button
+                                onClick={() => handleRegenSection('outfits')}
+                                disabled={regenLoading === 'outfits'}
+                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
+                                title="Régénérer les tenues"
+                            >
+                                {regenLoading === 'outfits' ? (
+                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                                ) : (<><span className="text-[11px]">♻️</span></>)}
+                            </button>
                         )}
                     </div>
                     <div className="grid grid-cols-3 gap-1.5 mb-2">
@@ -343,31 +383,92 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                     />
                 </div>
 
-                {/* ═══ DÉTAILS LIBRES ═══ */}
-                <div className="mb-4 border-t border-white/[0.04] pt-3">
-                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                        ✏️ Détails libres <span className="normal-case font-normal text-zinc-600">personnalise cette photo</span>
-                    </span>
-                    <textarea
-                        value={scene.custom_details || ''}
-                        onChange={(e) => updateSceneEntry('custom_details', e.target.value)}
-                        placeholder="Ex: cheveux mouillés, lunettes de soleil, tenant un café, regard vers la droite..."
-                        rows={2}
-                        className="velvet-input w-full text-[12px] resize-none"
+                {/* ═══ ZONE 3: POSE (promoted to main section) ═══ */}
+                <div className="mb-3 border-t border-white/[0.04] pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">🤸 Pose</span>
+                            {!isSandbox && location?.ai_poses?.length > 0 && (
+                                <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
+                            )}
+                        </div>
+                        {!isSandbox && location?.ai_poses?.length > 0 && (
+                            <button
+                                onClick={() => handleRegenSection('poses')}
+                                disabled={regenLoading === 'poses'}
+                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
+                                title="Régénérer les poses"
+                            >
+                                {regenLoading === 'poses' ? (
+                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                                ) : (<><span className="text-[11px]">♻️</span></>)}
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                        {(!isSandbox && location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => (
+                            <button
+                                key={item.promptEN}
+                                onClick={() => updateSceneEntry('pose', item.promptEN)}
+                                className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${scene.pose === item.promptEN
+                                    ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
+                                    : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
+                                    }`}
+                            >
+                                {item.labelFR}
+                            </button>
+                        ))}
+                    </div>
+                    <input
+                        className="velvet-input w-full text-sm"
+                        type="text"
+                        placeholder="Pose personnalisée..."
+                        value={scene.pose || ""}
+                        onChange={(e) => updateSceneEntry('pose', e.target.value)}
                     />
                 </div>
 
-                {/* ═══ ZONE 3: OPTIONS AVANCÉES (replié) ═══ */}
+                {/* ═══ DÉTAILS LIBRES (collapsible chip) ═══ */}
+                <div className="mb-3 border-t border-white/[0.04] pt-2">
+                    <button
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="w-full flex items-center justify-between py-1.5 group"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">
+                                ✏️ Détails libres
+                            </span>
+                            {!showDetails && scene.custom_details && (
+                                <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5 truncate max-w-[120px]">
+                                    {scene.custom_details.slice(0, 25)}{scene.custom_details.length > 25 ? '…' : ''}
+                                </span>
+                            )}
+                        </div>
+                        <span className={`text-[9px] text-zinc-600 transition-transform ${showDetails ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                    </button>
+                    {showDetails && (
+                        <textarea
+                            value={scene.custom_details || ''}
+                            onChange={(e) => updateSceneEntry('custom_details', e.target.value)}
+                            placeholder="Ex: cheveux mouillés, lunettes de soleil, tenant un café, regard vers la droite..."
+                            rows={2}
+                            className="velvet-input w-full text-[12px] resize-none mt-1 animate-fade-in"
+                            autoFocus
+                        />
+                    )}
+                </div>
+
+                {/* ═══ OPTIONS AVANCÉES (collapsed) ═══ */}
                 <div className="border-t border-white/[0.04] pt-2">
                     <button
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="w-full flex items-center justify-between py-2 group"
+                        className="w-full flex items-center justify-between py-1.5 group"
                     >
                         <div className="flex items-center gap-2">
                             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">
                                 ⚙️ Options avancées
                             </span>
-                            {!showAdvanced && (scene.pose || scene.expression) && (
+                            {!showAdvanced && scene.expression && (
                                 <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5">personnalisé</span>
                             )}
                         </div>
@@ -375,38 +476,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                     </button>
 
                     {showAdvanced && (
-                        <div className="pb-3 space-y-4 animate-fade-in">
-
-                            {/* POSE */}
-                            <div>
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Pose</span>
-                                    {!isSandbox && location?.ai_poses?.length > 0 && (
-                                        <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap gap-1.5 mb-2">
-                                    {(!isSandbox && location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => (
-                                        <button
-                                            key={item.promptEN}
-                                            onClick={() => updateSceneEntry('pose', item.promptEN)}
-                                            className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${scene.pose === item.promptEN
-                                                ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
-                                                : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
-                                                }`}
-                                        >
-                                            {item.labelFR}
-                                        </button>
-                                    ))}
-                                </div>
-                                <input
-                                    className="velvet-input w-full text-sm"
-                                    type="text"
-                                    placeholder="Pose personnalisée..."
-                                    value={scene.pose || ""}
-                                    onChange={(e) => updateSceneEntry('pose', e.target.value)}
-                                />
-                            </div>
+                        <div className="pb-3 space-y-3 animate-fade-in">
 
                             {/* CAMERA + EXPRESSION */}
                             <div className="grid grid-cols-2 gap-3">

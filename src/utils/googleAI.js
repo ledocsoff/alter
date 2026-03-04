@@ -694,3 +694,80 @@ export const generateLocationPresets = async (apiKey, location) => {
     throw new Error('Gemini a retourné un format invalide pour les presets. Réessaie.');
   }
 };
+
+/* ─── PER-SECTION REGENERATION ─── */
+
+const SECTION_PROMPTS = {
+  presets: `Generate EXACTLY 8 photo scene presets for this location. Each preset is a different vibe/scenario.
+CRITICAL: ALL "label" fields in FRENCH.
+camera_angle MUST be one of: "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait", "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
+expression MUST be one of: "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare", "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
+Output JSON array: [{"id":"unique_id","label":"emoji Label FR","desc":"description FR courte","scene":{"camera_angle":"...","pose":"english 5-10 words","expression":"...","outfit":"english outfit"}}]`,
+
+  outfits: `Generate EXACTLY 8 outfit suggestions REALISTIC for this location.
+CRITICAL: ALL "label" fields in FRENCH. "value" in English.
+Output JSON array: [{"id":"unique_id","label":"Nom FR","value":"detailed english description","icon":"emoji"}]`,
+
+  poses: `Generate EXACTLY 8 pose suggestions that make sense for this location.
+CRITICAL: "labelFR" in FRENCH. "promptEN" in English.
+Output JSON array: [{"id":"unique_id","labelFR":"Nom court FR","promptEN":"english pose 5-10 words"}]`,
+};
+
+/**
+ * Regenerate a single section (presets, outfits, or poses) for a location.
+ * @param {string} apiKey
+ * @param {object} location
+ * @param {'presets'|'outfits'|'poses'} section
+ * @returns {Promise<Array>}
+ */
+export const regenerateSection = async (apiKey, location, section) => {
+  const prompt = SECTION_PROMPTS[section];
+  if (!prompt) throw new Error(`Section "${section}" inconnue`);
+
+  const locationContext = [
+    `Location: "${location.name}"`,
+    `Environment: ${location.environment || 'not specified'}`,
+    location.default_lighting ? `Lighting: ${location.default_lighting}` : null,
+    location.default_vibe ? `Vibe: ${location.default_vibe}` : null,
+    location.anchor_details ? `Details: ${location.anchor_details}` : null,
+  ].filter(Boolean).join('\n');
+
+  logger.info('generation', `Regenerating ${section} for "${location.name}"`);
+
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: `${locationContext}\n\n${prompt}` }] }],
+    generationConfig: { responseMimeType: 'application/json', temperature: 0.8, maxOutputTokens: 4096 },
+  };
+
+  const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const t0 = Date.now();
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.filter(p => p.text).map(p => p.text).join('') || '';
+
+  try {
+    const parsed = extractJSON(text);
+    const arr = Array.isArray(parsed) ? parsed : (parsed[section] || []);
+
+    const validators = {
+      presets: p => p?.id && p?.label && p?.scene,
+      outfits: o => o?.id && o?.label && o?.value,
+      poses: p => p?.promptEN && p?.labelFR,
+    };
+    const valid = arr.filter(validators[section]);
+    if (valid.length === 0) throw new Error('No valid items');
+
+    logger.success('generation', `${valid.length} ${section} régénérés en ${elapsed}s`);
+    return valid.slice(0, 8);
+  } catch (e) {
+    logger.error('generation', `${section} invalides`, text.slice(0, 300));
+    throw new Error(`Format invalide pour ${section}. Réessaie.`);
+  }
+};
