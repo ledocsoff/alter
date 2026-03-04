@@ -164,6 +164,15 @@ const AppLayout = ({ children }) => {
             Velvet
           </span>
         </Link>
+        <a
+          href="https://github.com/ledocsoff/velvet-studio/releases"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono -ml-4 hidden sm:block"
+          title="Voir les mises a jour"
+        >
+          v{__APP_VERSION__}
+        </a>
         <div className="hidden md:block h-4 w-px bg-zinc-800"></div>
         <div className="hidden md:block flex-1">
           <Breadcrumb />

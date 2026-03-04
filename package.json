@@ -24,10 +24,13 @@
         "dev": "concurrently -n server,vite -c yellow,cyan \"node server.js\" \"vite\"",
         "build": "vite build",
         "preview": "vite preview",
-        "server": "node server.js",
+        "server": "node server-runner.js",
+        "server:raw": "node server.js",
         "electron:dev": "concurrently -n server,vite,electron -c yellow,cyan,magenta \"node server.js\" \"vite --open false\" \"sleep 3 && ELECTRON_DEV=true npx electron .\"",
         "electron:build": "vite build && npx electron-builder --config electron-builder.json",
-        "electron:pack": "vite build && npx electron-builder --config electron-builder.json --dir"
+        "electron:pack": "vite build && npx electron-builder --config electron-builder.json --dir",
+        "update": "echo '⏳ Mise a jour Velvet Studio...' && git pull origin master && npm install --omit=dev && npm run build && echo '✅ Mise a jour terminee (v'$(node -p \"require('./package.json').version\")')'",
+        "version": "node -p \"'Velvet Studio v' + require('./package.json').version\""
     },
     "dependencies": {
         "express": "^4.21.0",

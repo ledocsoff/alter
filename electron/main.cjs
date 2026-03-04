@@ -1,6 +1,43 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
+
+// ─── Auto-Update ────────────────────────────────────────
+let autoUpdater = null;
+function setupAutoUpdate() {
+    try {
+        autoUpdater = require('electron-updater').autoUpdater;
+        autoUpdater.autoDownload = true;
+        autoUpdater.autoInstallOnAppQuit = true;
+
+        autoUpdater.on('update-available', (info) => {
+            console.log(`[Update] Nouvelle version disponible: v${info.version}`);
+        });
+
+        autoUpdater.on('update-downloaded', (info) => {
+            console.log(`[Update] v${info.version} telechargee, prete a installer`);
+            dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Mise a jour disponible',
+                message: `Velvet Studio v${info.version} est prete.`,
+                detail: 'Redemarrer maintenant pour appliquer la mise a jour ?',
+                buttons: ['Redemarrer', 'Plus tard'],
+                defaultId: 0,
+            }).then(({ response }) => {
+                if (response === 0) autoUpdater.quitAndInstall();
+            });
+        });
+
+        autoUpdater.on('error', (err) => {
+            console.warn('[Update] Erreur auto-update (non bloquante):', err.message);
+        });
+
+        // Check for updates 3s after launch
+        setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 3000);
+    } catch (err) {
+        console.log('[Update] electron-updater non disponible, auto-update desactive.');
+    }
+}
 
 // ─── Configuration ──────────────────────────────────────
 const IS_DEV = process.env.ELECTRON_DEV === 'true';
@@ -93,6 +130,9 @@ app.whenReady().then(async () => {
 
     await startServer();
     createWindow();
+
+    // Auto-update in production only
+    if (!IS_DEV) setupAutoUpdate();
 
     app.on('activate', () => {
         // macOS: re-create window when dock icon is clicked

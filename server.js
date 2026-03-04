@@ -15,7 +15,58 @@ if (!fs.existsSync(SAVE_DIR)) {
     fs.mkdirSync(SAVE_DIR, { recursive: true });
 }
 
-const EMPTY_DATA = { models: [], templates: [], history: [] };
+const EMPTY_DATA = { dataVersion: 1, models: [], templates: [], history: [] };
+const CURRENT_DATA_VERSION = 1;
+
+// ============================================
+// CHECKSUM — SHA-256 pour détecter la corruption
+// ============================================
+const computeChecksum = (data) => {
+    const payload = JSON.stringify({ models: data.models || [], templates: data.templates || [], history: data.history || [] });
+    return crypto.createHash('sha256').update(payload).digest('hex');
+};
+
+const verifyChecksum = (data) => {
+    if (!data._checksum) return true; // pas de checksum → ancienne version, OK
+    const expected = computeChecksum(data);
+    return data._checksum === expected;
+};
+
+// ============================================
+// DATA VERSIONING — migrations automatiques
+// ============================================
+const migrations = {
+    // Version 0 → 1 : ajout du champ dataVersion + normalisation
+    1: (data) => {
+        data.dataVersion = 1;
+        if (!Array.isArray(data.models)) data.models = [];
+        if (!Array.isArray(data.templates)) data.templates = [];
+        if (!Array.isArray(data.history)) data.history = [];
+        // Normalise chaque modèle
+        data.models.forEach(m => {
+            if (!Array.isArray(m.accounts)) m.accounts = [];
+            m.accounts.forEach(a => {
+                if (!Array.isArray(a.locations)) a.locations = [];
+            });
+        });
+        return data;
+    },
+    // Ajouter ici les futures migrations:
+    // 2: (data) => { /* v1 → v2 */ return data; },
+};
+
+const migrateData = (data) => {
+    let version = data.dataVersion || 0;
+    while (version < CURRENT_DATA_VERSION) {
+        version++;
+        if (migrations[version]) {
+            console.log(`[Server] Migration données v${version - 1} → v${version}`);
+            data = migrations[version](data);
+        }
+    }
+    data.dataVersion = CURRENT_DATA_VERSION;
+    return data;
+};
 
 const backupPath = (n) => path.join(SAVE_DIR, `data.backup.${n}.json`);
 
@@ -84,7 +135,10 @@ const validatePayload = (data) => {
 // ATOMIC WRITE — écriture dans .tmp puis rename
 // ============================================
 const writeDataAtomic = (filepath, data) => {
-    const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    // Add checksum and version before writing
+    data.dataVersion = CURRENT_DATA_VERSION;
+    data._checksum = computeChecksum(data);
+    const json = JSON.stringify(data, null, 2);
     const dir = path.dirname(filepath);
     const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
     fs.writeFileSync(tmpFile, json, 'utf-8');
@@ -117,7 +171,21 @@ const readData = () => {
             const parsed = JSON.parse(content);
             // Validate structure
             if (parsed && typeof parsed === 'object' && Array.isArray(parsed.models)) {
-                return parsed;
+                // Verify checksum
+                if (!verifyChecksum(parsed)) {
+                    console.warn('[Server] ⚠ Checksum invalide sur data.json — corruption détectée');
+                    console.warn('[Server] Tentative restauration depuis backup...');
+                    return tryRestoreFromBackup();
+                }
+                // Run migrations if needed
+                const migrated = migrateData(parsed);
+                // Re-validate after migration
+                const err = validatePayload(migrated);
+                if (err) {
+                    console.warn(`[Server] Données invalides après migration: ${err}`);
+                    return tryRestoreFromBackup();
+                }
+                return migrated;
             }
             console.warn('[Server] data.json structure invalide, tentative restauration backup...');
             return tryRestoreFromBackup();
@@ -231,6 +299,16 @@ app.get('/api/health', (_req, res) => {
     } catch (err) {
         res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
     }
+});
+
+// Version info
+const PKG_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8')).version;
+app.get('/api/version', (_req, res) => {
+    res.json({
+        version: PKG_VERSION,
+        dataVersion: CURRENT_DATA_VERSION,
+        uptime: process.uptime(),
+    });
 });
 
 // Load all data

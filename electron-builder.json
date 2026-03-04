@@ -8,8 +8,14 @@
         "dist/**/*",
         "electron/**/*",
         "server.js",
+        "server-runner.js",
         "package.json"
     ],
+    "publish": {
+        "provider": "github",
+        "owner": "ledocsoff",
+        "repo": "velvet-studio"
+    },
     "extraResources": [
         {
             "from": "server.js",
