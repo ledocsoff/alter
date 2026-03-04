@@ -2,7 +2,21 @@
     "name": "velvet-studio",
     "private": true,
     "version": "5.0.0",
-    "description": "Premium AI Model Prompt Studio",
+    "description": "Premium AI Model Management & Image Generation Studio",
+    "author": "ledocsoff",
+    "homepage": "https://github.com/ledocsoff/nanabanana-studio",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ledocsoff/nanabanana-studio.git"
+    },
+    "keywords": [
+        "ai",
+        "image-generation",
+        "gemini",
+        "electron",
+        "react",
+        "prompt-engineering"
+    ],
     "main": "electron/main.js",
     "type": "module",
     "scripts": {
