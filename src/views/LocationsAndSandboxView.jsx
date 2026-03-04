@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
+import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations } from '../utils/storage';
 import { autoFillLocation } from '../utils/googleAI';
-import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon } from '../components/Icons';
+import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
@@ -57,6 +57,19 @@ const LocationsAndSandboxView = () => {
     const [newLocNegativePrompt, setNewLocNegativePrompt] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isAutoFilling, setIsAutoFilling] = useState(false);
+    const dragItem = useRef(null);
+    const dragOverItem = useRef(null);
+    const [dragOverIdx, setDragOverIdx] = useState(null);
+
+    const handleDragStart = (idx) => { dragItem.current = idx; };
+    const handleDragEnter = (idx) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+    const handleDragEnd = () => {
+        if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+            const updated = reorderLocations(modelId, accountId, dragItem.current, dragOverItem.current);
+            if (updated) { setAllModelsDatabase(updated); toast.success('Ordre mis à jour'); }
+        }
+        dragItem.current = null; dragOverItem.current = null; setDragOverIdx(null);
+    };
 
     const currentModel = allModelsDatabase.find(m => m.id === modelId);
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
@@ -354,12 +367,21 @@ const LocationsAndSandboxView = () => {
                             </div>
                         ) : (
                             <div className="space-y-2.5 stagger-children">
-                                {currentAccount.locations.map(loc => (
+                                {currentAccount.locations.map((loc, idx) => (
                                     <div
                                         key={loc.id}
-                                        className="velvet-card group p-4"
+                                        draggable
+                                        onDragStart={() => handleDragStart(idx)}
+                                        onDragEnter={() => handleDragEnter(idx)}
+                                        onDragEnd={handleDragEnd}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        className={`velvet-card group p-4 ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
                                     >
                                         <div className="flex items-center gap-3">
+                                            {/* Drag handle */}
+                                            <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
+                                                <GripVerticalIcon size={14} />
+                                            </div>
                                             {/* Left: clickable area for navigation */}
                                             <div
                                                 className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"

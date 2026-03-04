@@ -24,7 +24,7 @@ const withRetry = async (fn, context = 'api') => {
       const isRetryable = err._retryable || err.message?.includes('fetch') || err.message?.includes('network');
       if (!isRetryable || attempt === MAX_RETRIES) throw err;
       const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
-      logger.warn(context, `Tentative ${attempt}/${MAX_RETRIES} echouee, retry dans ${delay / 1000}s...`, err.message);
+      logger.warn(context, `Tentative ${attempt}/${MAX_RETRIES} échouée, retry dans ${delay / 1000}s...`, err.message);
       await new Promise(r => setTimeout(r, delay));
     }
   }
@@ -32,7 +32,7 @@ const withRetry = async (fn, context = 'api') => {
 };
 
 export const validateApiKey = async (apiKey) => {
-  logger.info('api', `Validation de cle API (...${apiKey.slice(-4)})`);
+  logger.info('api', `Validation de clé API (...${apiKey.slice(-4)})`);
   try {
     const res = await fetch(
       `${API_BASE}?key=${encodeURIComponent(apiKey)}`,
@@ -42,13 +42,13 @@ export const validateApiKey = async (apiKey) => {
       const err = await res.json().catch(() => ({}));
       const msg = err.error?.message || `Erreur ${res.status}`;
       if (res.status === 403 && msg.includes('Generative Language API')) {
-        logger.error('api', `Cle rejetee — Generative Language API non activee`, msg);
+        logger.error('api', `Clé rejetée — Generative Language API non activée`, msg);
         return { valid: false, error: 'Activez la "Generative Language API" dans votre projet GCP (console.cloud.google.com > API & Services).' };
       }
-      logger.error('api', `Cle invalide (HTTP ${res.status})`, msg);
+      logger.error('api', `Clé invalide (HTTP ${res.status})`, msg);
       return { valid: false, error: msg };
     }
-    logger.success('api', 'Cle API validee');
+    logger.success('api', 'Clé API validée');
     return { valid: true };
   } catch (e) {
     logger.error('api', 'Erreur reseau lors de la validation', e.message);
@@ -131,7 +131,7 @@ OUTPUT: Generate a single photorealistic image matching ALL specifications above
 
       if (RETRYABLE_CODES.includes(res.status)) {
         const e = new Error(res.status === 429
-          ? 'Quota depasse. Essayez votre autre cle API, ou attendez quelques minutes.'
+          ? 'Quota dépassé. Essayez votre autre clé API, ou attendez quelques minutes.'
           : `Serveurs satures (${res.status}). Retry automatique en cours...`);
         e._retryable = true;
         throw e;
@@ -141,7 +141,7 @@ OUTPUT: Generate a single photorealistic image matching ALL specifications above
         if (msg.includes('Generative Language API')) {
           throw new Error('Activez la "Generative Language API" dans votre projet GCP.');
         }
-        throw new Error('Cle API invalide ou acces refuse.');
+        throw new Error('Clé API invalide ou accès refusé.');
       }
       throw new Error(msg);
     }

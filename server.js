@@ -482,7 +482,7 @@ app.post('/api/gallery', (req, res) => {
     }
 
     try {
-        const { base64, mimeType, prompt, scene, modelName, locationName, accountHandle, seed } = req.body;
+        const { base64, mimeType, prompt, scene, modelName, locationName, accountHandle, seed, modelHash } = req.body;
         if (!base64 || typeof base64 !== 'string') return res.status(400).json({ error: 'base64 requis (string)' });
 
         // Validate image size
@@ -517,6 +517,7 @@ app.post('/api/gallery', (req, res) => {
             locationName: (locationName || 'Sandbox').slice(0, 100),
             accountHandle: (accountHandle || '').slice(0, 100),
             seed: seed || null,
+            modelHash: modelHash || null,
             timestamp: Date.now(),
             starred: false,
             fileSize: imgBuffer.length,

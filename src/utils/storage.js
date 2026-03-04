@@ -338,6 +338,39 @@ export const deleteLocationData = (modelId, accountId, locationId) => {
 };
 
 // ============================================
+// REORDER — Drag & drop support
+// ============================================
+export const reorderModels = (fromIndex, toIndex) => {
+    const models = getSavedModels();
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= models.length || toIndex >= models.length) return null;
+    const [moved] = models.splice(fromIndex, 1);
+    models.splice(toIndex, 0, moved);
+    _saveAll(models);
+    return models;
+};
+
+export const reorderAccounts = (modelId, fromIndex, toIndex) => {
+    const models = getSavedModels();
+    const model = models.find(m => m.id === modelId);
+    if (!model?.accounts || fromIndex < 0 || toIndex < 0) return null;
+    const [moved] = model.accounts.splice(fromIndex, 1);
+    model.accounts.splice(toIndex, 0, moved);
+    _saveAll(models);
+    return models;
+};
+
+export const reorderLocations = (modelId, accountId, fromIndex, toIndex) => {
+    const models = getSavedModels();
+    const model = models.find(m => m.id === modelId);
+    const account = model?.accounts?.find(a => a.id === accountId);
+    if (!account?.locations || fromIndex < 0 || toIndex < 0) return null;
+    const [moved] = account.locations.splice(fromIndex, 1);
+    account.locations.splice(toIndex, 0, moved);
+    _saveAll(models);
+    return models;
+};
+
+// ============================================
 // PROMPT HISTORY
 // ============================================
 const MAX_HISTORY = 50;

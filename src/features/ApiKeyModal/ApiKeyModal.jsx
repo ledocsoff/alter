@@ -102,7 +102,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
 
         {/* API KEY INPUT */}
         <div className="mb-4">
-          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Cle API</label>
+          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Clé API</label>
           <div className="relative">
             <input
               type={showKey ? 'text' : 'password'}
@@ -139,7 +139,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
             disabled={!key}
             className="text-[11px] text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-30"
           >
-            Supprimer la cle
+            Supprimer la clé
           </button>
           <div className="flex gap-2">
             <button
@@ -159,7 +159,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-[10px] text-zinc-700 mt-4 text-center">
-          La cle est stockee localement dans votre navigateur uniquement.
+          La cl\u00e9 est stock\u00e9e localement dans votre navigateur uniquement.
         </p>
       </div>
     </div>

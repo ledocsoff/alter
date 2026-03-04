@@ -128,7 +128,7 @@ const GalleryPanel = () => {
                             <button
                                 onClick={() => {
                                     navigator.clipboard.writeText(selectedItem.prompt);
-                                    toast.success('Prompt copie');
+                                    toast.success('Prompt copi\u00e9');
                                 }}
                                 className="text-[11px] text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors"
                             >

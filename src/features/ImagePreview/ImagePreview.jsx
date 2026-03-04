@@ -149,7 +149,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     a.href = currentImage.dataUrl;
     a.download = `velvet-${Date.now()}.${ext}`;
     a.click();
-    toast.success('Image telechargee');
+    toast.success('Image t\u00e9l\u00e9charg\u00e9e');
   }, [currentImage, toast]);
 
   const handleCopyImage = useCallback(async () => {

@@ -1,11 +1,11 @@
 // v5.0.0 — CRUD buttons always visible, navigation separated
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveAccountData, deleteAccountData, duplicateAccountData } from '../utils/storage';
+import { saveAccountData, deleteAccountData, duplicateAccountData, reorderAccounts } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
-import { TrashIcon, CopyIcon, PlusIcon, ChevronRightIcon, MapPinIcon } from '../components/Icons';
+import { PlusIcon, TrashIcon, CopyIcon, MapPinIcon, EditIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
 
 const PLATFORMS = {
   Instagram: { color: 'from-fuchsia-500 to-purple-600', accent: 'text-fuchsia-400' },
@@ -19,6 +19,20 @@ const AccountsView = () => {
   const navigate = useNavigate();
   const { allModelsDatabase, setAllModelsDatabase } = useStudio();
   const toast = useToast();
+
+  const dragItem = useRef(null);
+  const dragOverItem = useRef(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+
+  const handleDragStart = (idx) => { dragItem.current = idx; };
+  const handleDragEnter = (idx) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const updated = reorderAccounts(modelId, dragItem.current, dragOverItem.current);
+      if (updated) { setAllModelsDatabase(updated); toast.success('Ordre mis à jour'); }
+    }
+    dragItem.current = null; dragOverItem.current = null; setDragOverIdx(null);
+  };
 
   const [handle, setHandle] = useState('');
   const [platform, setPlatform] = useState('Instagram');
@@ -136,14 +150,23 @@ const AccountsView = () => {
           </div>
         ) : (
           <div className="space-y-3 stagger-children">
-            {currentModel.accounts.map(acc => {
+            {currentModel.accounts.map((acc, idx) => {
               const cfg = PLATFORMS[acc.platform] || PLATFORMS.Instagram;
               const locCount = (acc.locations || []).length;
               return (
                 <div
                   key={acc.id}
-                  className="velvet-card group p-4 flex items-center gap-4"
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  className={`velvet-card group p-4 flex items-center gap-4 ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
                 >
+                  {/* Drag handle */}
+                  <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
+                    <GripVerticalIcon size={14} />
+                  </div>
                   {/* Left: clickable area for navigation */}
                   <div
                     className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"

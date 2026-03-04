@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { deleteModelData, saveModelData, getLastSession } from '../utils/storage';
+import { deleteModelData, saveModelData, getLastSession, reorderModels } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
-import { TrashIcon, CopyIcon, PlayIcon, SearchIcon, PlusIcon, UsersIcon, MapPinIcon } from '../components/Icons';
+import { TrashIcon, CopyIcon, PlayIcon, SearchIcon, PlusIcon, UsersIcon, MapPinIcon, GripVerticalIcon } from '../components/Icons';
 
 const MODEL_COLORS = [
   { gradient: 'from-violet-500 to-fuchsia-600', glow: 'shadow-violet-500/20', accent: 'violet' },
@@ -24,6 +24,19 @@ const ModelsView = () => {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [search, setSearch] = useState('');
+  const dragItem = useRef(null);
+  const dragOverItem = useRef(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+
+  const handleDragStart = (idx) => { dragItem.current = idx; };
+  const handleDragEnter = (idx) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const updated = reorderModels(dragItem.current, dragOverItem.current);
+      if (updated) { setAllModelsDatabase(updated); toast.success('Ordre mis à jour'); }
+    }
+    dragItem.current = null; dragOverItem.current = null; setDragOverIdx(null);
+  };
 
   const handleDelete = (e, model) => {
     e.stopPropagation();
@@ -60,7 +73,7 @@ const ModelsView = () => {
   const handleSelect = (m) => {
     const { id, accounts, ...traits } = m;
     setModel({ ...traits, name: m.name });
-    navigate(`/models/${id}/accounts`);
+    navigate(`/ models / ${id}/accounts`);
   };
 
   const lastSession = getLastSession();
@@ -140,10 +153,21 @@ const ModelsView = () => {
               return (
                 <div
                   key={m.id}
+                  draggable={!search}
+                  onDragStart={() => handleDragStart(globalIdx)}
+                  onDragEnter={() => handleDragEnter(globalIdx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
                   onClick={() => handleSelect(m)}
-                  className="group relative flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border border-transparent hover:border-zinc-700/50"
+                  className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-violet-500/50 bg-violet-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
                   style={{ animationDelay: `${idx * 40}ms` }}
                 >
+                  {/* Drag handle */}
+                  {!search && (
+                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors" onMouseDown={(e) => e.stopPropagation()}>
+                      <GripVerticalIcon size={14} />
+                    </div>
+                  )}
                   {/* Avatar */}
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg ${color.glow}`}>
                     {m.name?.charAt(0)?.toUpperCase() || '?'}
