@@ -4,7 +4,7 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
 import { autoFillLocation } from '../utils/googleAI';
-import { TrashIcon, EditIcon } from '../components/Icons';
+import { TrashIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
@@ -16,27 +16,24 @@ const TIME_OF_DAY_OPTIONS = [
     { labelFR: "Nuit club", promptEN: "late night, club atmosphere, colored lights" },
 ];
 
-const inputClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700";
-const selectClass = "w-full bg-zinc-950 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-zinc-600 transition-colors";
-const labelClass = "text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block";
-
 const LockScore = ({ location }) => {
     const { filled, total } = getLocationLockScore(location);
+    const pct = Math.round((filled / total) * 100);
     return (
         <div className="flex items-center gap-1.5">
             <div className="flex gap-px">
                 {Array.from({ length: total }, (_, i) => (
                     <div
                         key={i}
-                        className={`w-1.5 h-3 rounded-sm transition-colors ${i < filled
+                        className={`w-1.5 h-3.5 rounded-sm transition-colors ${i < filled
                             ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
-                            : 'bg-zinc-800'
+                            : 'bg-zinc-800/60'
                             }`}
                     />
                 ))}
             </div>
-            <span className={`text-[10px] font-medium ${filled >= 5 ? 'text-emerald-500/70' : filled >= 3 ? 'text-amber-500/70' : 'text-zinc-600'
-                }`}>{filled}/{total}</span>
+            <span className={`text-[10px] font-semibold ${filled >= 5 ? 'text-emerald-400/80' : filled >= 3 ? 'text-amber-400/80' : 'text-zinc-600'
+                }`}>{pct}%</span>
         </div>
     );
 };
@@ -65,12 +62,11 @@ const LocationsAndSandboxView = () => {
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
 
     if (!currentModel || !currentAccount) {
-        return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Compte introuvable. <button onClick={() => navigate('/')} className="text-amber-500 ml-1 underline">Retour</button></div>;
+        return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Compte introuvable. <button onClick={() => navigate('/')} className="text-violet-400 ml-1.5 hover:underline font-medium">Retour</button></div>;
     }
 
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
-    // Get all other accounts for duplication target
     const otherAccounts = [];
     allModelsDatabase.forEach(m => {
         m.accounts?.forEach(a => {
@@ -194,51 +190,60 @@ const LocationsAndSandboxView = () => {
                 <div id="loc-scroll" className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="max-w-3xl mx-auto px-6 py-10">
 
-                        <div className="mb-8">
-                            <h2 className="text-xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
-                            <p className="text-zinc-500 text-sm mt-1">Definissez des lieux precis pour garantir la coherence visuelle.</p>
+                        <div className="mb-8 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
+                            <p className="text-zinc-500 text-sm mt-1.5">
+                                {(currentAccount.locations || []).length} lieu{(currentAccount.locations || []).length !== 1 ? 'x' : ''} · Definissez des lieux precis pour la coherence visuelle.
+                            </p>
                         </div>
 
                         {/* FORM */}
-                        <div className={`rounded-xl border p-5 mb-10 transition-colors ${isEditing ? 'bg-amber-500/[0.03] border-amber-500/20' : 'bg-zinc-900/60 border-zinc-800/60'}`}>
+                        <div className={`velvet-card rounded-xl p-5 mb-10 animate-fade-in-up transition-all ${isEditing ? '!border-amber-500/20 !bg-amber-500/[0.02]' : ''}`}>
                             <div className="flex justify-between items-center mb-5">
-                                <h3 className="text-sm font-semibold text-zinc-300">
-                                    {isEditing ? 'Modifier le lieu' : 'Nouveau lieu'}
+                                <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                                    {isEditing ? (
+                                        <><EditIcon size={14} className="text-amber-400" /> Modifier le lieu</>
+                                    ) : (
+                                        <><PlusIcon size={14} className="text-violet-400" /> Nouveau lieu</>
+                                    )}
                                 </h3>
-                                {isEditing && (
-                                    <button onClick={resetForm} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Annuler</button>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {!isEditing && newLocName.trim() && (
+                                        <button
+                                            onClick={handleAutoFill}
+                                            disabled={isAutoFilling}
+                                            className={`velvet-btn-primary text-[11px] py-1.5 px-3 flex items-center gap-1.5 ${isAutoFilling ? 'opacity-50 cursor-wait' : ''}`}
+                                        >
+                                            <SparklesIcon size={12} />
+                                            {isAutoFilling ? 'Analyse...' : 'Auto-fill IA'}
+                                        </button>
+                                    )}
+                                    {isEditing && (
+                                        <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className={labelClass}>Nom du lieu</label>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Nom du lieu</label>
                                         <input
                                             type="text"
                                             placeholder="Ex: Plage Bali, Café Paris..."
-                                            className={inputClass}
+                                            className="velvet-input w-full"
                                             value={newLocName}
                                             onChange={(e) => setNewLocName(e.target.value)}
                                         />
-                                        {!isEditing && newLocName.trim() && (
-                                            <button
-                                                onClick={handleAutoFill}
-                                                disabled={isAutoFilling}
-                                                className={`mt-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${isAutoFilling ? 'text-zinc-500 bg-zinc-800/50 cursor-wait' : 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'}`}
-                                            >
-                                                {isAutoFilling ? '⏳ Analyse IA...' : '✨ Auto-fill IA'}
-                                            </button>
-                                        )}
                                     </div>
                                     <div>
                                         <div className="flex items-center justify-between mb-1.5">
                                             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Environnement</span>
                                             <button
                                                 onClick={() => setIsCustomEnv(!isCustomEnv)}
-                                                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${isCustomEnv ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
+                                                className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${isCustomEnv ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
                                             >
-                                                {isCustomEnv ? 'Preset' : 'Custom'}
+                                                {isCustomEnv ? '← Preset' : 'Custom →'}
                                             </button>
                                         </div>
                                         {isCustomEnv ? (
@@ -247,10 +252,10 @@ const LocationsAndSandboxView = () => {
                                                 value={newLocEnvCustom}
                                                 onChange={(e) => setNewLocEnvCustom(e.target.value)}
                                                 rows={2}
-                                                className={inputClass + " resize-none"}
+                                                className="velvet-input w-full resize-none"
                                             />
                                         ) : (
-                                            <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className={selectClass}>
+                                            <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className="velvet-input w-full">
                                                 {SCENE_OPTIONS.environment.map(env => (
                                                     <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
                                                 ))}
@@ -261,8 +266,8 @@ const LocationsAndSandboxView = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div>
-                                        <label className={labelClass}>Eclairage</label>
-                                        <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className={selectClass}>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Eclairage</label>
+                                        <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
                                             <option value="">Libre</option>
                                             {SCENE_OPTIONS.lighting.map(l => (
                                                 <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
@@ -270,8 +275,8 @@ const LocationsAndSandboxView = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className={labelClass}>Vibe</label>
-                                        <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className={selectClass}>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
+                                        <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
                                             <option value="">Libre</option>
                                             {SCENE_OPTIONS.vibe.map(v => (
                                                 <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
@@ -279,8 +284,8 @@ const LocationsAndSandboxView = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className={labelClass}>Moment</label>
-                                        <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className={selectClass}>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
+                                        <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
                                             <option value="">Libre</option>
                                             {TIME_OF_DAY_OPTIONS.map(t => (
                                                 <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
@@ -291,36 +296,39 @@ const LocationsAndSandboxView = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className={labelClass}>Details d'ancrage <span className="text-amber-500/60 normal-case font-normal">coherence</span></label>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                            Details d'ancrage <span className="text-violet-400/60 normal-case font-normal">coherence</span>
+                                        </label>
                                         <textarea
                                             placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."
                                             value={newLocAnchorDetails}
                                             onChange={(e) => setNewLocAnchorDetails(e.target.value)}
                                             rows={3}
-                                            className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                            className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
                                         />
                                     </div>
                                     <div>
-                                        <label className={labelClass}>Palette couleurs</label>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
                                         <textarea
                                             placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
                                             value={newLocColorPalette}
                                             onChange={(e) => setNewLocColorPalette(e.target.value)}
                                             rows={3}
-                                            className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                            className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
                                         />
                                     </div>
                                 </div>
 
-                                {/* NEGATIVE PROMPT */}
                                 <div>
-                                    <label className={labelClass}>Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span></label>
+                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                        Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span>
+                                    </label>
                                     <textarea
                                         placeholder="tattoo, piercing, neon lights, cluttered background..."
                                         value={newLocNegativePrompt}
                                         onChange={(e) => setNewLocNegativePrompt(e.target.value)}
                                         rows={2}
-                                        className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                        className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
                                     />
                                 </div>
 
@@ -328,9 +336,9 @@ const LocationsAndSandboxView = () => {
                                     <button
                                         onClick={handleSaveLocation}
                                         disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
-                                        className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
-                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
-                                            : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                                        className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
+                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20'
+                                            : 'velvet-btn-primary'
                                             }`}
                                     >
                                         {isEditing ? 'Mettre a jour' : 'Enregistrer'}
@@ -340,30 +348,36 @@ const LocationsAndSandboxView = () => {
                         </div>
 
                         {/* SAVED LOCATIONS */}
-                        <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Lieux enregistres</h3>
+                        <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">
+                            Lieux enregistres ({(currentAccount.locations || []).length})
+                        </h3>
 
                         {(currentAccount.locations || []).length === 0 ? (
-                            <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800">
-                                <p className="text-zinc-500 text-sm">Aucun lieu. Creez-en un ci-dessus.</p>
+                            <div className="text-center py-16 rounded-2xl border border-dashed border-zinc-800/60 animate-fade-in-up">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 flex items-center justify-center mx-auto mb-4">
+                                    <MapPinIcon size={24} className="text-violet-400" />
+                                </div>
+                                <p className="text-zinc-300 font-semibold mb-1">Aucun lieu</p>
+                                <p className="text-zinc-600 text-sm">Creez-en un ci-dessus.</p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
+                            <div className="space-y-2.5 stagger-children">
                                 {currentAccount.locations.map(loc => (
                                     <div
                                         key={loc.id}
                                         onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                        className="group bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-4 cursor-pointer hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all duration-200"
+                                        className="velvet-card-interactive group p-4 cursor-pointer"
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2.5 mb-0.5">
+                                                    <MapPinIcon size={14} className="text-violet-400 shrink-0" />
                                                     <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
                                                     <LockScore location={loc} />
                                                 </div>
-                                                <p className="text-[12px] text-zinc-500 mt-0.5 truncate">{loc.environment}</p>
+                                                <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
                                             </div>
                                             <div className="flex gap-1 ml-3 shrink-0">
-                                                {/* Duplicate dropdown */}
                                                 {otherAccounts.length > 0 && (
                                                     <div className="relative">
                                                         <select
@@ -374,7 +388,7 @@ const LocationsAndSandboxView = () => {
                                                                 handleDuplicateLocation(e, loc.id, tModelId, tAccountId);
                                                                 e.target.value = '';
                                                             }}
-                                                            className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-zinc-700/50"
+                                                            className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-white/[0.04]"
                                                             defaultValue=""
                                                             title="Dupliquer vers..."
                                                         >
@@ -401,13 +415,13 @@ const LocationsAndSandboxView = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {loc.seed && <span className="text-[10px] text-amber-400/70 bg-amber-500/8 px-2 py-0.5 rounded-md font-mono">🎲 {loc.seed}</span>}
-                                            {loc.default_lighting && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Eclairage</span>}
-                                            {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
-                                            {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}
-                                            {loc.color_palette && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Palette</span>}
-                                            {loc.negative_prompt && <span className="text-[10px] text-red-400/70 bg-red-500/8 px-2 py-0.5 rounded-md">Neg prompt</span>}
+                                        <div className="flex flex-wrap gap-1.5 pl-[22px]">
+                                            {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">🎲 {loc.seed}</span>}
+                                            {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
+                                            {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
+                                            {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}
+                                            {loc.color_palette && <span className="velvet-tag">Palette</span>}
+                                            {loc.negative_prompt && <span className="velvet-tag !text-red-400/70 !bg-red-500/8 !border-red-500/10">Neg prompt</span>}
                                         </div>
                                     </div>
                                 ))}
@@ -417,16 +431,20 @@ const LocationsAndSandboxView = () => {
                 </div>
 
                 {/* RIGHT: SANDBOX */}
-                <div className="lg:w-72 bg-zinc-950/50 border-t lg:border-t-0 lg:border-l border-zinc-800/50 p-6 lg:p-8 flex flex-col justify-center">
+                <div className="lg:w-72 bg-[#0a0a0c] border-t lg:border-t-0 lg:border-l border-white/[0.04] p-6 lg:p-8 flex flex-col justify-center">
                     <div className="max-w-xs mx-auto w-full">
-                        <h3 className="text-base font-bold text-zinc-200 mb-2">Bac a sable</h3>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-4">
+                            <SparklesIcon size={22} className="text-violet-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-zinc-200 mb-2">Bac a sable</h3>
                         <p className="text-[13px] text-zinc-500 mb-8 leading-relaxed">
                             Mode libre pour du contenu ponctuel, sans creer de lieu.
                         </p>
                         <button
                             onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/sandbox/generate`)}
-                            className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/10 active:scale-[0.98]"
+                            className="velvet-btn-primary w-full h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
                         >
+                            <SparklesIcon size={14} />
                             Lancer le studio
                         </button>
                     </div>
@@ -445,4 +463,3 @@ const LocationsAndSandboxView = () => {
 };
 
 export default LocationsAndSandboxView;
-

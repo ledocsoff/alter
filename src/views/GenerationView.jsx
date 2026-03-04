@@ -12,6 +12,14 @@ import EditableMatrix from '../features/EditableMatrix/EditableMatrix';
 import GalleryPanel from '../features/GalleryPanel/GalleryPanel';
 import PromptHistoryPanel from '../features/PromptHistoryPanel/PromptHistoryPanel';
 import ApiKeyModal from '../features/ApiKeyModal/ApiKeyModal';
+import { SparklesIcon } from '../components/Icons';
+
+const TABS = [
+    { id: 'image', icon: '🖼️', label: 'Image' },
+    { id: 'galerie', icon: '📷', label: 'Galerie' },
+    { id: 'historique', icon: '📝', label: 'Prompts' },
+    { id: 'matrice', icon: '⚙️', label: 'Matrice' },
+];
 
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
@@ -22,7 +30,7 @@ const GenerationView = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [showRecap, setShowRecap] = useState(false);
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-    const [rightPanel, setRightPanel] = useState('image'); // 'image' | 'matrice' | 'galerie'
+    const [rightPanel, setRightPanel] = useState('image');
     const [enrichedMatrix, setEnrichedMatrix] = useState(null);
     const [isEnriching, setIsEnriching] = useState(false);
     const [galleryKey, setGalleryKey] = useState(0);
@@ -56,11 +64,9 @@ const GenerationView = () => {
 
         if (isSandbox) {
             setActiveWorkflow({ modelId: null, accountId: null });
-            // Sandbox: seed aléatoire par session
             updateSceneEntry('seed', generateSeed());
         } else {
             setActiveWorkflow({ modelId, accountId });
-            // Charger la seed du lieu
             if (loc?.seed) updateSceneEntry('seed', loc.seed);
             if (loc?.environment) updateSceneEntry('environment', loc.environment);
             if (loc?.default_lighting) updateSceneEntry('lighting', loc.default_lighting);
@@ -79,7 +85,6 @@ const GenerationView = () => {
 
         setIsLoaded(true);
 
-        // Sauvegarder la session pour le bouton "Reprendre"
         saveLastSession({
             modelId,
             accountId,
@@ -91,7 +96,6 @@ const GenerationView = () => {
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
 
-    // Keyboard shortcuts
     const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
     const handleRandomize = useCallback(() => {
         setScene(prev => ({
@@ -142,7 +146,7 @@ const GenerationView = () => {
     if (!isLoaded || !currentModel) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -156,7 +160,6 @@ const GenerationView = () => {
     const handleRegenerateSeed = () => {
         const newSeed = generateSeed();
         updateSceneEntry('seed', newSeed);
-        // Sauvegarder la nouvelle seed dans le lieu (si ce n'est pas le sandbox)
         if (!isSandbox && currentLocation) {
             saveLocationData(modelId, accountId, { ...currentLocation, seed: newSeed });
         }
@@ -166,26 +169,25 @@ const GenerationView = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
 
             {/* HEADER BAR */}
-            <div className="shrink-0 h-10 px-5 border-b border-zinc-800/50 flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${isSandbox ? 'bg-amber-500' : 'bg-indigo-500'}`}></div>
-                    <span className="text-[13px] font-medium text-zinc-300 truncate">
+            <div className="shrink-0 h-11 px-5 border-b border-white/[0.04] bg-[#0c0c0e] flex items-center justify-between animate-fade-in">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${isSandbox ? 'bg-violet-400 animate-pulse' : 'bg-emerald-500'}`}></div>
+                    <span className="text-[13px] font-semibold text-zinc-200 truncate">
                         {isSandbox ? 'Sandbox' : currentLocation?.name}
                     </span>
                     <span className="text-[11px] text-zinc-600 shrink-0">
                         {currentModel.name} / {currentAccount?.handle}
                     </span>
                 </div>
-                <div className="flex items-center gap-2">
-                    {/* REFERENCE IMAGES */}
+                <div className="flex items-center gap-2.5">
                     <ReferenceUpload />
                     {/* SEED BADGE */}
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/30">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                         <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
-                        <span className="text-[11px] text-amber-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
+                        <span className="text-[11px] text-violet-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
                         <button
                             onClick={handleRegenerateSeed}
-                            className="ml-0.5 w-4 h-4 rounded flex items-center justify-center text-[9px] text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                            className="ml-0.5 w-4 h-4 rounded flex items-center justify-center text-[9px] text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
                             title="Regenerer la seed"
                         >
                             ↻
@@ -193,19 +195,22 @@ const GenerationView = () => {
                     </div>
                     <button
                         onClick={() => setShowRecap(!showRecap)}
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${showRecap ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
+                        className={`text-[10px] font-medium px-2.5 py-1 rounded-lg transition-all ${showRecap ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]'}`}
                     >
                         Fiche modele
                     </button>
                     {!isSandbox && (
-                        <span className="text-[11px] text-indigo-400/60 font-medium shrink-0">verrouille</span>
+                        <span className="text-[10px] text-emerald-400/60 font-medium shrink-0 flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                            verrouille
+                        </span>
                     )}
                 </div>
             </div>
 
             {/* MODEL RECAP */}
             {showRecap && (
-                <div className="shrink-0 px-5 py-3 border-b border-zinc-800/50 bg-zinc-950/50">
+                <div className="shrink-0 px-5 py-3 border-b border-white/[0.04] bg-[#0a0a0c] animate-slide-in-down">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
                         <div>
                             <span className="text-zinc-600 block mb-0.5">Identite</span>
@@ -225,7 +230,7 @@ const GenerationView = () => {
                         </div>
                     </div>
                     {model.anatomical_fidelity && (
-                        <div className="mt-2 pt-2 border-t border-zinc-800/30">
+                        <div className="mt-2 pt-2 border-t border-white/[0.04]">
                             <span className="text-zinc-600 text-[10px]">Directives: </span>
                             <span className="text-zinc-500 text-[10px] font-mono">{model.anatomical_fidelity.slice(0, 120)}...</span>
                         </div>
@@ -241,23 +246,19 @@ const GenerationView = () => {
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
                     <div className="flex items-center shrink-0">
-                        <div className="flex items-center bg-zinc-900/80 border border-zinc-800/50 rounded-lg p-0.5">
-                            {[
-                                { id: 'image', icon: '🖼️', tip: 'Image' },
-                                { id: 'galerie', icon: '📷', tip: 'Galerie' },
-                                { id: 'historique', icon: '📝', tip: 'Prompts' },
-                                { id: 'matrice', icon: '⚙️', tip: 'Matrice' },
-                            ].map(tab => (
+                        <div className="flex items-center bg-white/[0.02] border border-white/[0.05] rounded-xl p-1 gap-0.5">
+                            {TABS.map(tab => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setRightPanel(tab.id)}
-                                    title={tab.tip}
-                                    className={`text-[13px] px-2.5 py-1.5 rounded-md transition-all ${rightPanel === tab.id
-                                        ? 'bg-zinc-800 shadow-sm scale-110'
-                                        : 'opacity-40 hover:opacity-80'
+                                    title={tab.label}
+                                    className={`text-[12px] px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${rightPanel === tab.id
+                                        ? 'bg-white/[0.06] shadow-sm text-zinc-200 font-medium'
+                                        : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'
                                         }`}
                                 >
-                                    {tab.icon}
+                                    <span className="text-[13px]">{tab.icon}</span>
+                                    <span className="hidden md:inline">{tab.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -280,11 +281,12 @@ const GenerationView = () => {
                                             };
                                             imagePreviewRef.current?.handleBatchGenerate(3, getVariant);
                                         }}
-                                        className="text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded-md transition-colors"
+                                        className="text-[10px] font-semibold text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
                                     >
-                                        ⚡ Batch x3
+                                        <SparklesIcon size={11} />
+                                        Batch x3
                                     </button>
-                                    <span className="text-[10px] text-zinc-700 font-mono">Cmd+G generer</span>
+                                    <span className="text-[10px] text-zinc-700 font-mono">⌘G generer</span>
                                 </>
                             )}
                             {rightPanel === 'matrice' && (
@@ -295,8 +297,8 @@ const GenerationView = () => {
                     {/* ACTIVE PANEL */}
                     <div className="flex-1 min-h-0">
                         {rightPanel === 'matrice' ? (
-                            <div className="h-full flex flex-col bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
-                                <div className="shrink-0 px-4 py-2.5 border-b border-zinc-800/50 flex items-center justify-between">
+                            <div className="h-full flex flex-col bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
+                                <div className="shrink-0 px-4 py-2.5 border-b border-white/[0.04] flex items-center justify-between">
                                     <span className="text-[12px] font-semibold text-zinc-300">Matrice d'Ancrage</span>
                                     <div className="flex items-center gap-2">
                                         <button
@@ -315,7 +317,7 @@ const GenerationView = () => {
                                                 }
                                             }}
                                             disabled={isEnriching}
-                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors disabled:opacity-50"
                                         >
                                             {isEnriching ? 'Enrichissement...' : '✨ Enrichir'}
                                         </button>
@@ -340,7 +342,7 @@ const GenerationView = () => {
                                                 }
                                             }}
                                             disabled={isEnriching}
-                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 hover:from-amber-500/30 hover:to-orange-500/30 transition-colors disabled:opacity-50"
+                                            className="velvet-btn-primary text-[10px] font-semibold px-2.5 py-1 disabled:opacity-50"
                                         >
                                             {isEnriching ? '...' : '⚡ Enrichir & Generer'}
                                         </button>
@@ -350,7 +352,7 @@ const GenerationView = () => {
                                                 navigator.clipboard.writeText(data);
                                                 toast.success('Matrice copiee');
                                             }}
-                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                                            className="velvet-btn-ghost text-[10px] font-semibold px-2.5 py-1"
                                         >
                                             Copier
                                         </button>
@@ -360,7 +362,6 @@ const GenerationView = () => {
                                     <EditableMatrix
                                         matrix={enrichedMatrix || anchorMatrix}
                                         onChange={(path, value) => {
-                                            // Deep set value at path in a copy of the matrix
                                             const base = enrichedMatrix ? { ...enrichedMatrix } : { ...anchorMatrix };
                                             const keys = path.replace('$.', '').split('.');
                                             let obj = base;
@@ -377,11 +378,11 @@ const GenerationView = () => {
                                 </div>
                             </div>
                         ) : rightPanel === 'galerie' ? (
-                            <div className="h-full bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
+                            <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
                                 <GalleryPanel key={galleryKey} />
                             </div>
                         ) : rightPanel === 'historique' ? (
-                            <div className="h-full bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
+                            <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
                                 <PromptHistoryPanel
                                     key={historyKey}
                                     onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
