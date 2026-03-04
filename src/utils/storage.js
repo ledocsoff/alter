@@ -128,6 +128,19 @@ export const saveApiProvider = (provider) => {
 };
 
 // ============================================
+// LAST SESSION — Retour rapide au dernier studio
+// ============================================
+const LAST_SESSION_KEY = 'nanabanana_last_session';
+
+export const saveLastSession = (info) => {
+    try { localStorage.setItem(LAST_SESSION_KEY, JSON.stringify({ ...info, timestamp: Date.now() })); } catch { }
+};
+
+export const getLastSession = () => {
+    try { return JSON.parse(localStorage.getItem(LAST_SESSION_KEY)) || null; } catch { return null; }
+};
+
+// ============================================
 // LECTURE GLOBALE
 // ============================================
 export const getSavedModels = () => {

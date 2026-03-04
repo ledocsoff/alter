@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
-import { saveLocationData, generateSeed, getApiKey } from '../utils/storage';
+import { saveLocationData, generateSeed, getApiKey, saveLastSession } from '../utils/storage';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
@@ -78,6 +78,16 @@ const GenerationView = () => {
         }
 
         setIsLoaded(true);
+
+        // Sauvegarder la session pour le bouton "Reprendre"
+        saveLastSession({
+            modelId,
+            accountId,
+            locationId,
+            modelName: mdl.name,
+            locationName: isSandbox ? 'Sandbox' : loc?.name,
+            path: `/models/${modelId}/accounts/${accountId}/${isSandbox ? 'sandbox' : `locations/${locationId}/studio`}`,
+        });
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
 

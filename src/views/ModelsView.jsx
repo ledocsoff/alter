@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { deleteModelData, saveModelData } from '../utils/storage';
+import { deleteModelData, saveModelData, getLastSession } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
 const MODEL_COLORS = [
@@ -70,6 +70,24 @@ const ModelsView = () => {
             <p className="text-zinc-500 text-sm mt-1">Selectionnez un profil pour commencer.</p>
           </div>
           <div className="flex items-center gap-2">
+            {(() => {
+              const lastSession = getLastSession();
+              if (!lastSession) return null;
+              // Vérifier que le modèle existe toujours
+              const stillExists = allModelsDatabase.some(m => m.id === lastSession.modelId);
+              if (!stillExists) return null;
+              return (
+                <button
+                  onClick={() => navigate(lastSession.path)}
+                  className="flex items-center gap-2 h-9 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/15 transition-colors"
+                  title={`Reprendre : ${lastSession.modelName} — ${lastSession.locationName}`}
+                >
+                  <span>▶</span>
+                  <span className="hidden sm:inline">Reprendre</span>
+                  <span className="text-amber-500/60 text-[10px] hidden md:inline">({lastSession.modelName})</span>
+                </button>
+              );
+            })()}
             {allModelsDatabase.length > 0 && (
               <input
                 type="text"
