@@ -413,6 +413,48 @@ export const extractModelFromPhotos = async (apiKey, photos) => {
 };
 
 // ============================================
+// ROBUST JSON EXTRACTION
+// ============================================
+
+/**
+ * Extract JSON from Gemini response text, handling markdown fences,
+ * extra text before/after, trailing commas, etc.
+ */
+const extractJSON = (rawText) => {
+  let str = rawText.trim();
+
+  // 1. Extract from markdown fences ```json ... ```
+  const fenceMatch = str.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) str = fenceMatch[1].trim();
+
+  // 2. Try direct parse first
+  try { return JSON.parse(str); } catch { /* continue */ }
+
+  // 3. Find first { or [ and last matching } or ]
+  const firstBrace = str.indexOf('{');
+  const firstBracket = str.indexOf('[');
+  let start, endChar;
+
+  if (firstBrace >= 0 && (firstBracket < 0 || firstBrace < firstBracket)) {
+    start = firstBrace; endChar = '}';
+  } else if (firstBracket >= 0) {
+    start = firstBracket; endChar = ']';
+  } else {
+    throw new Error('No JSON found');
+  }
+
+  const end = str.lastIndexOf(endChar);
+  if (end <= start) throw new Error('Malformed JSON');
+
+  let extracted = str.slice(start, end + 1);
+
+  // 4. Remove trailing commas before } or ]
+  extracted = extracted.replace(/,\s*([}\]])/g, '$1');
+
+  return JSON.parse(extracted);
+};
+
+// ============================================
 // AUTO-FILL LIEU VIA IA
 // ============================================
 const LOCATION_AUTOFILL_PROMPT = `You are an expert at creating detailed photoshoot location descriptions for AI image generation.
@@ -504,17 +546,13 @@ export const autoFillLocation = async (apiKey, locationName) => {
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.filter(p => p.text).map(p => p.text).join('') || '';
 
-  let jsonStr = text.trim();
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
   try {
-    const parsed = JSON.parse(jsonStr);
+    const parsed = extractJSON(text);
     logger.success('generation', `Lieu auto-rempli en ${elapsed}s`, { fields: Object.keys(parsed) });
     return parsed;
-  } catch {
-    logger.error('generation', 'JSON invalide pour auto-fill lieu', jsonStr.slice(0, 500));
-    throw new Error('Gemini a retourné un format invalide.');
+  } catch (e) {
+    logger.error('generation', 'JSON invalide pour auto-fill lieu', text.slice(0, 500));
+    throw new Error('Gemini a retourné un format invalide. Réessaie.');
   }
 };
 
@@ -604,17 +642,14 @@ export const generateLocationPresets = async (apiKey, location) => {
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.filter(p => p.text).map(p => p.text).join('') || '';
 
-  let jsonStr = text.trim();
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
   try {
-    const parsed = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Not an array');
-    logger.success('generation', `${parsed.length} presets générés en ${elapsed}s pour "${location.name}"`);
-    return parsed.slice(0, 8);
-  } catch {
-    logger.error('generation', 'JSON invalide pour presets lieu', jsonStr.slice(0, 500));
-    throw new Error('Gemini a retourné un format invalide pour les presets.');
+    const parsed = extractJSON(text);
+    const arr = Array.isArray(parsed) ? parsed : [parsed];
+    if (arr.length === 0) throw new Error('Empty array');
+    logger.success('generation', `${arr.length} presets générés en ${elapsed}s pour "${location.name}"`);
+    return arr.slice(0, 8);
+  } catch (e) {
+    logger.error('generation', 'JSON invalide pour presets lieu', text.slice(0, 500));
+    throw new Error('Gemini a retourné un format invalide pour les presets. Réessaie.');
   }
 };
