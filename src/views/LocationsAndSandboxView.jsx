@@ -405,7 +405,7 @@ const LocationsAndSandboxView = () => {
                                         )}
                                         <button
                                             onClick={handleSaveLocation}
-                                            disabled={!newLocName.trim() || !newLocEnvCustom.trim()}
+                                            disabled={!newLocName.trim() || (!safeStr(newLocEnvCustom) && !newLocEnvDrop)}
                                             className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
                                                 ? 'bg-violet-500 text-white hover:bg-violet-400 hover:shadow-lg hover:shadow-violet-500/20'
                                                 : 'velvet-btn-primary'
@@ -425,7 +425,7 @@ const LocationsAndSandboxView = () => {
                                     <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
                                     <div>
                                         <p className="text-sm font-semibold text-violet-300">Génération des ambiances IA...</p>
-                                        <p className="text-[11px] text-zinc-500">8 presets adaptés à ce lieu seront créés automatiquement</p>
+                                        <p className="text-[11px] text-zinc-500">8 ambiances + 8 tenues + 8 poses adaptées seront générées</p>
                                     </div>
                                 </div>
                             </div>
@@ -515,7 +515,11 @@ const LocationsAndSandboxView = () => {
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
                                             {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
-                                            {loc.ai_presets?.length > 0 && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">IA ✓ {loc.ai_presets.length} ambiances</span>}
+                                            {loc.ai_presets?.length > 0 && (
+                                                <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">
+                                                    IA ✓ {loc.ai_presets.length} ambiances{loc.ai_outfits?.length > 0 ? ` · ${loc.ai_outfits.length} tenues` : ''}{loc.ai_poses?.length > 0 ? ` · ${loc.ai_poses.length} poses` : ''}
+                                                </span>
+                                            )}
                                             {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
                                             {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
                                             {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}

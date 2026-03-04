@@ -51,9 +51,10 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
 
     /* ─── Apply a scene preset ─── */
     const applyPreset = (preset) => {
+        const { outfit: presetOutfit, ...sceneWithoutOutfit } = preset.scene || {};
         setScene(prev => ({
             ...prev,
-            ...preset.scene,
+            ...sceneWithoutOutfit,
             // In location mode: keep ALL location-locked values
             ...(isSandbox ? {} : {
                 environment: prev.environment,
@@ -62,8 +63,8 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 lighting: prev.lighting,
             }),
             // Apply outfit from AI preset if present, otherwise keep current
-            outfit: preset.scene?.outfit
-                ? { id: `ai_${preset.id}`, label: preset.label, value: preset.scene.outfit, icon: '' }
+            outfit: presetOutfit
+                ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
                 : prev.outfit,
             // Always keep these
             aspect_ratio: prev.aspect_ratio,
@@ -81,11 +82,12 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
         const availableOutfits = (!isSandbox && location?.ai_outfits?.length > 0) ? location.ai_outfits : OUTFIT_PRESETS;
         const preset = pickRandom(availablePresets);
         const outfit = pickRandom(availableOutfits);
+        const { outfit: presetOutfit, ...sceneWithoutOutfit } = preset.scene || {};
         setScene(prev => ({
             ...prev,
-            ...preset.scene,
-            outfit: preset.scene?.outfit
-                ? { id: `ai_${preset.id}`, label: preset.label, value: preset.scene.outfit, icon: '' }
+            ...sceneWithoutOutfit,
+            outfit: presetOutfit
+                ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
                 : outfit,
             ...(isSandbox ? {} : {
                 environment: prev.environment,
@@ -100,6 +102,28 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
         }));
         setActivePresetId(preset.id);
         toast.info(`🎲 ${preset.label} + ${outfit.label}`);
+    };
+
+    /* ─── Generate AI presets ─── */
+    const handleGenerateAI = async () => {
+        const apiKey = getApiKey();
+        if (!apiKey) { toast.error('Clé API requise'); return; }
+        setIsGeneratingPresets(true);
+        try {
+            const result = await generateLocationPresets(apiKey, location);
+            const updated = saveLocationData(modelId, accountId, {
+                ...location,
+                ai_presets: result.presets,
+                ai_outfits: result.outfits,
+                ai_poses: result.poses,
+            });
+            if (updated) setAllModelsDatabase(updated);
+            toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses`);
+        } catch (err) {
+            toast.error(`Erreur: ${err.message}`);
+        } finally {
+            setIsGeneratingPresets(false);
+        }
     };
 
     /* ─── Templates ─── */
@@ -228,28 +252,23 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                             {hasAiPresets ? `🧠 Ambiances — ${location.name}` : (!isSandbox && location) ? `📸 Ambiance — ${location.name}` : '📸 Ambiance'}
                         </span>
                         {hasAiPresets && (
-                            <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
+                            <button
+                                onClick={handleGenerateAI}
+                                disabled={isGeneratingPresets}
+                                className="text-[9px] text-zinc-600 hover:text-violet-400 transition-colors flex items-center gap-1"
+                                title="Régénérer les ambiances, tenues et poses IA"
+                            >
+                                {isGeneratingPresets ? (
+                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                                ) : '♻️'}
+                            </button>
                         )}
                     </div>
                     {!isSandbox && location && !hasAiPresets && (
                         <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
                             <p className="text-[11px] text-zinc-500">Aucune ambiance IA pour ce lieu</p>
                             <button
-                                onClick={async () => {
-                                    const apiKey = getApiKey();
-                                    if (!apiKey) { toast.error('Clé API requise'); return; }
-                                    setIsGeneratingPresets(true);
-                                    try {
-                                        const result = await generateLocationPresets(apiKey, location);
-                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
-                                        if (updated) setAllModelsDatabase(updated);
-                                        toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses`);
-                                    } catch (err) {
-                                        toast.error(`Erreur: ${err.message}`);
-                                    } finally {
-                                        setIsGeneratingPresets(false);
-                                    }
-                                }}
+                                onClick={handleGenerateAI}
                                 disabled={isGeneratingPresets}
                                 className={`text-[11px] velvet-btn-primary py-1.5 px-3 flex items-center gap-1.5 ${isGeneratingPresets ? 'opacity-50 cursor-wait' : ''}`}
                             >
