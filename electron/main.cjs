@@ -61,11 +61,7 @@ function startServer() {
         });
 
         serverProcess.stdout?.on('data', (data) => {
-            const msg = data.toString();
-            console.log('[Server]', msg.trim());
-            if (msg.includes('Velvet Studio Server')) {
-                resolve();
-            }
+            console.log('[Server]', data.toString().trim());
         });
 
         serverProcess.stderr?.on('data', (data) => {
@@ -74,8 +70,29 @@ function startServer() {
 
         serverProcess.on('error', reject);
 
-        // Fallback: resolve after 3s even if no message received
-        setTimeout(resolve, 3000);
+        // Poll health endpoint until server is ready (up to 10s)
+        let attempts = 0;
+        const maxAttempts = 20;
+        const poll = setInterval(async () => {
+            attempts++;
+            try {
+                const http = require('http');
+                const req = http.get(`http://localhost:${SERVER_PORT}/api/health`, (res) => {
+                    if (res.statusCode === 200) {
+                        clearInterval(poll);
+                        console.log('[Electron] Server ready after', attempts * 500, 'ms');
+                        resolve();
+                    }
+                });
+                req.on('error', () => { }); // Server not ready yet
+                req.setTimeout(400, () => req.destroy());
+            } catch { /* ignore */ }
+            if (attempts >= maxAttempts) {
+                clearInterval(poll);
+                console.warn('[Electron] Server did not respond in 10s, continuing anyway');
+                resolve();
+            }
+        }, 500);
     });
 }
 

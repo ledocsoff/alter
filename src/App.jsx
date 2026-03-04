@@ -87,13 +87,30 @@ const AppLayout = ({ children }) => {
   const [serverOnline, setServerOnline] = useState(true);
   const [savedFlash, setSavedFlash] = useState(false);
 
-  // Health check — ping server every 30s
+  // Health check — ping server every 30s, with startup retry
   const apiBase = (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3001' : '';
   useEffect(() => {
-    const check = () => fetch(`${apiBase}/api/health`).then(() => setServerOnline(true)).catch(() => setServerOnline(false));
-    check();
-    const interval = setInterval(check, 30000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    let interval;
+    const ping = () => fetch(`${apiBase}/api/health`).then(() => true).catch(() => false);
+
+    // Startup: retry every 2s for up to 15s (server may be booting in Electron)
+    const startup = async () => {
+      for (let i = 0; i < 8; i++) {
+        if (cancelled) return;
+        const ok = await ping();
+        if (ok) { setServerOnline(true); break; }
+        if (i === 7) { setServerOnline(false); break; }
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      // Then check every 30s
+      interval = setInterval(async () => {
+        const ok = await ping();
+        if (!cancelled) setServerOnline(ok);
+      }, 30000);
+    };
+    startup();
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   // Flash "Sauvegardé ✓" on successful sync
