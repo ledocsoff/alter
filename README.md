@@ -8,8 +8,8 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Velvet Studio-5.0.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
-| **Windows** (x64) | [Velvet Studio Setup 5.0.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **macOS** (Apple Silicon) | [Velvet Studio-5.1.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **Windows** (x64) | [Velvet Studio Setup 5.1.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
 
 > **Note**: The app is not code-signed. On macOS, right-click → Open on first launch. On Windows, click "More info" → "Run anyway".
 
