@@ -135,10 +135,11 @@ const validatePayload = (data) => {
 // ATOMIC WRITE — écriture dans .tmp puis rename
 // ============================================
 const writeDataAtomic = (filepath, data) => {
-    // Add checksum and version before writing
-    data.dataVersion = CURRENT_DATA_VERSION;
-    data._checksum = computeChecksum(data);
-    const json = JSON.stringify(data, null, 2);
+    // Work on a copy to avoid mutating the original (e.g. req.body)
+    const toWrite = { ...data };
+    toWrite.dataVersion = CURRENT_DATA_VERSION;
+    toWrite._checksum = computeChecksum(toWrite);
+    const json = JSON.stringify(toWrite, null, 2);
     const dir = path.dirname(filepath);
     const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
     fs.writeFileSync(tmpFile, json, 'utf-8');
@@ -260,14 +261,6 @@ const cleanupTempFiles = () => {
 const app = express();
 app.use(corsMiddleware);
 app.use(express.json({ limit: '50mb' }));
-
-// ============================================
-// ERROR HANDLER — attrape les erreurs non gérées
-// ============================================
-app.use((err, _req, res, _next) => {
-    console.error('[Server] Erreur non gérée:', err.message);
-    res.status(500).json({ error: 'Erreur interne du serveur' });
-});
 
 // Health check — enrichi avec infos disque
 app.get('/api/health', (_req, res) => {
@@ -722,6 +715,14 @@ app.delete('/api/refs/:modelId/:refId', (req, res) => {
     writeRefsIndex(modelId, entries);
     console.log(`[Server] Refs ${modelId}: -1 → ${entries.length} restantes`);
     res.json({ ok: true, remaining: entries.length });
+});
+
+// ============================================
+// ERROR HANDLER — attrape les erreurs non gérées (DOIT être après les routes)
+// ============================================
+app.use((err, _req, res, _next) => {
+    console.error('[Server] Erreur non gérée:', err.message);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
 });
 
 // ============================================

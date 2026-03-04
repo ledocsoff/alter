@@ -2,7 +2,7 @@
     "name": "Velvet Studio",
     "short_name": "Velvet",
     "description": "AI Model Management & Prompt Generation Studio",
-    "start_url": "/",
+    "start_url": "./#/",
     "display": "standalone",
     "background_color": "#09090b",
     "theme_color": "#7c3aed",

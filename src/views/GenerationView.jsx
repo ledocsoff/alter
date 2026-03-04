@@ -104,18 +104,6 @@ const GenerationView = () => {
         try { sessionStorage.setItem('velvet_last_tab', rightPanel); } catch { }
     }, [rightPanel]);
 
-    // Quick Win D: Ctrl+G to generate
-    useEffect(() => {
-        const handler = (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
-                e.preventDefault();
-                if (imagePreviewRef.current?.handleGenerate) imagePreviewRef.current.handleGenerate();
-            }
-        };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, []);
-
     // Auto-load persistent model reference photos
     useEffect(() => {
         if (!modelId || !isLoaded) return;
