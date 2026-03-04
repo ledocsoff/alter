@@ -21,8 +21,8 @@ export const OUTFIT_PRESETS = [
 export const SCENE_OPTIONS = {
   vibe: [
     { labelFR: "Photo Instagram spontanée", promptEN: "candid Instagram photo" },
-    { labelFR: "Photo Polaroid", promptEN: "Polaroid picture" },
-    { labelFR: "Capture d'écran TikTok", promptEN: "Tiktok screenshot" },
+    { labelFR: "Photo Polaroid vintage", promptEN: "warm vintage tones, faded colors, casual candid" },
+    { labelFR: "Style TikTok décontracté", promptEN: "casual TikTok style photo, trendy angle" },
     { labelFR: "Selfie amateur", promptEN: "amateur selfie" },
     { labelFR: "Appareil photo jetable", promptEN: "disposable camera shot" },
     { labelFR: "Quotidien décontracté", promptEN: "casual everyday snapshot" },
@@ -136,7 +136,7 @@ export const SCENE_PRESETS = [
   },
   {
     id: 'balcony_city', label: '🌆 Balcon', desc: 'Vue urbaine, soirée',
-    scene: { environment: 'city apartment balcony with plants', lighting: 'moody low light', camera_angle: 'eye-level portrait', pose: 'looking over shoulder', expression: 'serious model stare', vibe: 'Polaroid picture' },
+    scene: { environment: 'city apartment balcony with plants', lighting: 'moody low light', camera_angle: 'eye-level portrait', pose: 'looking over shoulder', expression: 'serious model stare', vibe: 'warm vintage tones, faded colors, casual candid' },
   },
   {
     id: 'cafe_terrace', label: '☕ Café', desc: 'Terrasse, lumière naturelle',

@@ -262,6 +262,20 @@ const SceneEditor = ({ isSandbox = false }) => {
                     />
                 </div>
 
+                {/* ═══ DÉTAILS LIBRES ═══ */}
+                <div className="mb-4 border-t border-white/[0.04] pt-3">
+                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                        ✏️ Détails libres <span className="normal-case font-normal text-zinc-600">personnalise cette photo</span>
+                    </span>
+                    <textarea
+                        value={scene.custom_details || ''}
+                        onChange={(e) => updateSceneEntry('custom_details', e.target.value)}
+                        placeholder="Ex: cheveux mouillés, lunettes de soleil, tenant un café, regard vers la droite..."
+                        rows={2}
+                        className="velvet-input w-full text-[12px] resize-none"
+                    />
+                </div>
+
                 {/* ═══ ZONE 3: OPTIONS AVANCÉES (replié) ═══ */}
                 <div className="border-t border-white/[0.04] pt-2">
                     <button

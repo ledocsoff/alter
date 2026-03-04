@@ -106,6 +106,9 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     "inconsistent background", "changing room layout",
     "bokeh", "depth of field", "shallow DOF", "DSLR", "studio lighting",
     "professional photography", "cinematic color grading", "film grain",
+    "phone UI", "status bar", "notification bar", "phone frame",
+    "screenshot overlay", "app interface", "phone screen", "UI elements",
+    "battery icon", "time display", "signal bars", "phone border",
   ].join(', ');
 
   // Append custom negative prompt if user provided one
@@ -155,8 +158,8 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     style_and_realism: {
-      aesthetic: "Candid smartphone photo. Natural phone camera look. No professional photography, no studio lighting, no bokeh. Looks like a real Instagram/TikTok post taken with an iPhone.",
-      fidelity: "Photorealistic, natural skin texture. No airbrushing or over-processing. Casual, unposed feel. Slight phone camera grain, natural imperfections.",
+      aesthetic: "Candid photo taken with a smartphone camera. Natural casual look, not a screenshot or screen capture. This is a PHOTOGRAPH, not a phone screen. No phone UI, no status bar, no app interface — just the raw photo image.",
+      fidelity: "Photorealistic, natural skin texture. No airbrushing or over-processing. Casual, unposed feel. Natural imperfections. The output MUST be a direct photograph, NOT a phone screen or screenshot.",
     },
 
     colors_and_tone: {
@@ -191,6 +194,8 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     negative_prompt: negativeStr,
+
+    custom_details: scene.custom_details?.trim() || null,
   };
 
   // Identity lock directives
