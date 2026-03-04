@@ -54,53 +54,52 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
 
     const promptToSend = customPrompt || generatedPrompt;
 
-    // Build visual anchoring based on available references
+    // ─── ANCHOR ARCHITECTURE ───
+    // Identity MUST be the primary anchor. Location is secondary.
+    // Each anchor type gets its own conversation turn for maximum attention.
+    // A synthetic model "acknowledgment" turn reinforces the identity lock
+    // before introducing location context.
     let anchorHistory = [];
 
-    if (referenceImages.length > 0 && locationRefImages.length > 0) {
-      // DUAL ANCHOR — unified cross-reference for strongest consistency
-      anchorHistory = [{
+    // TURN 1: Model identity (always first if available)
+    if (referenceImages.length > 0) {
+      anchorHistory.push({
         role: 'user',
         parts: [
           {
-            text: `DUAL VISUAL ANCHOR — IDENTITY + ENVIRONMENT LOCK:
-
-1. PERSON IDENTITY REFERENCE (photos below): This is the EXACT person to reproduce.
-   Match this face, body proportions, skin tone, hair, and features precisely.
-   This person's identity is LOCKED — she must be recognizable as the SAME individual.
-
-2. ENVIRONMENT REFERENCE (photos after person refs): This is the EXACT location/environment.
-   Match this background, architecture, décor, furniture, lighting, colors, and atmosphere.
-
-3. CROSS-ANCHOR RULE: The person from the identity references MUST appear INSIDE
-   the environment from the location references. Both must be reproduced simultaneously
-   and precisely. The person is placed naturally within this exact setting.` },
-          { text: '--- PERSON REFERENCE PHOTOS ---' },
+            text: `IDENTITY LOCK — ABSOLUTE PRIORITY:
+The following photos show the EXACT person you must reproduce in EVERY image.
+This is NON-NEGOTIABLE. Match precisely:
+- This exact FACE (eyes, nose, mouth, jawline, facial structure)
+- This exact BODY (proportions, silhouette, skin tone)
+- This exact HAIR (color, length, texture, style)
+The person must be IMMEDIATELY recognizable as the same individual.
+Identity fidelity is MORE important than any other instruction.` },
           ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-          { text: '--- LOCATION REFERENCE PHOTOS ---' },
+        ],
+      });
+
+      // Synthetic model acknowledgment — reinforces the lock
+      anchorHistory.push({
+        role: 'model',
+        parts: [{ text: 'Identity locked. I have memorized this exact person\'s face, body, skin tone, hair, and proportions. Every image I generate will reproduce this exact individual. Identity fidelity is my top priority.' }],
+      });
+    }
+
+    // TURN 2: Location context (separate turn, explicitly subordinate)
+    if (locationRefImages.length > 0) {
+      anchorHistory.push({
+        role: 'user',
+        parts: [
+          {
+            text: `ENVIRONMENT CONTEXT (secondary to identity):
+The following photos show the environment/location for this scene.
+Reproduce the background, décor, lighting, and atmosphere.
+IMPORTANT: The person's identity from the previous reference MUST NOT change.
+The environment adapts around the person, not the other way around.` },
           ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
         ],
-      }];
-    } else {
-      // Single anchor fallbacks
-      if (referenceImages.length > 0) {
-        anchorHistory.push({
-          role: 'user',
-          parts: [
-            { text: 'REFERENCE IMAGES — This is the EXACT person to reproduce. Match this face, body proportions, skin tone, and features precisely in EVERY generation. This person\'s identity is LOCKED.' },
-            ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-          ],
-        });
-      }
-      if (locationRefImages.length > 0) {
-        anchorHistory.push({
-          role: 'user',
-          parts: [
-            { text: 'LOCATION REFERENCE — This is the EXACT environment/location to reproduce. Match this background, architecture, décor, lighting, colors, and atmosphere precisely. The model should be placed IN this environment.' },
-            ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-          ],
-        });
-      }
+      });
     }
 
     try {
