@@ -33,10 +33,9 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
     const [activePresetId, setActivePresetId] = useState(null);
 
     // Use location-specific presets when available, fallback to generic
-    const presets = (!isSandbox && location?.ai_presets?.length > 0)
-        ? location.ai_presets
-        : SCENE_PRESETS;
     const hasAiPresets = !isSandbox && location?.ai_presets?.length > 0;
+    const waitingForPresets = !isSandbox && location && !hasAiPresets;
+    const presets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
 
     /* ─── Detect active preset ─── */
     const detectedPreset = useMemo(() => {
@@ -218,40 +217,48 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-2.5">
                         <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : '📸 Ambiance'}
+                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : waitingForPresets ? `⏳ Ambiances — ${location.name}` : '📸 Ambiance'}
                         </span>
                         {hasAiPresets && (
                             <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                        {presets.map(preset => {
-                            const isActive = detectedPreset === preset.id;
-                            return (
-                                <button
-                                    key={preset.id}
-                                    onClick={() => applyPreset(preset)}
-                                    className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
-                                        ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
-                                        : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-[13px]">{preset.label.split(' ')[0]}</span>
-                                        <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
-                                            {preset.label.split(' ').slice(1).join(' ')}
-                                        </span>
-                                    </div>
-                                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
-                                        {preset.desc}
-                                    </p>
-                                    {isActive && (
-                                        <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    {waitingForPresets ? (
+                        <div className="flex flex-col items-center justify-center py-8 rounded-xl border border-dashed border-violet-500/15 bg-violet-500/[0.02]">
+                            <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin mb-3" />
+                            <p className="text-[12px] text-violet-300 font-medium">Génération des ambiances IA...</p>
+                            <p className="text-[10px] text-zinc-600 mt-1">8 presets adaptés à ce lieu</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-1.5">
+                            {presets.map(preset => {
+                                const isActive = detectedPreset === preset.id;
+                                return (
+                                    <button
+                                        key={preset.id}
+                                        onClick={() => applyPreset(preset)}
+                                        className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
+                                            ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
+                                            : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[13px]">{preset.label.split(' ')[0]}</span>
+                                            <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
+                                                {preset.label.split(' ').slice(1).join(' ')}
+                                            </span>
+                                        </div>
+                                        <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
+                                            {preset.desc}
+                                        </p>
+                                        {isActive && (
+                                            <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* ═══ ZONE 2: TENUE ═══ */}
@@ -420,7 +427,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };
 

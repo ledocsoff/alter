@@ -83,54 +83,60 @@ const LocationsAndSandboxView = () => {
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
     const handleSaveLocation = async () => {
-        if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
-        const finalEnvironment = newLocEnvCustom.trim() || newLocEnvDrop;
-        if (!finalEnvironment) { toast.error('Environnement requis'); return; }
+        try {
+            if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
+            const finalEnvironment = newLocEnvCustom.trim() || newLocEnvDrop;
+            if (!finalEnvironment) { toast.error('Environnement requis'); return; }
 
-        const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
+            const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
 
-        const locationData = {
-            name: newLocName.trim(),
-            environment: finalEnvironment,
-            default_lighting: newLocLighting,
-            default_vibe: newLocVibe,
-            time_of_day: newLocTimeOfDay,
-            anchor_details: newLocAnchorDetails.trim(),
-            color_palette: newLocColorPalette.trim(),
-            negative_prompt: newLocNegativePrompt.trim(),
-        };
-        if (!isCreating) locationData.id = locFormMode;
+            const locationData = {
+                name: newLocName.trim(),
+                environment: finalEnvironment,
+                default_lighting: newLocLighting,
+                default_vibe: newLocVibe,
+                time_of_day: newLocTimeOfDay,
+                anchor_details: newLocAnchorDetails.trim(),
+                color_palette: newLocColorPalette.trim(),
+                negative_prompt: newLocNegativePrompt.trim(),
+            };
+            if (!isCreating) locationData.id = locFormMode;
 
-        const updated = saveLocationData(modelId, accountId, locationData);
-        if (updated) {
-            setAllModelsDatabase(updated);
-            toast.success(isCreating ? `"${locationData.name}" créé` : `Lieu mis à jour`);
-            resetForm();
+            const updated = saveLocationData(modelId, accountId, locationData);
 
-            // Generate AI presets on CREATION only
-            if (isCreating) {
-                const apiKey = getApiKey();
-                if (apiKey) {
-                    setIsGeneratingPresets(true);
-                    try {
-                        const savedModel = updated.find(m => m.id === modelId);
-                        const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
-                        const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
-                        if (savedLoc) {
-                            const presets = await generateLocationPresets(apiKey, savedLoc);
-                            const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: presets });
-                            if (updated2) setAllModelsDatabase(updated2);
-                            toast.success(`${presets.length} ambiances IA générées`);
+            if (updated) {
+                setAllModelsDatabase(updated);
+                toast.success(isCreating ? `"${locationData.name}" créé` : `Lieu mis à jour`);
+                resetForm();
+
+                // Generate AI presets on CREATION only
+                if (isCreating) {
+                    const apiKey = getApiKey();
+                    if (apiKey) {
+                        setIsGeneratingPresets(true);
+                        try {
+                            const savedModel = updated.find(m => m.id === modelId);
+                            const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
+                            const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
+                            if (savedLoc) {
+                                const presets = await generateLocationPresets(apiKey, savedLoc);
+                                const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: presets });
+                                if (updated2) setAllModelsDatabase(updated2);
+                                toast.success(`${presets.length} ambiances IA générées`);
+                            }
+                        } catch (err) {
+                            toast.error(`Presets IA: ${err.message}`);
+                        } finally {
+                            setIsGeneratingPresets(false);
                         }
-                    } catch (err) {
-                        toast.error(`Presets IA: ${err.message}`);
-                    } finally {
-                        setIsGeneratingPresets(false);
                     }
                 }
+            } else {
+                toast.error('Erreur: impossible de sauvegarder');
             }
-        } else {
-            toast.error('Erreur: impossible de sauvegarder');
+        } catch (err) {
+            console.error('[SAVE] Unexpected error:', err);
+            toast.error(`Erreur inattendue: ${err.message}`);
         }
     };
 
@@ -200,14 +206,15 @@ const LocationsAndSandboxView = () => {
         setIsAutoFilling(true);
         try {
             const result = await autoFillLocation(apiKey, newLocName.trim());
-            if (result.name) setNewLocName(result.name);
-            if (result.environment) { setIsCustomEnv(true); setNewLocEnvCustom(result.environment); }
-            if (result.lighting) setNewLocLighting(result.lighting);
-            if (result.vibe) setNewLocVibe(result.vibe);
-            if (result.time_of_day) setNewLocTimeOfDay(result.time_of_day);
-            if (result.anchor_details) setNewLocAnchorDetails(result.anchor_details);
-            if (result.color_palette) setNewLocColorPalette(result.color_palette);
-            if (result.negative_prompt) setNewLocNegativePrompt(result.negative_prompt);
+            const str = v => Array.isArray(v) ? v.join(', ') : (typeof v === 'string' ? v : String(v || ''));
+            if (result.name) setNewLocName(str(result.name));
+            if (result.environment) { setIsCustomEnv(true); setNewLocEnvCustom(str(result.environment)); }
+            if (result.lighting) setNewLocLighting(str(result.lighting));
+            if (result.vibe) setNewLocVibe(str(result.vibe));
+            if (result.time_of_day) setNewLocTimeOfDay(str(result.time_of_day));
+            if (result.anchor_details) setNewLocAnchorDetails(str(result.anchor_details));
+            if (result.color_palette) setNewLocColorPalette(str(result.color_palette));
+            if (result.negative_prompt) setNewLocNegativePrompt(str(result.negative_prompt));
             setLocFormMode('review');
             toast.success('Lieu rempli par l\'IA — vérifie et enregistre');
         } catch (err) {
