@@ -4,8 +4,7 @@ import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
 import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate } from '../../utils/storage';
 import { TrashIcon } from '../../components/Icons';
-
-const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+import { pickRandom } from '../../utils/helpers';
 
 const SceneEditor = ({ isSandbox = false }) => {
     const { scene, updateSceneEntry, setScene } = useStudio();

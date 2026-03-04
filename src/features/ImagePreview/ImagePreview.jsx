@@ -92,10 +92,15 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
       onGalleryUpdate?.();
 
       setConversationHistory(prev => {
+        // Strip base64 image data from model parts to prevent memory bloat
+        const cleanModelParts = (result.modelParts || []).map(part => {
+          if (part.inlineData) return { text: '[image generated]' };
+          return part;
+        });
         const updated = [
           ...prev,
           { role: 'user', parts: [{ text: promptToSend }] },
-          { role: 'model', parts: result.modelParts },
+          { role: 'model', parts: cleanModelParts },
         ];
         if (updated.length > MAX_HISTORY_TURNS * 2) {
           return updated.slice(-MAX_HISTORY_TURNS * 2);

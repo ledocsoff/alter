@@ -41,7 +41,7 @@ const syncToServer = () => {
         } catch (err) {
             console.warn('[Velvet] Sync serveur echoue:', err.message);
         }
-    }, 300);
+    }, 1500); // 1.5s debounce — reduces redundant writes during rapid edits
 };
 
 // Force sync immédiat (pour beforeunload ou appel explicite)

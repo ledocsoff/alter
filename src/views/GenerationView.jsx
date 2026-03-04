@@ -4,6 +4,7 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
 import { saveLocationData, generateSeed, getApiKey, saveLastSession } from '../utils/storage';
+import { pickRandom } from '../utils/helpers';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
@@ -96,7 +97,7 @@ const GenerationView = () => {
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
 
-    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
     const handleRandomize = useCallback(() => {
         setScene(prev => ({
             outfit: pickRandom(OUTFIT_PRESETS),
@@ -267,14 +268,14 @@ const GenerationView = () => {
                                 <>
                                     <button
                                         onClick={() => {
-                                            const pickR = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
                                             const getVariant = (i) => {
                                                 try {
                                                     const matrix = JSON.parse(generatedPrompt);
                                                     if (i > 0) {
-                                                        matrix.pose.body_position = pickR(SCENE_OPTIONS.pose).promptEN;
-                                                        matrix.camera.perspective = pickR(SCENE_OPTIONS.camera_angle).promptEN;
-                                                        matrix.mood_and_expression.facial_expression = pickR(SCENE_OPTIONS.expression).promptEN;
+                                                        matrix.pose.body_position = pickRandom(SCENE_OPTIONS.pose).promptEN;
+                                                        matrix.camera.perspective = pickRandom(SCENE_OPTIONS.camera_angle).promptEN;
+                                                        matrix.mood_and_expression.facial_expression = pickRandom(SCENE_OPTIONS.expression).promptEN;
                                                     }
                                                     return JSON.stringify(matrix, null, 2);
                                                 } catch { return generatedPrompt; }

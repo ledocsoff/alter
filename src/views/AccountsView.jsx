@@ -35,8 +35,14 @@ const AccountsView = () => {
   }
 
   const handleCreate = () => {
-    if (!handle.trim()) return;
-    const updated = saveAccountData(modelId, { handle: handle.trim(), platform });
+    const trimmed = handle.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 30) { toast.error('Nom trop long (30 caracteres max)'); return; }
+    const exists = (currentModel.accounts || []).some(
+      a => a.handle.toLowerCase() === trimmed.toLowerCase() && a.platform === platform
+    );
+    if (exists) { toast.error('Ce compte existe deja'); return; }
+    const updated = saveAccountData(modelId, { handle: trimmed, platform });
     if (updated) {
       setAllModelsDatabase(updated);
       setHandle('');
