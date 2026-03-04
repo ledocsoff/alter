@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
-import { saveLocationData, generateSeed, getApiKey, saveLastSession } from '../utils/storage';
+import { saveLocationData, generateSeed, getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
 import { pickRandom } from '../utils/helpers';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
@@ -25,7 +25,7 @@ const TABS = [
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -96,6 +96,23 @@ const GenerationView = () => {
         });
         return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
+
+    // Auto-load persistent model reference photos
+    useEffect(() => {
+        if (!modelId || !isLoaded) return;
+        (async () => {
+            try {
+                const refs = await getModelRefs(modelId);
+                if (!refs || refs.length === 0) return;
+                const loaded = (await Promise.all(
+                    refs.map(r => loadModelRefBase64(modelId, r.id))
+                )).filter(Boolean).map(r => ({ base64: r.base64, mimeType: r.mimeType, dataUrl: `data:${r.mimeType};base64,${r.base64}` }));
+                if (loaded.length > 0) {
+                    setReferenceImages(loaded);
+                }
+            } catch { /* silent */ }
+        })();
+    }, [modelId, isLoaded, setReferenceImages]);
 
 
     const handleRandomize = useCallback(() => {

@@ -491,6 +491,148 @@ app.delete('/api/gallery', (_req, res) => {
 });
 
 // ============================================
+// REFERENCE PHOTOS — multi-angle model refs
+// ============================================
+const REFS_DIR = path.join(SAVE_DIR, 'refs');
+const MAX_REFS_PER_MODEL = 5;
+
+if (!fs.existsSync(REFS_DIR)) {
+    fs.mkdirSync(REFS_DIR, { recursive: true });
+}
+
+const isValidModelId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_\-]{3,80}$/.test(id);
+const isValidRefId = (id) => typeof id === 'string' && /^ref_[a-zA-Z0-9_\-]+$/.test(id);
+
+const getModelRefsDir = (modelId) => {
+    const safe = sanitizeFilename(modelId);
+    return path.join(REFS_DIR, safe);
+};
+
+const readRefsIndex = (modelId) => {
+    const dir = getModelRefsDir(modelId);
+    const indexPath = path.join(dir, 'index.json');
+    try {
+        if (fs.existsSync(indexPath)) return JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+    } catch { }
+    return [];
+};
+
+const writeRefsIndex = (modelId, entries) => {
+    const dir = getModelRefsDir(modelId);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
+};
+
+// Upload reference photo(s) for a model
+app.post('/api/refs/:modelId', (req, res) => {
+    try {
+        const { modelId } = req.params;
+        if (!isValidModelId(modelId)) return res.status(400).json({ error: 'Model ID invalide' });
+
+        const { photos } = req.body; // [{ base64, mimeType }]
+        if (!Array.isArray(photos) || photos.length === 0) {
+            return res.status(400).json({ error: 'photos[] requis' });
+        }
+
+        const existing = readRefsIndex(modelId);
+        const remaining = MAX_REFS_PER_MODEL - existing.length;
+        if (remaining <= 0) {
+            return res.status(400).json({ error: `Max ${MAX_REFS_PER_MODEL} photos de reference atteint` });
+        }
+
+        const toAdd = photos.slice(0, remaining);
+        const dir = getModelRefsDir(modelId);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        const added = [];
+        for (const photo of toAdd) {
+            if (!photo.base64 || typeof photo.base64 !== 'string') continue;
+            const safeMime = photo.mimeType || 'image/jpeg';
+            if (!['image/png', 'image/jpeg', 'image/webp'].includes(safeMime)) continue;
+
+            // Validate size
+            const imageBytes = Math.ceil(photo.base64.length * 3 / 4);
+            if (imageBytes > MAX_IMAGE_SIZE_BYTES) continue;
+
+            const ext = safeMime.includes('jpeg') ? 'jpg' : safeMime.includes('webp') ? 'webp' : 'png';
+            const id = `ref_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+            const filename = `${id}.${ext}`;
+
+            const imgBuffer = Buffer.from(photo.base64, 'base64');
+            fs.writeFileSync(path.join(dir, filename), imgBuffer);
+
+            added.push({ id, filename, mimeType: safeMime, fileSize: imgBuffer.length, timestamp: Date.now() });
+        }
+
+        const updated = [...existing, ...added];
+        writeRefsIndex(modelId, updated);
+        console.log(`[Server] Refs ${modelId}: +${added.length} → ${updated.length} total`);
+        res.json({ ok: true, added: added.length, total: updated.length });
+    } catch (err) {
+        console.error('[Server] Erreur ref upload:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// List reference photos for a model (metadata only)
+app.get('/api/refs/:modelId', (req, res) => {
+    const { modelId } = req.params;
+    if (!isValidModelId(modelId)) return res.status(400).json({ error: 'Model ID invalide' });
+    const entries = readRefsIndex(modelId);
+    res.json(entries.map(e => ({
+        ...e,
+        imageUrl: `/api/refs/${modelId}/${e.id}/image`,
+    })));
+});
+
+// Serve a reference photo as binary
+app.get('/api/refs/:modelId/:refId/image', (req, res) => {
+    const { modelId, refId } = req.params;
+    if (!isValidModelId(modelId) || !isValidRefId(refId)) return res.status(400).end();
+    const entries = readRefsIndex(modelId);
+    const entry = entries.find(e => e.id === refId);
+    if (!entry) return res.status(404).end();
+
+    const imgPath = path.join(getModelRefsDir(modelId), path.basename(entry.filename));
+    if (!fs.existsSync(imgPath)) return res.status(404).end();
+
+    res.setHeader('Content-Type', entry.mimeType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Content-Length', fs.statSync(imgPath).size);
+    fs.createReadStream(imgPath).pipe(res);
+});
+
+// Serve a reference photo as base64 (for prompt generation)
+app.get('/api/refs/:modelId/:refId/base64', (req, res) => {
+    const { modelId, refId } = req.params;
+    if (!isValidModelId(modelId) || !isValidRefId(refId)) return res.status(400).end();
+    const entries = readRefsIndex(modelId);
+    const entry = entries.find(e => e.id === refId);
+    if (!entry) return res.status(404).json({ error: 'Ref introuvable' });
+
+    const imgPath = path.join(getModelRefsDir(modelId), path.basename(entry.filename));
+    if (!fs.existsSync(imgPath)) return res.status(404).json({ error: 'Fichier introuvable' });
+
+    const buf = fs.readFileSync(imgPath);
+    res.json({ base64: buf.toString('base64'), mimeType: entry.mimeType });
+});
+
+// Delete a specific reference photo
+app.delete('/api/refs/:modelId/:refId', (req, res) => {
+    const { modelId, refId } = req.params;
+    if (!isValidModelId(modelId) || !isValidRefId(refId)) return res.status(400).json({ error: 'ID invalide' });
+    const entries = readRefsIndex(modelId);
+    const idx = entries.findIndex(e => e.id === refId);
+    if (idx === -1) return res.status(404).json({ error: 'Ref introuvable' });
+
+    const [removed] = entries.splice(idx, 1);
+    try { fs.unlinkSync(path.join(getModelRefsDir(modelId), path.basename(removed.filename))); } catch { }
+    writeRefsIndex(modelId, entries);
+    console.log(`[Server] Refs ${modelId}: -1 → ${entries.length} restantes`);
+    res.json({ ok: true, remaining: entries.length });
+});
+
+// ============================================
 // STARTUP
 // ============================================
 const PORT = 3001;

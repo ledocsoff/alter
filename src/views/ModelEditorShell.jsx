@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveModelData, getSavedModels, getApiKey } from '../utils/storage';
+import { getSavedModels, saveModelData, getApiKey, uploadModelRefs } from '../utils/storage';
 import { extractModelFromPhotos } from '../utils/googleAI';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
 import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
@@ -59,7 +59,7 @@ const ModelEditorShell = ({ mode }) => {
     }
   }, [mode, modelId, setModel]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!modelName.trim()) {
       toast.error("Donnez un nom a cette influenceuse.");
       return;
@@ -70,7 +70,7 @@ const ModelEditorShell = ({ mode }) => {
       return;
     }
 
-    const id = mode === 'edit' ? modelId : `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const id = mode === 'edit' ? modelId : `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)} `;
     let existingAccounts = [];
     if (mode === 'edit') {
       const existing = allModelsDatabase.find(m => m.id === modelId);
@@ -89,7 +89,23 @@ const ModelEditorShell = ({ mode }) => {
 
     const updatedDB = saveModelData(modelData);
     setAllModelsDatabase(updatedDB);
-    toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'}`);
+
+    // Save uploaded photos as persistent reference images
+    if (photos.length > 0) {
+      try {
+        const result = await uploadModelRefs(id, photos.map(p => ({ base64: p.base64, mimeType: p.mimeType })));
+        if (result?.ok) {
+          toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} — ${result.added} photo(s) de reference sauvee(s)`);
+        } else {
+          toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
+        }
+      } catch {
+        toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
+      }
+    } else {
+      toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
+    }
+
     navigate('/');
   };
 

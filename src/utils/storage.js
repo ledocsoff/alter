@@ -552,3 +552,86 @@ export const clearGallery = async () => {
         return null;
     }
 };
+
+// ============================================
+// REFERENCE PHOTOS — multi-angle model refs
+// ============================================
+
+/**
+ * Upload reference photos for a model
+ * @param {string} modelId
+ * @param {Array<{base64: string, mimeType: string}>} photos
+ * @returns {Promise<{ok: boolean, added: number, total: number}>}
+ */
+export const uploadModelRefs = async (modelId, photos) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photos }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur upload refs:', err.message);
+        return null;
+    }
+};
+
+/**
+ * List reference photos metadata for a model (no base64)
+ * @param {string} modelId
+ * @returns {Promise<Array>}
+ */
+export const getModelRefs = async (modelId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur get refs:', err.message);
+        return [];
+    }
+};
+
+/**
+ * Load a single reference photo as base64 (for prompt generation)
+ * @param {string} modelId
+ * @param {string} refId
+ * @returns {Promise<{base64: string, mimeType: string}|null>}
+ */
+export const loadModelRefBase64 = async (modelId, refId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}/${encodeURIComponent(refId)}/base64`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur load ref base64:', err.message);
+        return null;
+    }
+};
+
+/**
+ * Delete a reference photo
+ * @param {string} modelId
+ * @param {string} refId
+ */
+export const deleteModelRef = async (modelId, refId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}/${encodeURIComponent(refId)}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur delete ref:', err.message);
+        return null;
+    }
+};
+
+/**
+ * Get the image URL for a reference photo (for <img> display)
+ * @param {string} modelId
+ * @param {string} refId
+ */
+export const refImageUrl = (modelId, refId) => `${API_BASE}/api/refs/${encodeURIComponent(modelId)}/${encodeURIComponent(refId)}/image`;
