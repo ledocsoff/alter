@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'nanabanana_studio_v4';
-const HISTORY_KEY = 'nanabanana_history';
-const TEMPLATES_KEY = 'nanabanana_templates';
-const GALLERY_KEY = 'nanabanana_gallery';
-const API_KEY_KEY = 'nanabanana_api_key';
-const API_PROVIDER_KEY = 'nanabanana_api_provider'; // 'ai_studio' | 'vertex_ai'
+const STORAGE_KEY = 'velvet_studio_v4';
+const HISTORY_KEY = 'velvet_history';
+const TEMPLATES_KEY = 'velvet_templates';
+const GALLERY_KEY = 'velvet_gallery';
+const API_KEY_KEY = 'velvet_api_key';
+const API_PROVIDER_KEY = 'velvet_api_provider'; // 'ai_studio' | 'vertex_ai'
 
 // ============================================
 // FILE SYNC — Sauvegarde automatique vers le serveur
@@ -30,10 +30,10 @@ const syncToServer = () => {
             });
             if (res.ok) {
                 hasPendingSync = false;
-                window.dispatchEvent(new CustomEvent('nanabanana:synced'));
+                window.dispatchEvent(new CustomEvent('velvet:synced'));
             }
         } catch (err) {
-            console.warn('[NanaBanana] Sync serveur echoue:', err.message);
+            console.warn('[Velvet] Sync serveur echoue:', err.message);
         }
     }, 300);
 };
@@ -130,7 +130,7 @@ export const saveApiProvider = (provider) => {
 // ============================================
 // LAST SESSION — Retour rapide au dernier studio
 // ============================================
-const LAST_SESSION_KEY = 'nanabanana_last_session';
+const LAST_SESSION_KEY = 'velvet_last_session';
 
 export const saveLastSession = (info) => {
     try { localStorage.setItem(LAST_SESSION_KEY, JSON.stringify({ ...info, timestamp: Date.now() })); } catch { }
@@ -342,7 +342,7 @@ export const deleteSceneTemplate = (templateId) => {
 // ============================================
 export const exportAllData = () => {
     return JSON.stringify({
-        version: 'nanabanana_v4',
+        version: 'velvet_v4',
         exportedAt: new Date().toISOString(),
         models: getSavedModels(),
         templates: getSceneTemplates(),

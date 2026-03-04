@@ -101,8 +101,8 @@ const AppLayout = ({ children }) => {
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2000);
     };
-    window.addEventListener('nanabanana:synced', onSynced);
-    return () => window.removeEventListener('nanabanana:synced', onSynced);
+    window.addEventListener('velvet:synced', onSynced);
+    return () => window.removeEventListener('velvet:synced', onSynced);
   }, []);
 
   // Global ? shortcut to show shortcuts modal
@@ -156,11 +156,11 @@ const AppLayout = ({ children }) => {
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans antialiased">
       <header className="px-6 h-12 bg-[#09090b]/80 border-b border-zinc-800/50 flex items-center gap-6 sticky top-0 z-50 backdrop-blur-xl">
         <Link to="/" className="hover:opacity-80 transition-opacity shrink-0 flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <span className="text-[10px] font-black text-white leading-none">N</span>
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center">
+            <span className="text-[10px] font-black text-white leading-none">V</span>
           </div>
           <span className="text-[15px] font-bold text-zinc-100 tracking-tight hidden sm:block">
-            NanaBanana
+            Velvet
           </span>
         </Link>
         <div className="hidden md:block h-4 w-px bg-zinc-800"></div>

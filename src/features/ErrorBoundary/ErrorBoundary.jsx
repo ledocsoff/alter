@@ -11,7 +11,7 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error('[NanaBanana] Erreur fatale:', error, errorInfo);
+        console.error('[Velvet] Erreur fatale:', error, errorInfo);
     }
 
     render() {

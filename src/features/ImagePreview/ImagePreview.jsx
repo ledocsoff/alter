@@ -135,7 +135,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     const ext = currentImage.mimeType?.includes('jpeg') ? 'jpg' : 'png';
     const a = document.createElement('a');
     a.href = currentImage.dataUrl;
-    a.download = `nanabanana-${Date.now()}.${ext}`;
+    a.download = `velvet-${Date.now()}.${ext}`;
     a.click();
     toast.success('Image telechargee');
   }, [currentImage, toast]);

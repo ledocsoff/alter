@@ -169,7 +169,7 @@ app.post('/api/restore/:n', (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => {
-    console.log(`\n  🍌 NanaBanana Server`);
+    console.log(`\n  💎 Velvet Studio Server`);
     console.log(`  ➜  API:         http://localhost:${PORT}/api`);
     console.log(`  ➜  CORS:        ${ALLOWED_ORIGINS.join(', ')}`);
     console.log(`  ➜  Sauvegarde:  ${SAVE_DIR}/`);
