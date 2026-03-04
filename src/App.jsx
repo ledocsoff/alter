@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import { useDatabase } from './store/StudioContext';
 import { useToast } from './store/ToastContext';
 import { exportAllData, importAllData, getApiKey } from './utils/storage';
@@ -250,7 +250,7 @@ const AppLayout = ({ children }) => {
 
 const App = () => (
   <ErrorBoundary>
-    <BrowserRouter>
+    <HashRouter>
       <Suspense fallback={<AppLayout><LoadingFallback /></AppLayout>}>
         <Routes>
           <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
@@ -261,7 +261,7 @@ const App = () => (
           <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><GenerationView /></AppLayout>} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </HashRouter>
   </ErrorBoundary>
 );
 
