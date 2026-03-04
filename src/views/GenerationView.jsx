@@ -44,14 +44,14 @@ const GenerationView = () => {
 
     const isSandbox = locationId === 'sandbox';
 
-    const currentModel = allModelsDatabase.find(m => m.id === modelId);
+    const currentModel = (allModelsDatabase || []).find(m => m.id === modelId);
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
     const currentLocation = isSandbox ? null : currentAccount?.locations?.find(l => l.id === locationId);
 
     useEffect(() => {
         if (hasInitialized.current) return;
 
-        const mdl = allModelsDatabase.find(m => m.id === modelId);
+        const mdl = (allModelsDatabase || []).find(m => m.id === modelId);
         const acc = mdl?.accounts?.find(a => a.id === accountId);
         const loc = isSandbox ? null : acc?.locations?.find(l => l.id === locationId);
 

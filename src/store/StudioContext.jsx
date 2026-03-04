@@ -49,7 +49,7 @@ export const PromptProvider = ({ children }) => {
   // Resolve active account
   const activeAccount = useMemo(() => {
     if (!activeWorkflow.modelId || !activeWorkflow.accountId) return null;
-    const dbModel = allModelsDatabase.find(m => m.id === activeWorkflow.modelId);
+    const dbModel = (allModelsDatabase || []).find(m => m.id === activeWorkflow.modelId);
     return dbModel?.accounts?.find(a => a.id === activeWorkflow.accountId) || null;
   }, [activeWorkflow, allModelsDatabase]);
 
