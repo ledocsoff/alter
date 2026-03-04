@@ -119,10 +119,10 @@ const LocationsAndSandboxView = () => {
                             const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
                             const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
                             if (savedLoc) {
-                                const presets = await generateLocationPresets(apiKey, savedLoc);
-                                const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: presets });
+                                const result = await generateLocationPresets(apiKey, savedLoc);
+                                const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: result.presets, ai_outfits: result.outfits });
                                 if (updated2) setAllModelsDatabase(updated2);
-                                toast.success(`${presets.length} ambiances IA générées`);
+                                toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues IA générées`);
                             }
                         } catch (err) {
                             toast.error(`Presets IA: ${err.message}`);

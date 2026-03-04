@@ -560,8 +560,9 @@ export const autoFillLocation = async (apiKey, locationName) => {
 
 const LOCATION_PRESETS_PROMPT = `You are an expert at creating photo scene presets for a specific location.
 
-Given a location with its details, generate EXACTLY 8 scene presets that make sense FOR THIS SPECIFIC LOCATION.
-Each preset represents a different "vibe" or scenario that a model could do in this exact place.
+Given a location with its details, generate:
+1. EXACTLY 8 scene presets (ambiances) that make sense FOR THIS SPECIFIC LOCATION
+2. EXACTLY 8 outfit suggestions that are REALISTIC for this location
 
 IMPORTANT RULES:
 - Each preset must be REALISTIC for the given location
@@ -573,29 +574,43 @@ IMPORTANT RULES:
 - expression MUST be one of these EXACT values:
   "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare",
   "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
+- outfit in each preset: short english outfit description matching the scene AND location
 - label: emoji + short french name (max 3 words)
 - desc: short french description (max 6 words)
 - id: unique snake_case identifier
 
-Output a JSON array of exactly 8 objects:
-[
-  {
-    "id": "unique_id",
-    "label": "emoji Nom Court",
-    "desc": "courte description en français",
-    "scene": {
-      "camera_angle": "one of the EXACT values above",
-      "pose": "short english pose description",
-      "expression": "one of the EXACT values above"
+Output a JSON object with this EXACT structure:
+{
+  "presets": [
+    {
+      "id": "unique_id",
+      "label": "emoji Nom Court",
+      "desc": "courte description en francais",
+      "scene": {
+        "camera_angle": "one of the EXACT values above",
+        "pose": "short english pose description",
+        "expression": "one of the EXACT values above",
+        "outfit": "short english outfit for this specific scene"
+      }
     }
-  }
-]
+  ],
+  "outfits": [
+    {
+      "id": "unique_outfit_id",
+      "label": "Nom Court FR",
+      "value": "detailed english outfit description",
+      "icon": "single emoji"
+    }
+  ]
+}
 
 RULES:
-1. Output ONLY the JSON array, no markdown, no explanation.
+1. Output ONLY the JSON object, no markdown, no explanation.
 2. All scene values in English, labels and desc in French.
-3. Make presets VARIED — different poses, angles, expressions.
-4. Think about what people ACTUALLY do in this specific location.`;
+3. Make presets VARIED - different poses, angles, expressions, outfits.
+4. Outfits must be REALISTIC for this location.
+5. Think about what people ACTUALLY wear and do in this specific location.`;
+
 
 /**
  * Generate 8 location-specific scene presets via Gemini.
@@ -607,10 +622,10 @@ RULES:
 export const generateLocationPresets = async (apiKey, location) => {
   const locationContext = [
     `Location: "${location.name}"`,
-    `Environment: ${location.environment || 'not specified'}`,
-    location.default_lighting ? `Lighting: ${location.default_lighting}` : null,
-    location.anchor_details ? `Key objects: ${location.anchor_details}` : null,
-    location.time_of_day ? `Time: ${location.time_of_day}` : null,
+    `Environment: ${location.environment || 'not specified'} `,
+    location.default_lighting ? `Lighting: ${location.default_lighting} ` : null,
+    location.anchor_details ? `Key objects: ${location.anchor_details} ` : null,
+    location.time_of_day ? `Time: ${location.time_of_day} ` : null,
   ].filter(Boolean).join('\n');
 
   logger.info('generation', `Generating presets for "${location.name}"`, { model: GEMINI_TEXT_MODEL });
@@ -618,7 +633,7 @@ export const generateLocationPresets = async (apiKey, location) => {
   const body = {
     contents: [{
       role: 'user',
-      parts: [{ text: `${locationContext}\n\n${LOCATION_PRESETS_PROMPT}` }],
+      parts: [{ text: `${locationContext}\n\n${LOCATION_PRESETS_PROMPT} ` }],
     }],
     generationConfig: {
       responseMimeType: 'application/json',
@@ -644,10 +659,18 @@ export const generateLocationPresets = async (apiKey, location) => {
 
   try {
     const parsed = extractJSON(text);
-    const arr = Array.isArray(parsed) ? parsed : [parsed];
-    if (arr.length === 0) throw new Error('Empty array');
-    logger.success('generation', `${arr.length} presets générés en ${elapsed}s pour "${location.name}"`);
-    return arr.slice(0, 8);
+    // Handle both { presets, outfits } and flat array format
+    let presets, outfits;
+    if (Array.isArray(parsed)) {
+      presets = parsed;
+      outfits = [];
+    } else {
+      presets = Array.isArray(parsed.presets) ? parsed.presets : [];
+      outfits = Array.isArray(parsed.outfits) ? parsed.outfits : [];
+    }
+    if (presets.length === 0) throw new Error('No presets generated');
+    logger.success('generation', `${presets.length} presets + ${outfits.length} outfits générés en ${elapsed}s pour "${location.name}"`);
+    return { presets: presets.slice(0, 8), outfits: outfits.slice(0, 8) };
   } catch (e) {
     logger.error('generation', 'JSON invalide pour presets lieu', text.slice(0, 500));
     throw new Error('Gemini a retourné un format invalide pour les presets. Réessaie.');

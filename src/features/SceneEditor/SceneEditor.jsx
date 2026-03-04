@@ -233,10 +233,10 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                                     if (!apiKey) { toast.error('Clé API requise'); return; }
                                     setIsGeneratingPresets(true);
                                     try {
-                                        const presets = await generateLocationPresets(apiKey, location);
-                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: presets });
+                                        const result = await generateLocationPresets(apiKey, location);
+                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: result.presets, ai_outfits: result.outfits });
                                         if (updated) setAllModelsDatabase(updated);
-                                        toast.success(`${presets.length} ambiances IA générées`);
+                                        toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues IA générées`);
                                     } catch (err) {
                                         toast.error(`Erreur: ${err.message}`);
                                     } finally {
@@ -286,9 +286,16 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
 
                 {/* ═══ ZONE 2: TENUE ═══ */}
                 <div className="mb-4 border-t border-white/[0.04] pt-3">
-                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 block">👗 Tenue</span>
+                    <div className="flex items-center justify-between mb-2.5">
+                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                            {(!isSandbox && location?.ai_outfits?.length > 0) ? `👗 Tenues — ${location.name}` : '👗 Tenue'}
+                        </span>
+                        {!isSandbox && location?.ai_outfits?.length > 0 && (
+                            <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
+                        )}
+                    </div>
                     <div className="grid grid-cols-3 gap-1.5 mb-2">
-                        {OUTFIT_PRESETS.map(item => (
+                        {(!isSandbox && location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS).map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => updateSceneEntry('outfit', item)}
@@ -297,7 +304,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                                     : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
                                     }`}
                             >
-                                {item.label}
+                                {item.icon || ''} {item.label}
                             </button>
                         ))}
                     </div>

@@ -317,6 +317,7 @@ export const saveLocationData = (modelId, accountId, locationData) => {
         color_palette: locationData.color_palette || "",
         seed: locationData.seed || existingLoc?.seed || generateSeed(),
         ai_presets: locationData.ai_presets || existingLoc?.ai_presets || [],
+        ai_outfits: locationData.ai_outfits || existingLoc?.ai_outfits || [],
     };
 
     const index = account.locations.findIndex(l => l.id === id);
