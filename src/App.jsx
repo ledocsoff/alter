@@ -12,7 +12,7 @@ import ModelsView from './views/ModelsView';
 
 const ModelEditorShell = lazy(() => import('./views/ModelEditorShell'));
 const AccountsView = lazy(() => import('./views/AccountsView'));
-const LocationsAndSandboxView = lazy(() => import('./views/LocationsAndSandboxView'));
+const LocationsView = lazy(() => import('./views/LocationsAndSandboxView'));
 const GenerationView = lazy(() => import('./views/GenerationView'));
 
 const LoadingFallback = () => (
@@ -30,7 +30,7 @@ const Breadcrumb = () => {
 
   const currentModel = allModelsDatabase.find(m => m.id === modelId);
   const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
-  const currentLocation = locationId && locationId !== 'sandbox'
+  const currentLocation = locationId
     ? currentAccount?.locations?.find(l => l.id === locationId)
     : null;
 
@@ -44,7 +44,7 @@ const Breadcrumb = () => {
   }
   if (locationId) {
     crumbs.push({
-      label: locationId === 'sandbox' ? 'Sandbox' : currentLocation?.name || '...',
+      label: currentLocation?.name || '...',
       path: null,
     });
   }
@@ -295,7 +295,7 @@ const App = () => (
           <Route path="/models/new" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="create" /></ErrorBoundary></AppLayout>} />
           <Route path="/models/:modelId/edit" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="edit" /></ErrorBoundary></AppLayout>} />
           <Route path="/models/:modelId/accounts" element={<AppLayout><ErrorBoundary><AccountsView /></ErrorBoundary></AppLayout>} />
-          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><ErrorBoundary><LocationsAndSandboxView /></ErrorBoundary></AppLayout>} />
+          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><ErrorBoundary><LocationsView /></ErrorBoundary></AppLayout>} />
           <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><ErrorBoundary><GenerationView /></ErrorBoundary></AppLayout>} />
           <Route path="*" element={<AppLayout><ModelsView /></AppLayout>} />
         </Routes>

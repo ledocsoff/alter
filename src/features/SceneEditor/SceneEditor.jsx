@@ -24,7 +24,7 @@ const Section = ({ id, label, children, isOpen, onToggle }) => (
 
 /* ─── Main Component ─── */
 
-const SceneEditor = ({ isSandbox = false, location = null }) => {
+const SceneEditor = ({ location = null }) => {
     const { scene, updateSceneEntry, setScene, allModelsDatabase, setAllModelsDatabase, modelId, accountId } = useStudio();
     const toast = useToast();
     const [showTemplates, setShowTemplates] = useState(false);
@@ -35,7 +35,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
     const [isGeneratingPresets, setIsGeneratingPresets] = useState(false);
 
     // Use location-specific presets when available
-    const hasAiPresets = !isSandbox && location?.ai_presets?.length > 0;
+    const hasAiPresets = location?.ai_presets?.length > 0;
     const presets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
 
     /* ─── Detect active preset ─── */
@@ -56,12 +56,10 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
             ...prev,
             ...sceneWithoutOutfit,
             // In location mode: keep ALL location-locked values
-            ...(isSandbox ? {} : {
-                environment: prev.environment,
-                location_meta: prev.location_meta,
-                vibe: prev.vibe,
-                lighting: prev.lighting,
-            }),
+            environment: prev.environment,
+            location_meta: prev.location_meta,
+            vibe: prev.vibe,
+            lighting: prev.lighting,
             // Apply outfit from AI preset if present, otherwise keep current
             outfit: presetOutfit
                 ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
@@ -79,7 +77,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
     /* ─── Randomize ─── */
     const handleRandomize = () => {
         const availablePresets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
-        const availableOutfits = (!isSandbox && location?.ai_outfits?.length > 0) ? location.ai_outfits : OUTFIT_PRESETS;
+        const availableOutfits = location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS;
         const preset = pickRandom(availablePresets);
         const outfit = pickRandom(availableOutfits);
         const { outfit: presetOutfit, ...sceneWithoutOutfit } = preset.scene || {};
@@ -89,12 +87,10 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
             outfit: presetOutfit
                 ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
                 : outfit,
-            ...(isSandbox ? {} : {
-                environment: prev.environment,
-                location_meta: prev.location_meta,
-                vibe: prev.vibe,
-                lighting: prev.lighting,
-            }),
+            environment: prev.environment,
+            location_meta: prev.location_meta,
+            vibe: prev.vibe,
+            lighting: prev.lighting,
             aspect_ratio: prev.aspect_ratio,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
@@ -165,7 +161,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
             location_meta: prev.location_meta,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
-            ...(isSandbox ? {} : { vibe: prev.vibe, lighting: prev.lighting }),
+            vibe: prev.vibe, lighting: prev.lighting,
         }));
         setShowTemplates(false);
         setActivePresetId(null);
@@ -292,7 +288,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                             </button>
                         )}
                     </div>
-                    {!isSandbox && location && !hasAiPresets && (
+                    {location && !hasAiPresets && (
                         <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
                             <p className="text-[11px] text-zinc-500">Aucune ambiance IA</p>
                             <button
@@ -342,12 +338,12 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 <div className="mb-3 border-t border-white/[0.04] pt-3">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">👗 Tenue</span>
-                            {!isSandbox && location?.ai_outfits?.length > 0 && (
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">👗 Tenues</span>
+                            {location?.ai_outfits?.length > 0 && (
                                 <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
                             )}
                         </div>
-                        {!isSandbox && location?.ai_outfits?.length > 0 && (
+                        {location?.ai_outfits?.length > 0 && (
                             <button
                                 onClick={() => handleRegenSection('outfits')}
                                 disabled={regenLoading === 'outfits'}
@@ -360,19 +356,33 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                             </button>
                         )}
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5 mb-2">
-                        {(!isSandbox && location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS).map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => updateSceneEntry('outfit', item)}
-                                className={`text-[11px] py-1.5 px-1 rounded-lg border text-center transition-all ${scene.outfit?.id === item.id
-                                    ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
-                                    : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
-                                    }`}
-                            >
-                                {item.icon || ''} {item.label}
-                            </button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-1.5 mb-2">
+                        {(location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS).map(item => {
+                            const isActive = scene.outfit?.id === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => updateSceneEntry('outfit', item)}
+                                    className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
+                                        ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
+                                        : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[13px]">{item.icon || '👗'}</span>
+                                        <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
+                                            {item.label}
+                                        </span>
+                                    </div>
+                                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
+                                        {item.value?.slice(0, 40) || ''}{item.value?.length > 40 ? '…' : ''}
+                                    </p>
+                                    {isActive && (
+                                        <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                     <input
                         className="velvet-input w-full text-sm"
@@ -387,12 +397,12 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 <div className="mb-3 border-t border-white/[0.04] pt-3">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">🤸 Pose</span>
-                            {!isSandbox && location?.ai_poses?.length > 0 && (
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">🤸 Poses</span>
+                            {location?.ai_poses?.length > 0 && (
                                 <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
                             )}
                         </div>
-                        {!isSandbox && location?.ai_poses?.length > 0 && (
+                        {location?.ai_poses?.length > 0 && (
                             <button
                                 onClick={() => handleRegenSection('poses')}
                                 disabled={regenLoading === 'poses'}
@@ -405,19 +415,33 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                             </button>
                         )}
                     </div>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                        {(!isSandbox && location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => (
-                            <button
-                                key={item.promptEN}
-                                onClick={() => updateSceneEntry('pose', item.promptEN)}
-                                className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${scene.pose === item.promptEN
-                                    ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
-                                    : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
-                                    }`}
-                            >
-                                {item.labelFR}
-                            </button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-1.5 mb-2">
+                        {(location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => {
+                            const isActive = scene.pose === item.promptEN;
+                            return (
+                                <button
+                                    key={item.promptEN}
+                                    onClick={() => updateSceneEntry('pose', item.promptEN)}
+                                    className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
+                                        ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
+                                        : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[13px]">🤸</span>
+                                        <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
+                                            {item.labelFR}
+                                        </span>
+                                    </div>
+                                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
+                                        {item.promptEN}
+                                    </p>
+                                    {isActive && (
+                                        <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                     <input
                         className="velvet-input w-full text-sm"
@@ -500,47 +524,6 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                                 </div>
                             </div>
 
-                            {/* VIBE + LIGHTING (Sandbox only) */}
-                            {isSandbox && (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Vibe</span>
-                                        <select className="velvet-input w-full text-sm" value={scene.vibe || ""} onChange={(e) => updateSceneEntry('vibe', e.target.value)}>
-                                            <option value="">Auto</option>
-                                            {SCENE_OPTIONS.vibe?.map(v => (
-                                                <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Éclairage</span>
-                                        <select className="velvet-input w-full text-sm" value={scene.lighting || ""} onChange={(e) => updateSceneEntry('lighting', e.target.value)}>
-                                            <option value="">Auto</option>
-                                            {SCENE_OPTIONS.lighting?.map(l => (
-                                                <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ENVIRONMENT (Sandbox only) */}
-                            {isSandbox && (
-                                <div>
-                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Environnement</span>
-                                    <select className="velvet-input w-full text-sm" value={scene.environment || ""} onChange={(e) => updateSceneEntry('environment', e.target.value)}>
-                                        {SCENE_OPTIONS.environment.map(env => (
-                                            <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
-                                        ))}
-                                    </select>
-                                    <input
-                                        className="velvet-input w-full mt-1.5 text-sm"
-                                        type="text"
-                                        placeholder="...ou décor custom en anglais"
-                                        onChange={(e) => { if (e.target.value.trim()) updateSceneEntry('environment', e.target.value); }}
-                                    />
-                                </div>
-                            )}
 
                             {/* NEGATIVE PROMPT */}
                             <div>

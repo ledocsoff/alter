@@ -533,26 +533,6 @@ const LocationsAndSandboxView = () => {
                     </div>
                 </div>
 
-                {/* RIGHT: SANDBOX */}
-                <div className="lg:w-72 bg-[#0a0a0c] border-t lg:border-t-0 lg:border-l border-white/[0.04] p-6 lg:p-8 flex flex-col justify-center">
-                    <div className="max-w-xs mx-auto w-full">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mb-4">
-                            <SparklesIcon size={22} className="text-violet-400" />
-                        </div>
-                        <h3 className="text-lg font-bold text-zinc-200 mb-2">Bac a sable</h3>
-                        <p className="text-[13px] text-zinc-500 mb-8 leading-relaxed">
-                            Mode libre pour du contenu ponctuel, sans creer de lieu.
-                        </p>
-                        <button
-                            onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/sandbox/generate`)}
-                            className="velvet-btn-primary w-full h-11 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
-                        >
-                            <SparklesIcon size={14} />
-                            Lancer le studio
-                        </button>
-                    </div>
-                </div>
-
             </div>
             <ConfirmModal
                 isOpen={!!confirmDelete}

@@ -42,20 +42,19 @@ const GenerationView = () => {
     const imagePreviewRef = useRef(null);
     const hasInitialized = useRef(false);
 
-    const isSandbox = locationId === 'sandbox';
 
     const currentModel = (allModelsDatabase || []).find(m => m.id === modelId);
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
-    const currentLocation = isSandbox ? null : currentAccount?.locations?.find(l => l.id === locationId);
+    const currentLocation = currentAccount?.locations?.find(l => l.id === locationId);
 
     useEffect(() => {
         if (hasInitialized.current) return;
 
         const mdl = (allModelsDatabase || []).find(m => m.id === modelId);
         const acc = mdl?.accounts?.find(a => a.id === accountId);
-        const loc = isSandbox ? null : acc?.locations?.find(l => l.id === locationId);
+        const loc = acc?.locations?.find(l => l.id === locationId);
 
-        if (!mdl || !acc || (!isSandbox && !loc)) {
+        if (!mdl || !acc || !loc) {
             navigate('/');
             return;
         }
@@ -66,25 +65,20 @@ const GenerationView = () => {
         const { id, accounts, ...modelTraits } = mdl;
         setModel({ ...modelTraits, name: mdl.name });
 
-        if (isSandbox) {
-            setActiveWorkflow({ modelId: null, accountId: null });
-            updateSceneEntry('seed', generateSeed());
-        } else {
-            setActiveWorkflow({ modelId, accountId });
-            if (loc?.seed) updateSceneEntry('seed', loc.seed);
-            if (loc?.environment) updateSceneEntry('environment', loc.environment);
-            if (loc?.default_lighting) updateSceneEntry('lighting', loc.default_lighting);
-            if (loc?.default_vibe) updateSceneEntry('vibe', loc.default_vibe);
-            if (loc?.time_of_day || loc?.anchor_details || loc?.color_palette) {
-                updateSceneEntry('location_meta', {
-                    time_of_day: loc.time_of_day || '',
-                    anchor_details: loc.anchor_details || '',
-                    color_palette: loc.color_palette || '',
-                });
-            }
-            if (loc?.negative_prompt) {
-                updateSceneEntry('custom_negative_prompt', loc.negative_prompt);
-            }
+        setActiveWorkflow({ modelId, accountId });
+        if (loc?.seed) updateSceneEntry('seed', loc.seed);
+        if (loc?.environment) updateSceneEntry('environment', loc.environment);
+        if (loc?.default_lighting) updateSceneEntry('lighting', loc.default_lighting);
+        if (loc?.default_vibe) updateSceneEntry('vibe', loc.default_vibe);
+        if (loc?.time_of_day || loc?.anchor_details || loc?.color_palette) {
+            updateSceneEntry('location_meta', {
+                time_of_day: loc.time_of_day || '',
+                anchor_details: loc.anchor_details || '',
+                color_palette: loc.color_palette || '',
+            });
+        }
+        if (loc?.negative_prompt) {
+            updateSceneEntry('custom_negative_prompt', loc.negative_prompt);
         }
 
         setIsLoaded(true);
@@ -94,10 +88,10 @@ const GenerationView = () => {
             accountId,
             locationId,
             modelName: mdl.name,
-            locationName: isSandbox ? 'Sandbox' : loc?.name,
-            path: `/models/${modelId}/accounts/${accountId}/locations/${isSandbox ? 'sandbox' : locationId}/generate`,
+            locationName: loc?.name,
+            path: `/models/${modelId}/accounts/${accountId}/locations/${locationId}/generate`,
         });
-    }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
+    }, [modelId, accountId, locationId, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
 
     // Cleanup workflow on unmount (separate effect so it always runs)
     useEffect(() => {
@@ -129,16 +123,14 @@ const GenerationView = () => {
 
     const handleRandomize = useCallback(() => {
         setScene(prev => ({
-            ...prev, // preserve any keys not explicitly listed
+            ...prev,
             outfit: pickRandom(OUTFIT_PRESETS),
             controlnet_preset: pickRandom(CONTROLNET_PRESETS).id,
-            vibe: isSandbox ? pickRandom(SCENE_OPTIONS.vibe).promptEN : prev.vibe,
             camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
             pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
-            lighting: isSandbox ? pickRandom(SCENE_OPTIONS.lighting).promptEN : prev.lighting,
             expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
         }));
-    }, [isSandbox, setScene]);
+    }, [setScene]);
 
     // Lightweight djb2 hash for model fingerprinting
     const modelHash = (() => {
@@ -150,7 +142,7 @@ const GenerationView = () => {
 
     const meta = {
         modelName: currentModel?.name || '',
-        locationName: isSandbox ? 'Sandbox' : currentLocation?.name || '',
+        locationName: currentLocation?.name || '',
         accountHandle: currentAccount?.handle || '',
         scene: scene,
         seed: scene.seed,
@@ -190,7 +182,7 @@ const GenerationView = () => {
     const handleRegenerateSeed = () => {
         const newSeed = generateSeed();
         updateSceneEntry('seed', newSeed);
-        if (!isSandbox && currentLocation) {
+        if (currentLocation) {
             saveLocationData(modelId, accountId, { ...currentLocation, seed: newSeed });
         }
     };
@@ -201,9 +193,9 @@ const GenerationView = () => {
             {/* HEADER BAR */}
             <div className="shrink-0 h-11 px-5 border-b border-white/[0.04] bg-[#0c0c0e] flex items-center justify-between animate-fade-in">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${isSandbox ? 'bg-violet-400 animate-pulse' : 'bg-emerald-500'}`}></div>
+                    <div className="w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
                     <span className="text-[13px] font-semibold text-zinc-200 truncate">
-                        {isSandbox ? 'Sandbox' : currentLocation?.name}
+                        {currentLocation?.name}
                     </span>
                     <span className="text-[11px] text-zinc-600 shrink-0">
                         {currentModel.name} / {currentAccount?.handle}
@@ -229,12 +221,10 @@ const GenerationView = () => {
                     >
                         Fiche modèle
                     </button>
-                    {!isSandbox && (
-                        <span className="text-[10px] text-emerald-400/60 font-medium shrink-0 flex items-center gap-1">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-                            verrouillé
-                        </span>
-                    )}
+                    <span className="text-[10px] text-emerald-400/60 font-medium shrink-0 flex items-center gap-1">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                        verrouillé
+                    </span>
                 </div>
             </div>
 
@@ -271,7 +261,7 @@ const GenerationView = () => {
             {/* WORKSPACE */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
                 <div className="lg:col-span-4 h-full flex flex-col overflow-hidden">
-                    <SceneEditor isSandbox={isSandbox} location={currentLocation} />
+                    <SceneEditor location={currentLocation} />
                 </div>
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
