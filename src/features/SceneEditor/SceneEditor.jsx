@@ -53,7 +53,7 @@ const SceneEditor = ({ isSandbox = false }) => {
         const updated = saveSceneTemplate(templateName.trim(), scene);
         setTemplates(updated);
         setTemplateName('');
-        toast.success(`Template "${templateName.trim()}" sauvegarde`);
+        toast.success(`Template "${templateName.trim()}" sauvegardé`);
     };
 
     const handleLoadTemplate = (tpl) => {
@@ -130,7 +130,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                         </button>
                     </div>
                     {templates.length === 0 ? (
-                        <p className="text-[11px] text-zinc-600 py-2">Aucun template. Configurez une scene puis sauvegardez-la.</p>
+                        <p className="text-[11px] text-zinc-600 py-2">Aucun template. Configurez une scène puis sauvegardez-la.</p>
                     ) : (
                         <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
                             {templates.map(tpl => (

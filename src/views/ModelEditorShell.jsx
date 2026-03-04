@@ -453,7 +453,7 @@ const ModelEditorShell = ({ mode }) => {
                   <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">cohérence visuelle</span>
                 </h2>
                 <p className="text-[11px] text-zinc-600 mt-1">
-                  Ajoutez des photos multi-angles (face, profil, 3/4). Elles seront envoyees a Gemini a chaque generation pour verrouiller l'identite visuelle.
+                  Ajoutez des photos multi-angles (face, profil, 3/4). Elles seront envoyées à Gemini à chaque génération pour verrouiller l'identité visuelle.
                 </p>
               </div>
               <span className="text-[11px] text-zinc-500">{savedRefs.length + pendingRefs.length}/5</span>

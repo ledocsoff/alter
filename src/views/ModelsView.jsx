@@ -75,7 +75,7 @@ const ModelsView = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 animate-fade-in">
           <div>
-            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Modeles</h2>
+            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Modèles</h2>
             <p className="text-zinc-500 text-sm mt-1">
               {allModelsDatabase.length > 0
                 ? <>{allModelsDatabase.length} modèle{allModelsDatabase.length > 1 ? 's' : ''} · {totalAccounts} compte{totalAccounts > 1 ? 's' : ''} · {totalLocations} lieu{totalLocations > 1 ? 'x' : ''}</>

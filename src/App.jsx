@@ -34,7 +34,7 @@ const Breadcrumb = () => {
     ? currentAccount?.locations?.find(l => l.id === locationId)
     : null;
 
-  const crumbs = [{ label: 'Modeles', path: '/' }];
+  const crumbs = [{ label: 'Modèles', path: '/' }];
 
   if (modelId && currentModel) {
     crumbs.push({ label: currentModel.name, path: `/models/${modelId}/accounts` });

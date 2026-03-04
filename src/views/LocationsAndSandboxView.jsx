@@ -292,7 +292,7 @@ const LocationsAndSandboxView = () => {
                                             Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
                                         </label>
                                         <textarea
-                                            placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."
+                                            placeholder="Objets récurrents: pink LED strip, grey duvet, cactus on nightstand..."
                                             value={newLocAnchorDetails}
                                             onChange={(e) => setNewLocAnchorDetails(e.target.value)}
                                             rows={3}
@@ -333,7 +333,7 @@ const LocationsAndSandboxView = () => {
                                             : 'velvet-btn-primary'
                                             }`}
                                     >
-                                        {isEditing ? 'Mettre a jour' : 'Enregistrer'}
+                                        {isEditing ? 'Mettre à jour' : 'Enregistrer'}
                                     </button>
                                 </div>
                             </div>
