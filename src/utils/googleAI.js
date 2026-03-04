@@ -563,10 +563,11 @@ const LOCATION_PRESETS_PROMPT = `You are an expert at creating photo scene prese
 Given a location with its details, generate:
 1. EXACTLY 8 scene presets (ambiances) that make sense FOR THIS SPECIFIC LOCATION
 2. EXACTLY 8 outfit suggestions that are REALISTIC for this location
+3. EXACTLY 8 pose suggestions that make sense FOR THIS SPECIFIC LOCATION
 
 IMPORTANT RULES:
 - Each preset must be REALISTIC for the given location
-- DO NOT suggest scenes that don't match the location (e.g. no "poolside" for a bedroom)
+- DO NOT suggest scenes that don't match the location
 - camera_angle MUST be one of these EXACT values:
   "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait",
   "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
@@ -575,16 +576,15 @@ IMPORTANT RULES:
   "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare",
   "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
 - outfit in each preset: short english outfit description matching the scene AND location
-- label: emoji + short french name (max 3 words)
-- desc: short french description (max 6 words)
-- id: unique snake_case identifier
+
+CRITICAL: ALL "label" fields MUST be in FRENCH. Never use English for labels.
 
 Output a JSON object with this EXACT structure:
 {
   "presets": [
     {
       "id": "unique_id",
-      "label": "emoji Nom Court",
+      "label": "emoji Nom Court EN FRANCAIS",
       "desc": "courte description en francais",
       "scene": {
         "camera_angle": "one of the EXACT values above",
@@ -597,19 +597,27 @@ Output a JSON object with this EXACT structure:
   "outfits": [
     {
       "id": "unique_outfit_id",
-      "label": "Nom Court FR",
-      "value": "detailed english outfit description",
+      "label": "Nom EN FRANCAIS (ex: Pyjama Satin, Robe Legere)",
+      "value": "detailed english outfit description for image generation",
       "icon": "single emoji"
+    }
+  ],
+  "poses": [
+    {
+      "id": "unique_pose_id",
+      "labelFR": "Nom court en francais (ex: Allongee sur le lit)",
+      "promptEN": "english pose description for image generation (5-10 words)"
     }
   ]
 }
 
 RULES:
 1. Output ONLY the JSON object, no markdown, no explanation.
-2. All scene values in English, labels and desc in French.
-3. Make presets VARIED - different poses, angles, expressions, outfits.
-4. Outfits must be REALISTIC for this location.
-5. Think about what people ACTUALLY wear and do in this specific location.`;
+2. All "value" and "promptEN" fields in English (for image generation). ALL "label" and "labelFR" fields in FRENCH.
+3. Make everything VARIED and REALISTIC for this specific location.
+4. Outfits must match the location context.
+5. Poses must be actions someone would ACTUALLY do in this location.`;
+
 
 
 /**
@@ -659,18 +667,20 @@ export const generateLocationPresets = async (apiKey, location) => {
 
   try {
     const parsed = extractJSON(text);
-    // Handle both { presets, outfits } and flat array format
-    let presets, outfits;
+    // Handle both { presets, outfits, poses } and flat array format
+    let presets, outfits, poses;
     if (Array.isArray(parsed)) {
       presets = parsed;
       outfits = [];
+      poses = [];
     } else {
       presets = Array.isArray(parsed.presets) ? parsed.presets : [];
       outfits = Array.isArray(parsed.outfits) ? parsed.outfits : [];
+      poses = Array.isArray(parsed.poses) ? parsed.poses : [];
     }
     if (presets.length === 0) throw new Error('No presets generated');
-    logger.success('generation', `${presets.length} presets + ${outfits.length} outfits générés en ${elapsed}s pour "${location.name}"`);
-    return { presets: presets.slice(0, 8), outfits: outfits.slice(0, 8) };
+    logger.success('generation', `${presets.length} presets + ${outfits.length} outfits + ${poses.length} poses en ${elapsed}s pour "${location.name}"`);
+    return { presets: presets.slice(0, 8), outfits: outfits.slice(0, 8), poses: poses.slice(0, 8) };
   } catch (e) {
     logger.error('generation', 'JSON invalide pour presets lieu', text.slice(0, 500));
     throw new Error('Gemini a retourné un format invalide pour les presets. Réessaie.');

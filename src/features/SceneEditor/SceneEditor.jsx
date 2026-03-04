@@ -234,9 +234,9 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                                     setIsGeneratingPresets(true);
                                     try {
                                         const result = await generateLocationPresets(apiKey, location);
-                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: result.presets, ai_outfits: result.outfits });
+                                        const updated = saveLocationData(modelId, accountId, { ...location, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
                                         if (updated) setAllModelsDatabase(updated);
-                                        toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues IA générées`);
+                                        toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses`);
                                     } catch (err) {
                                         toast.error(`Erreur: ${err.message}`);
                                     } finally {
@@ -353,9 +353,14 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
 
                             {/* POSE */}
                             <div>
-                                <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Pose</span>
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Pose</span>
+                                    {!isSandbox && location?.ai_poses?.length > 0 && (
+                                        <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
+                                    )}
+                                </div>
                                 <div className="flex flex-wrap gap-1.5 mb-2">
-                                    {SCENE_OPTIONS.pose.map(item => (
+                                    {(!isSandbox && location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => (
                                         <button
                                             key={item.promptEN}
                                             onClick={() => updateSceneEntry('pose', item.promptEN)}
