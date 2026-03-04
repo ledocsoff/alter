@@ -267,9 +267,9 @@ export const duplicateAccountData = (modelId, accountId) => {
         ...rest,
         id: `acc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         handle: `${account.handle} (copie)`,
-        locations: (account.locations || []).map(loc => ({
+        locations: (account.locations || []).map((loc, i) => ({
             ...loc,
-            id: `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            id: `loc_${Date.now() + i}_${Math.random().toString(36).slice(2, 8)}`,
         })),
     };
     model.accounts.push(newAccount);
@@ -466,30 +466,7 @@ export const importAllData = (jsonString) => {
     return data.models;
 };
 
-// ============================================
-// LOCATION DUPLICATION
-// ============================================
-export const duplicateLocation = (fromModelId, fromAccountId, locationId, toModelId, toAccountId) => {
-    const models = getSavedModels();
-    const fromModel = models.find(m => m.id === fromModelId);
-    const fromAccount = fromModel?.accounts.find(a => a.id === fromAccountId);
-    const location = fromAccount?.locations.find(l => l.id === locationId);
-    if (!location) return null;
-
-    const toModel = models.find(m => m.id === toModelId);
-    const toAccount = toModel?.accounts.find(a => a.id === toAccountId);
-    if (!toAccount) return null;
-
-    const { id, ...locWithoutId } = location;
-    const newLoc = {
-        ...locWithoutId,
-        id: `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        name: `${location.name} (copie)`,
-    };
-    toAccount.locations.push(newLoc);
-    _saveAll(models);
-    return models;
-};
+// (Cross-account duplicateLocation removed — replaced by duplicateLocationLocal)
 
 // ============================================
 // LOCATION LOCK SCORE

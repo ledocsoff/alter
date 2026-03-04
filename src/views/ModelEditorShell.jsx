@@ -102,7 +102,7 @@ const ModelEditorShell = ({ mode }) => {
     if (!currentModelId) return;
     await deleteModelRef(currentModelId, refId);
     setSavedRefs(prev => prev.filter(r => r.id !== refId));
-    toast.success('Photo de reference supprimee');
+    toast.success('Photo de référence supprimée');
   };
 
   const handleRemovePendingRef = (idx) => {

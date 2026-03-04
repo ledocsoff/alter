@@ -5,7 +5,7 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveAccountData, deleteAccountData, duplicateAccountData } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
-import { TrashIcon, CopyIcon, PlusIcon, ChevronRightIcon, MapPinIcon, EditIcon } from '../components/Icons';
+import { TrashIcon, CopyIcon, PlusIcon, ChevronRightIcon, MapPinIcon } from '../components/Icons';
 
 const PLATFORMS = {
   Instagram: { color: 'from-fuchsia-500 to-purple-600', accent: 'text-fuchsia-400' },
@@ -29,7 +29,7 @@ const AccountsView = () => {
   if (!currentModel) {
     return (
       <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
-        Modele introuvable.
+        Modèle introuvable.
         <button onClick={() => navigate('/')} className="text-violet-400 ml-1.5 hover:underline font-medium">Retour</button>
       </div>
     );
@@ -47,7 +47,7 @@ const AccountsView = () => {
     if (updated) {
       setAllModelsDatabase(updated);
       setHandle('');
-      toast.success(`Compte ${platform} ajoute`);
+      toast.success(`Compte ${platform} ajouté`);
     }
   };
 
@@ -56,7 +56,7 @@ const AccountsView = () => {
     if (updated) {
       setAllModelsDatabase(updated);
       const acc = currentModel.accounts.find(a => a.id === accId);
-      toast.success(`"${acc?.handle}" duplique`);
+      toast.success(`"${acc?.handle}" dupliqué`);
     }
   };
 
@@ -68,7 +68,7 @@ const AccountsView = () => {
     if (!confirmDelete) return;
     const updated = deleteAccountData(modelId, confirmDelete.id);
     if (updated) setAllModelsDatabase(updated);
-    toast.success(`${confirmDelete.handle || 'Compte'} supprime`);
+    toast.success(`${confirmDelete.handle || 'Compte'} supprimé`);
     setConfirmDelete(null);
   };
 
@@ -198,7 +198,7 @@ const AccountsView = () => {
       <ConfirmModal
         isOpen={!!confirmDelete}
         title="Supprimer ce compte ?"
-        message={`"${confirmDelete?.handle}" et tous ses lieux seront definitivement supprimes.`}
+        message={`"${confirmDelete?.handle}" et tous ses lieux seront définitivement supprimés.`}
         onConfirm={executeDelete}
         onCancel={() => setConfirmDelete(null)}
       />

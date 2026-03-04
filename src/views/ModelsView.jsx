@@ -34,7 +34,7 @@ const ModelsView = () => {
   const executeDelete = () => {
     if (!confirmDelete) return;
     setAllModelsDatabase(deleteModelData(confirmDelete.id));
-    toast.success(`${confirmDelete.name || 'Modele'} supprime`);
+    toast.success(`${confirmDelete.name || 'Modèle'} supprimé`);
     setConfirmDelete(null);
   };
 
@@ -43,7 +43,7 @@ const ModelsView = () => {
     e.preventDefault();
     const { id, ...rest } = m;
     setAllModelsDatabase(saveModelData({ ...rest, name: `${m.name} (copie)`, accounts: [] }));
-    toast.success(`"${m.name}" duplique`);
+    toast.success(`"${m.name}" dupliqué`);
   };
 
   const filteredModels = useMemo(() => {
@@ -79,7 +79,7 @@ const ModelsView = () => {
             <p className="text-zinc-500 text-sm mt-1">
               {allModelsDatabase.length > 0
                 ? <>{allModelsDatabase.length} modele{allModelsDatabase.length > 1 ? 's' : ''} · {totalAccounts} compte{totalAccounts > 1 ? 's' : ''} · {totalLocations} lieu{totalLocations > 1 ? 'x' : ''}</>
-                : 'Creez votre premier profil pour commencer.'
+                : 'Créez votre premier profil pour commencer.'
               }
             </p>
           </div>
@@ -123,8 +123,8 @@ const ModelsView = () => {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mx-auto mb-4">
               <PlusIcon size={24} className="text-violet-400" />
             </div>
-            <p className="text-zinc-300 font-semibold text-base mb-1">Aucun modele</p>
-            <p className="text-zinc-600 text-sm">Creez votre premiere influenceuse pour demarrer.</p>
+            <p className="text-zinc-300 font-semibold text-base mb-1">Aucun modèle</p>
+            <p className="text-zinc-600 text-sm">Créez votre première influenceuse pour démarrer.</p>
           </div>
         ) : filteredModels.length === 0 ? (
           <div className="text-center py-12 rounded-xl border border-dashed border-zinc-800/60 animate-fade-in">
@@ -200,7 +200,7 @@ const ModelsView = () => {
       <ConfirmModal
         isOpen={!!confirmDelete}
         title="Supprimer ce modele ?"
-        message={`"${confirmDelete?.name}" et tous ses comptes/lieux seront definitivement supprimes.`}
+        message={`"${confirmDelete?.name}" et tous ses comptes/lieux seront définitivement supprimés.`}
         onConfirm={executeDelete}
         onCancel={() => setConfirmDelete(null)}
       />

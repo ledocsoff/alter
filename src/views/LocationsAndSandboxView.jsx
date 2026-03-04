@@ -88,7 +88,7 @@ const LocationsAndSandboxView = () => {
         const updated = saveLocationData(modelId, accountId, locationData);
         if (updated) {
             setAllModelsDatabase(updated);
-            toast.success(locFormMode === 'create' ? `"${locationData.name}" cree` : `Lieu mis a jour`);
+            toast.success(locFormMode === 'create' ? `"${locationData.name}" créé` : `Lieu mis à jour`);
             resetForm();
         }
     };
@@ -103,7 +103,7 @@ const LocationsAndSandboxView = () => {
         const updated = deleteLocationData(modelId, accountId, confirmDelete.id);
         if (updated) setAllModelsDatabase(updated);
         if (locFormMode === confirmDelete.id) resetForm();
-        toast.success(`"${confirmDelete.name || 'Lieu'}" supprime`);
+        toast.success(`"${confirmDelete.name || 'Lieu'}" supprimé`);
         setConfirmDelete(null);
     };
 
@@ -113,12 +113,11 @@ const LocationsAndSandboxView = () => {
         const updated = duplicateLocationLocal(modelId, accountId, locId);
         if (updated) {
             setAllModelsDatabase(updated);
-            toast.success('Lieu duplique');
+            toast.success('Lieu dupliqué');
         }
     };
 
-    const enterEditMode = (e, loc) => {
-        e.stopPropagation();
+    const enterEditMode = (loc) => {
         setLocFormMode(loc.id);
         setNewLocName(loc.name);
         setNewLocLighting(loc.default_lighting || '');
@@ -351,7 +350,7 @@ const LocationsAndSandboxView = () => {
                                     <MapPinIcon size={24} className="text-violet-400" />
                                 </div>
                                 <p className="text-zinc-300 font-semibold mb-1">Aucun lieu</p>
-                                <p className="text-zinc-600 text-sm">Creez-en un ci-dessus.</p>
+                                <p className="text-zinc-600 text-sm">Créez-en un ci-dessus.</p>
                             </div>
                         ) : (
                             <div className="space-y-2.5 stagger-children">
@@ -377,7 +376,7 @@ const LocationsAndSandboxView = () => {
                                             {/* Right: action buttons — SEPARATE from navigation */}
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <button
-                                                    onClick={() => enterEditMode({ stopPropagation: () => { }, preventDefault: () => { } }, loc)}
+                                                    onClick={() => enterEditMode(loc)}
                                                     className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
                                                     title="Modifier"
                                                 >
@@ -388,7 +387,7 @@ const LocationsAndSandboxView = () => {
                                                         const updated = duplicateLocationLocal(modelId, accountId, loc.id);
                                                         if (updated) {
                                                             setAllModelsDatabase(updated);
-                                                            toast.success('Lieu duplique');
+                                                            toast.success('Lieu dupliqué');
                                                         }
                                                     }}
                                                     className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
@@ -452,7 +451,7 @@ const LocationsAndSandboxView = () => {
             <ConfirmModal
                 isOpen={!!confirmDelete}
                 title="Supprimer ce lieu ?"
-                message={`"${confirmDelete?.name}" sera definitivement supprime.`}
+                message={`"${confirmDelete?.name}" sera définitivement supprimé.`}
                 onConfirm={executeDeleteLocation}
                 onCancel={() => setConfirmDelete(null)}
             />

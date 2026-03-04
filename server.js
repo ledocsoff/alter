@@ -411,7 +411,12 @@ const readGalleryIndex = () => {
 };
 
 const writeGalleryIndex = (entries) => {
-    writeDataAtomic(GALLERY_INDEX, entries);
+    // Don't use writeDataAtomic — it spreads into object + adds checksum/version,
+    // which corrupts the array structure. Use direct atomic write instead.
+    const dir = path.dirname(GALLERY_INDEX);
+    const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
+    fs.writeFileSync(tmpFile, JSON.stringify(entries, null, 2), 'utf-8');
+    fs.renameSync(tmpFile, GALLERY_INDEX);
 };
 
 // List gallery — returns metadata ONLY (no base64), with pagination

@@ -4,10 +4,10 @@
     "version": "5.0.0",
     "description": "Premium AI Model Management & Image Generation Studio",
     "author": "ledocsoff",
-    "homepage": "https://github.com/ledocsoff/nanabanana-studio",
+    "homepage": "https://github.com/ledocsoff/velvet-studio",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ledocsoff/nanabanana-studio.git"
+        "url": "https://github.com/ledocsoff/velvet-studio.git"
     },
     "keywords": [
         "ai",

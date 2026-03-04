@@ -150,7 +150,7 @@ const AppLayout = ({ children }) => {
     a.download = `nanabanana-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Backup exporte');
+    toast.success('Backup exporté');
   };
 
   const handleImport = (e) => {
@@ -161,7 +161,7 @@ const AppLayout = ({ children }) => {
       try {
         const models = importAllData(ev.target.result);
         setAllModelsDatabase(models);
-        toast.success(`${models.length} modele(s) importe(s)`);
+        toast.success(`${models.length} modèle(s) importé(s)`);
       } catch (err) {
         toast.error(err.message || 'Fichier invalide');
       }

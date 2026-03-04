@@ -154,7 +154,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
             <ConfirmModal
                 isOpen={confirmClear}
                 title="Vider l'historique ?"
-                message="Tous les prompts seront definitivement supprimes."
+                message="Tous les prompts seront définitivement supprimés."
                 confirmLabel="Vider"
                 onConfirm={executeClear}
                 onCancel={() => setConfirmClear(false)}

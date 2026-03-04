@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
+import { CONTROLNET_PRESETS } from '../constants/controlnetPresets';
 import { saveLocationData, generateSeed, getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
 import { pickRandom } from '../utils/helpers';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
@@ -96,8 +97,12 @@ const GenerationView = () => {
             locationName: isSandbox ? 'Sandbox' : loc?.name,
             path: `/models/${modelId}/accounts/${accountId}/locations/${isSandbox ? 'sandbox' : locationId}/generate`,
         });
-        return () => setActiveWorkflow({ modelId: null, accountId: null });
     }, [modelId, accountId, locationId, isSandbox, allModelsDatabase, navigate, setModel, setScene, setActiveWorkflow, updateSceneEntry]);
+
+    // Cleanup workflow on unmount (separate effect so it always runs)
+    useEffect(() => {
+        return () => setActiveWorkflow({ modelId: null, accountId: null });
+    }, [setActiveWorkflow]);
 
     // Quick Win B: Persist last tab
     useEffect(() => {
@@ -124,17 +129,14 @@ const GenerationView = () => {
 
     const handleRandomize = useCallback(() => {
         setScene(prev => ({
+            ...prev, // preserve any keys not explicitly listed
             outfit: pickRandom(OUTFIT_PRESETS),
+            controlnet_preset: pickRandom(CONTROLNET_PRESETS).id,
             vibe: isSandbox ? pickRandom(SCENE_OPTIONS.vibe).promptEN : prev.vibe,
             camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
             pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
             lighting: isSandbox ? pickRandom(SCENE_OPTIONS.lighting).promptEN : prev.lighting,
             expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
-            aspect_ratio: prev.aspect_ratio,
-            environment: prev.environment,
-            location_meta: prev.location_meta,
-            seed: prev.seed,
-            custom_negative_prompt: prev.custom_negative_prompt,
         }));
     }, [isSandbox, setScene]);
 

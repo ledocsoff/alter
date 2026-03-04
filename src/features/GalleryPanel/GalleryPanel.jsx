@@ -51,7 +51,7 @@ const GalleryPanel = () => {
             await loadGallery(pagination.page);
             if (selectedItem?.id === id) setSelectedItem(null);
             setPendingDeleteId(null);
-            toast.success('Image supprimee');
+            toast.success('Image supprimée');
         } else {
             setPendingDeleteId(id);
             setTimeout(() => setPendingDeleteId(null), 3000);
@@ -299,7 +299,7 @@ const GalleryPanel = () => {
             <ConfirmModal
                 isOpen={confirmClear}
                 title="Vider la galerie ?"
-                message="Toutes les images seront definitivement supprimees."
+                message="Toutes les images seront définitivement supprimées."
                 confirmLabel="Vider"
                 onConfirm={executeClear}
                 onCancel={() => setConfirmClear(false)}
