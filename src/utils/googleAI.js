@@ -724,6 +724,9 @@ export const regenerateSection = async (apiKey, location, section) => {
   const prompt = SECTION_PROMPTS[section];
   if (!prompt) throw new Error(`Section "${section}" inconnue`);
 
+  // Add variation seed so each call produces different results
+  const variationSeed = `VARIATION SEED: ${Date.now()}-${Math.random().toString(36).slice(2, 8)}. You MUST generate COMPLETELY DIFFERENT items from any previous generation. Be creative and varied.`;
+
   const locationContext = [
     `Location: "${location.name}"`,
     `Environment: ${location.environment || 'not specified'}`,
@@ -733,10 +736,11 @@ export const regenerateSection = async (apiKey, location, section) => {
   ].filter(Boolean).join('\n');
 
   logger.info('generation', `Regenerating ${section} for "${location.name}"`);
+  console.log(`[Velvet] regenerateSection('${section}') called for "${location.name}"`);
 
   const body = {
-    contents: [{ role: 'user', parts: [{ text: `${locationContext}\n\n${prompt}` }] }],
-    generationConfig: { responseMimeType: 'application/json', temperature: 0.8, maxOutputTokens: 4096 },
+    contents: [{ role: 'user', parts: [{ text: `${variationSeed}\n\n${locationContext}\n\n${prompt}` }] }],
+    generationConfig: { responseMimeType: 'application/json', temperature: 1.2, maxOutputTokens: 4096 },
   };
 
   const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -752,8 +756,16 @@ export const regenerateSection = async (apiKey, location, section) => {
   const data = await res.json();
   const text = data.candidates?.[0]?.content?.parts?.filter(p => p.text).map(p => p.text).join('') || '';
 
+  console.log(`[Velvet] AI response for ${section} (${elapsed}s):`, text.slice(0, 200));
+
   try {
-    const parsed = extractJSON(text);
+    // Try direct JSON.parse first (responseMimeType should give clean JSON), fallback to extractJSON
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = extractJSON(text);
+    }
     const arr = Array.isArray(parsed) ? parsed : (parsed[section] || []);
 
     const validators = {
@@ -764,9 +776,11 @@ export const regenerateSection = async (apiKey, location, section) => {
     const valid = arr.filter(validators[section]);
     if (valid.length === 0) throw new Error('No valid items');
 
+    console.log(`[Velvet] ✅ ${valid.length} valid ${section} items:`, valid.map(v => v.label || v.labelFR).join(', '));
     logger.success('generation', `${valid.length} ${section} régénérés en ${elapsed}s`);
     return valid.slice(0, 8);
   } catch (e) {
+    console.error(`[Velvet] ❌ ${section} parse failed:`, e.message, text.slice(0, 500));
     logger.error('generation', `${section} invalides`, text.slice(0, 300));
     throw new Error(`Format invalide pour ${section}. Réessaie.`);
   }
