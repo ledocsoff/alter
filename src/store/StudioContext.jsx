@@ -9,7 +9,7 @@ import { getSavedModels } from "../utils/storage";
 // =============================================
 const DatabaseContext = createContext();
 
-export const useDatabase = () => useContext(DatabaseContext);
+const useDatabase = () => useContext(DatabaseContext);
 
 export const DatabaseProvider = ({ children }) => {
   const [allModelsDatabase, setAllModelsDatabase] = useState(() => getSavedModels());
@@ -37,7 +37,7 @@ export const DatabaseProvider = ({ children }) => {
 // =============================================
 const PromptContext = createContext();
 
-export const usePrompt = () => useContext(PromptContext);
+const usePrompt = () => useContext(PromptContext);
 
 export const PromptProvider = ({ children }) => {
   const { allModelsDatabase, activeWorkflow } = useDatabase();
@@ -57,25 +57,14 @@ export const PromptProvider = ({ children }) => {
   const anchorMatrix = useMemo(() => generateAnchorMatrix(model, scene, activeAccount), [model, scene, activeAccount]);
   const generatedPrompt = useMemo(() => JSON.stringify(anchorMatrix, null, 2), [anchorMatrix]);
 
-  const updateModelField = useCallback((key, value) => {
-    setModel(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const updateModelCategory = useCallback((category, key, value) => {
-    setModel(prev => ({
-      ...prev,
-      [category]: { ...prev[category], [key]: value },
-    }));
-  }, []);
-
   const updateSceneEntry = useCallback((key, value) => {
     setScene(prev => ({ ...prev, [key]: value }));
   }, []);
 
   const value = useMemo(() => ({
     model, scene, generatedPrompt, anchorMatrix, referenceImages,
-    setModel, setScene, setReferenceImages, updateModelField, updateModelCategory, updateSceneEntry,
-  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, updateModelField, updateModelCategory, updateSceneEntry]);
+    setModel, setScene, setReferenceImages, updateSceneEntry,
+  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, updateSceneEntry]);
 
   return (
     <PromptContext.Provider value={value}>

@@ -1,4 +1,4 @@
-export const MODEL_OPTIONS = {
+const MODEL_OPTIONS = {
   face: {
     shape: ["soft oval", "round", "heart-shaped", "square", "oblong", "diamond", "inverted triangle", "rectangular"],
     jawline: ["soft rounded", "sharp defined", "angular", "V-shaped", "strong square", "gentle tapered", "wide", "narrow delicate"],

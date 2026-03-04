@@ -6,7 +6,7 @@ const SHORTCUTS = [
         section: 'Studio de Generation',
         items: [
             { keys: ['⌘', 'G'], label: 'Générer une image' },
-            { keys: ['⌘', 'R'], label: 'Randomiser la scene' },
+            { keys: ['⌘', 'R'], label: 'Randomiser la scène' },
             { keys: ['⌘', 'C'], label: 'Copier le prompt (vue Image)' },
         ],
     },

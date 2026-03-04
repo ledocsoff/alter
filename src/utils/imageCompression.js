@@ -48,7 +48,7 @@ export const compressImage = (file, maxDim = MAX_DIMENSION, quality = JPEG_QUALI
 
                 canvas.toBlob(
                     (blob) => {
-                        if (!blob) { reject(new Error('Compression echouee')); return; }
+                        if (!blob) { reject(new Error('Compression échouée')); return; }
                         const blobReader = new FileReader();
                         blobReader.onload = () => {
                             const base64 = blobReader.result.split(',')[1];
@@ -71,12 +71,4 @@ export const compressImage = (file, maxDim = MAX_DIMENSION, quality = JPEG_QUALI
         };
         reader.readAsDataURL(file);
     });
-};
-
-/**
- * Compresse un tableau de fichiers en parallèle.
- * Retourne un tableau de résultats { base64, mimeType, file, compressed, originalSize, compressedSize }.
- */
-export const compressImages = (files, maxDim = MAX_DIMENSION, quality = JPEG_QUALITY) => {
-    return Promise.all(files.map(f => compressImage(f, maxDim, quality)));
 };

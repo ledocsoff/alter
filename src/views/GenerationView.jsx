@@ -140,7 +140,7 @@ const GenerationView = () => {
         }));
     }, [isSandbox, setScene]);
 
-    const galleryMeta = {
+    const meta = {
         modelName: currentModel?.name || '',
         locationName: isSandbox ? 'Sandbox' : currentLocation?.name || '',
         accountHandle: currentAccount?.handle || '',
@@ -177,12 +177,6 @@ const GenerationView = () => {
             </div>
         );
     }
-
-    const meta = {
-        modelName: currentModel.name,
-        locationName: isSandbox ? 'Sandbox' : currentLocation?.name || '',
-        accountHandle: currentAccount?.handle || '',
-    };
 
     const handleRegenerateSeed = () => {
         const newSeed = generateSeed();
@@ -419,7 +413,7 @@ const GenerationView = () => {
                             <ImagePreview
                                 ref={imagePreviewRef}
                                 onRequestApiKey={() => setShowApiKeyModal(true)}
-                                galleryMeta={galleryMeta}
+                                galleryMeta={meta}
                                 onGalleryUpdate={() => { setGalleryKey(k => k + 1); setHistoryKey(k => k + 1); }}
                             />
                         )}

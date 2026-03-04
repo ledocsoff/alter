@@ -177,7 +177,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
             <span className="text-[11px] text-zinc-400 font-medium">
-              Session active — {turnCount} generation{turnCount > 1 ? 's' : ''}
+              Session active — {turnCount} génération{turnCount > 1 ? 's' : ''}
             </span>
             <span className="text-[10px] text-zinc-600">cohérence liée</span>
           </div>

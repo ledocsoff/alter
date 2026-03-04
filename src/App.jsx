@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
-import { useDatabase } from './store/StudioContext';
+import { useStudio } from './store/StudioContext';
 import { useToast } from './store/ToastContext';
 import { exportAllData, importAllData, getApiKey } from './utils/storage';
 import logger from './utils/logger';
@@ -24,7 +24,7 @@ const LoadingFallback = () => (
 const Breadcrumb = () => {
   const { modelId, accountId, locationId } = useParams();
   const location = useLocation();
-  const { allModelsDatabase } = useDatabase();
+  const { allModelsDatabase } = useStudio();
 
   if (location.pathname === '/') return null;
 
@@ -77,7 +77,7 @@ const Breadcrumb = () => {
 
 const AppLayout = ({ children }) => {
   const toast = useToast();
-  const { setAllModelsDatabase } = useDatabase();
+  const { setAllModelsDatabase } = useStudio();
   const fileInputRef = useRef(null);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);

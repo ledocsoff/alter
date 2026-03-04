@@ -39,7 +39,7 @@ const syncToServer = () => {
                 window.dispatchEvent(new CustomEvent('velvet:synced'));
             }
         } catch (err) {
-            console.warn('[Velvet] Sync serveur echoue:', err.message);
+            console.warn('[Velvet] Sync serveur échoué:', err.message);
         }
     }, 1500); // 1.5s debounce — reduces redundant writes during rapid edits
 };
@@ -54,7 +54,7 @@ export const syncNow = () => {
         const sent = navigator.sendBeacon(`${API_BASE}/api/save`, new Blob([payload], { type: 'application/json' }));
         if (sent) hasPendingSync = false;
     } catch (err) {
-        console.warn('[Velvet] Sync beacon echoue:', err.message);
+        console.warn('[Velvet] Sync beacon échoué:', err.message);
     }
 };
 
@@ -82,7 +82,7 @@ export const loadFromServer = async () => {
         localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates || []));
         localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history || []));
 
-        console.log(`[Velvet] Chargé depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
+        console.log(`[Velvet] Chargé depuis sauvegarde/: ${data.models?.length || 0} modèle(s)`);
         return data.models || [];
     } catch (err) {
         console.warn('[Velvet] Serveur indisponible, fallback localStorage:', err.message);
@@ -158,14 +158,6 @@ export const getLastSession = () => {
     try {
         const session = JSON.parse(localStorage.getItem(LAST_SESSION_KEY));
         if (!session) return null;
-        // Migrate stale paths from before the routing fix
-        if (session.path && (session.path.includes('/studio') || session.path.endsWith('/sandbox'))) {
-            const { modelId, accountId, locationId } = session;
-            if (modelId && accountId) {
-                session.path = `/models/${modelId}/accounts/${accountId}/locations/${locationId || 'sandbox'}/generate`;
-                try { localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(session)); } catch { }
-            }
-        }
         return session;
     } catch { return null; }
 };
@@ -466,7 +458,6 @@ export const importAllData = (jsonString) => {
     return data.models;
 };
 
-// (Cross-account duplicateLocation removed — replaced by duplicateLocationLocal)
 
 // ============================================
 // LOCATION LOCK SCORE
