@@ -5,6 +5,12 @@ const GALLERY_KEY = 'velvet_gallery';
 const API_KEY_KEY = 'velvet_api_key';
 const API_PROVIDER_KEY = 'velvet_api_provider'; // 'ai_studio' | 'vertex_ai'
 
+// In Electron production (file://), API calls must target localhost:3001 directly
+// In browser/dev mode, Vite proxy handles /api → localhost:3001
+const API_BASE = (typeof window !== 'undefined' && window.location.protocol === 'file:')
+    ? 'http://localhost:3001'
+    : '';
+
 // ============================================
 // FILE SYNC — Sauvegarde automatique vers le serveur
 // ============================================
@@ -23,7 +29,7 @@ const syncToServer = () => {
     hasPendingSync = true;
     syncTimeout = setTimeout(async () => {
         try {
-            const res = await fetch('/api/save', {
+            const res = await fetch(`${API_BASE}/api/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(buildSyncPayload()),
@@ -45,7 +51,7 @@ export const syncNow = () => {
     try {
         // sendBeacon fonctionne même pendant la fermeture de l'onglet
         const payload = JSON.stringify(buildSyncPayload());
-        const sent = navigator.sendBeacon('/api/save', new Blob([payload], { type: 'application/json' }));
+        const sent = navigator.sendBeacon(`${API_BASE}/api/save`, new Blob([payload], { type: 'application/json' }));
         if (sent) hasPendingSync = false;
     } catch (err) {
         console.warn('[NanaBanana] Sync beacon echoue:', err.message);
@@ -64,7 +70,7 @@ if (typeof window !== 'undefined') {
  */
 export const loadFromServer = async () => {
     try {
-        const res = await fetch('/api/load');
+        const res = await fetch(`${API_BASE}/api/load`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 

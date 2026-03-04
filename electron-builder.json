@@ -1,0 +1,49 @@
+{
+    "appId": "com.velvet.studio",
+    "productName": "Velvet Studio",
+    "directories": {
+        "output": "release"
+    },
+    "files": [
+        "dist/**/*",
+        "electron/**/*",
+        "server.js",
+        "package.json"
+    ],
+    "extraResources": [
+        {
+            "from": "server.js",
+            "to": "server.js"
+        },
+        {
+            "from": "sauvegarde",
+            "to": "sauvegarde",
+            "filter": [
+                "**/*"
+            ]
+        }
+    ],
+    "mac": {
+        "category": "public.app-category.developer-tools",
+        "target": [
+            "dmg"
+        ],
+        "icon": "public/icons/icon.png"
+    },
+    "win": {
+        "target": [
+            "nsis"
+        ],
+        "icon": "public/icons/icon.png"
+    },
+    "linux": {
+        "target": [
+            "AppImage"
+        ],
+        "icon": "public/icons/icon.png"
+    },
+    "nsis": {
+        "oneClick": true,
+        "createDesktopShortcut": true
+    }
+}

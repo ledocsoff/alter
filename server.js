@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_DIR = path.join(__dirname, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');
 const MAX_BACKUPS = 3;
-const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173', 'file://'];
 
 // Ensure save directory exists
 if (!fs.existsSync(SAVE_DIR)) {
@@ -25,8 +25,9 @@ const backupPath = (n) => path.join(SAVE_DIR, `data.backup.${n}.json`);
 // ============================================
 const corsMiddleware = (req, res, next) => {
     const origin = req.headers.origin;
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin || ALLOWED_ORIGINS[0]);
+    // Allow requests with no origin (Electron file://, same-origin, etc.)
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         if (req.method === 'OPTIONS') return res.sendStatus(204);

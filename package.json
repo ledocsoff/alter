@@ -1,14 +1,19 @@
 {
     "name": "velvet-studio",
     "private": true,
-    "version": "4.5.0",
+    "version": "5.0.0",
+    "description": "Premium AI Model Prompt Studio",
+    "main": "electron/main.js",
     "type": "module",
     "scripts": {
         "predev": "lsof -ti:5173 | xargs kill -9 2>/dev/null; lsof -ti:3001 | xargs kill -9 2>/dev/null || true",
         "dev": "concurrently -n server,vite -c yellow,cyan \"node server.js\" \"vite\"",
         "build": "vite build",
         "preview": "vite preview",
-        "server": "node server.js"
+        "server": "node server.js",
+        "electron:dev": "concurrently -n server,vite,electron -c yellow,cyan,magenta \"node server.js\" \"vite --open false\" \"sleep 3 && ELECTRON_DEV=true npx electron .\"",
+        "electron:build": "vite build && npx electron-builder --config electron-builder.json",
+        "electron:pack": "vite build && npx electron-builder --config electron-builder.json --dir"
     },
     "dependencies": {
         "express": "^4.21.0",
@@ -20,6 +25,8 @@
         "@vitejs/plugin-react": "^4.3.0",
         "autoprefixer": "^10.4.27",
         "concurrently": "^9.1.0",
+        "electron": "^33.0.0",
+        "electron-builder": "^25.0.0",
         "postcss": "^8.5.6",
         "tailwindcss": "^3.4.1",
         "vite": "^6.0.0"

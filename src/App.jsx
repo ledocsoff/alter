@@ -88,8 +88,9 @@ const AppLayout = ({ children }) => {
   const [savedFlash, setSavedFlash] = useState(false);
 
   // Health check — ping server every 30s
+  const apiBase = (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3001' : '';
   useEffect(() => {
-    const check = () => fetch('/api/health').then(() => setServerOnline(true)).catch(() => setServerOnline(false));
+    const check = () => fetch(`${apiBase}/api/health`).then(() => setServerOnline(true)).catch(() => setServerOnline(false));
     check();
     const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
