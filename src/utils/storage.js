@@ -74,50 +74,62 @@ export const loadFromServer = async () => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // Populate localStorage from server data
-        if (data.models && data.models.length > 0) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.models));
-        }
-        if (data.templates && data.templates.length > 0) {
-            localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates));
-        }
-        if (data.history && data.history.length > 0) {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
-        }
+        // Validate server response
+        if (!data || typeof data !== 'object') throw new Error('Réponse serveur invalide');
 
-        console.log(`[Velvet] Charge depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
+        // Always overwrite localStorage from server (source of truth)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.models || []));
+        localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates || []));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history || []));
+
+        console.log(`[Velvet] Chargé depuis sauvegarde/: ${data.models?.length || 0} modele(s)`);
         return data.models || [];
     } catch (err) {
-        console.warn('[Velvet] Serveur indisponible, fallback localStorage');
+        console.warn('[Velvet] Serveur indisponible, fallback localStorage:', err.message);
         return getSavedModels();
     }
 };
 
 // ============================================
 // API KEY (localStorage only — jamais dans les fichiers)
+// Obfuscation base64 pour éviter la lecture directe dans DevTools
 // Une clé par provider : ai_studio et vertex_ai
 // ============================================
 const _apiKeyFor = (provider) => `${API_KEY_KEY}_${provider}`;
 
-// Migration: si l'ancienne clé unique existe, la déplacer vers ai_studio
+const _obfuscate = (key) => { try { return btoa(key); } catch { return key; } };
+const _deobfuscate = (val) => { try { return atob(val); } catch { return val; } };
+
+// Migration: si l'ancienne clé unique existe, la déplacer vers ai_studio (obfusquée)
 (() => {
     try {
         const old = localStorage.getItem(API_KEY_KEY);
         if (old) {
-            localStorage.setItem(_apiKeyFor('ai_studio'), old);
+            localStorage.setItem(_apiKeyFor('ai_studio'), _obfuscate(old));
             localStorage.removeItem(API_KEY_KEY);
         }
+        // Migrate plaintext keys stored before obfuscation
+        ['ai_studio', 'vertex_ai'].forEach(p => {
+            const k = localStorage.getItem(_apiKeyFor(p));
+            if (k && !k.includes('=') && k.startsWith('AI')) {
+                // Looks like a plaintext key starting with AI, obfuscate it
+                localStorage.setItem(_apiKeyFor(p), _obfuscate(k));
+            }
+        });
     } catch { }
 })();
 
 export const getApiKey = (provider) => {
     const p = provider || getApiProvider();
-    try { return localStorage.getItem(_apiKeyFor(p)) || ''; } catch { return ''; }
+    try {
+        const stored = localStorage.getItem(_apiKeyFor(p)) || '';
+        return stored ? _deobfuscate(stored) : '';
+    } catch { return ''; }
 };
 
 export const saveApiKey = (key, provider) => {
     const p = provider || getApiProvider();
-    localStorage.setItem(_apiKeyFor(p), key);
+    localStorage.setItem(_apiKeyFor(p), _obfuscate(key));
 };
 
 export const removeApiKey = (provider) => {
@@ -147,16 +159,22 @@ export const getLastSession = () => {
 };
 
 // ============================================
-// LECTURE GLOBALE
+// LECTURE GLOBALE — avec auto-recovery
 // ============================================
 export const getSavedModels = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
-        const parsed = data ? JSON.parse(data) : [];
-        if (!Array.isArray(parsed)) return [];
+        if (!data) return [];
+        const parsed = JSON.parse(data);
+        if (!Array.isArray(parsed)) {
+            console.error('[Velvet] Données corrompues détectées, nettoyage...');
+            localStorage.removeItem(STORAGE_KEY);
+            return [];
+        }
         return parsed;
     } catch (error) {
-        console.error("[NanaBanana] Erreur lecture localStorage:", error);
+        console.error('[Velvet] Erreur critique localStorage — reset:', error.message);
+        try { localStorage.removeItem(STORAGE_KEY); } catch { }
         return [];
     }
 };

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SAVE_DIR = path.join(__dirname, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');
-const MAX_BACKUPS = 3;
+const MAX_BACKUPS = 5;
 const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173', 'file://'];
 
 // Ensure save directory exists
@@ -19,6 +19,16 @@ if (!fs.existsSync(SAVE_DIR)) {
 const EMPTY_DATA = { models: [], templates: [], history: [] };
 
 const backupPath = (n) => path.join(SAVE_DIR, `data.backup.${n}.json`);
+
+// ============================================
+// SECURITY — Input sanitization
+// ============================================
+const sanitizeFilename = (name) => name.replace(/[^a-zA-Z0-9_\-.]/g, '_');
+
+const isValidGalleryId = (id) => /^gal_\d+_[a-f0-9]+$/.test(id);
+
+const MAX_IMAGE_SIZE_MB = 20;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 // ============================================
 // CORS — restreint à localhost:5173
@@ -43,24 +53,33 @@ const corsMiddleware = (req, res, next) => {
 const validatePayload = (data) => {
     if (!data || typeof data !== 'object') return 'Payload invalide: objet attendu';
     if (!Array.isArray(data.models)) return 'Payload invalide: models doit être un tableau';
-    // templates et history optionnels mais doivent être des tableaux si présents
     if (data.templates !== undefined && !Array.isArray(data.templates)) return 'Payload invalide: templates doit être un tableau';
     if (data.history !== undefined && !Array.isArray(data.history)) return 'Payload invalide: history doit être un tableau';
+
+    // Validate models have required fields
+    for (let i = 0; i < data.models.length; i++) {
+        const m = data.models[i];
+        if (!m || typeof m !== 'object') return `Modèle #${i + 1}: objet invalide`;
+        if (!m.id || typeof m.id !== 'string') return `Modèle #${i + 1}: id manquant`;
+        if (!m.name || typeof m.name !== 'string') return `Modèle #${i + 1}: nom manquant`;
+    }
+
     return null;
 };
 
 // ============================================
 // ATOMIC WRITE — écriture dans .tmp puis rename
 // ============================================
-const writeDataAtomic = (data) => {
-    const json = JSON.stringify(data, null, 2);
-    const tmpFile = path.join(SAVE_DIR, `.data.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
+const writeDataAtomic = (filepath, data) => {
+    const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    const dir = path.dirname(filepath);
+    const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
     fs.writeFileSync(tmpFile, json, 'utf-8');
-    fs.renameSync(tmpFile, DATA_FILE);
+    fs.renameSync(tmpFile, filepath);
 };
 
 // ============================================
-// BACKUP ROTATION
+// BACKUP ROTATION (now 5 backups)
 // ============================================
 const rotateBackups = () => {
     try {
@@ -81,26 +100,124 @@ const rotateBackups = () => {
 const readData = () => {
     try {
         if (fs.existsSync(DATA_FILE)) {
-            return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+            const content = fs.readFileSync(DATA_FILE, 'utf-8');
+            const parsed = JSON.parse(content);
+            // Validate structure
+            if (parsed && typeof parsed === 'object' && Array.isArray(parsed.models)) {
+                return parsed;
+            }
+            console.warn('[Server] data.json structure invalide, tentative restauration backup...');
+            return tryRestoreFromBackup();
         }
     } catch (err) {
-        console.error('[Server] Erreur lecture:', err.message);
+        console.error('[Server] Erreur lecture data.json:', err.message);
+        console.warn('[Server] Tentative restauration automatique depuis backup...');
+        return tryRestoreFromBackup();
     }
     return { ...EMPTY_DATA };
 };
 
 // ============================================
-// RATE LIMITER — 1 save/seconde max
+// AUTO-RECOVERY — essaie de restaurer depuis un backup
 // ============================================
-let lastSaveTime = 0;
+const tryRestoreFromBackup = () => {
+    for (let i = 1; i <= MAX_BACKUPS; i++) {
+        const bp = backupPath(i);
+        try {
+            if (fs.existsSync(bp)) {
+                const content = fs.readFileSync(bp, 'utf-8');
+                const parsed = JSON.parse(content);
+                if (parsed && Array.isArray(parsed.models)) {
+                    console.log(`[Server] ✓ Restauration auto depuis backup ${i} — ${parsed.models.length} modele(s)`);
+                    // Rewrite main data file from backup
+                    writeDataAtomic(DATA_FILE, parsed);
+                    return parsed;
+                }
+            }
+        } catch {
+            console.warn(`[Server] Backup ${i} corrompu, essai suivant...`);
+        }
+    }
+    console.error('[Server] ⚠ Aucun backup viable trouvé — démarrage avec données vides');
+    return { ...EMPTY_DATA };
+};
+
+// ============================================
+// RATE LIMITER — par endpoint
+// ============================================
+const rateLimiters = {};
+const checkRateLimit = (key, intervalMs) => {
+    const now = Date.now();
+    if (rateLimiters[key] && now - rateLimiters[key] < intervalMs) {
+        return false; // Rate limited
+    }
+    rateLimiters[key] = now;
+    return true;
+};
+
+// ============================================
+// TEMP FILE CLEANUP — supprime les .tmp orphelins
+// ============================================
+const cleanupTempFiles = () => {
+    try {
+        const dirs = [SAVE_DIR, path.join(SAVE_DIR, 'gallery')];
+        for (const dir of dirs) {
+            if (!fs.existsSync(dir)) continue;
+            const files = fs.readdirSync(dir);
+            for (const f of files) {
+                if (f.startsWith('.tmp.') || f.startsWith('.data.tmp.') || f.startsWith('.index.tmp.')) {
+                    try {
+                        fs.unlinkSync(path.join(dir, f));
+                        console.log(`[Server] Temp file nettoyé: ${f}`);
+                    } catch { /* ignore */ }
+                }
+            }
+        }
+    } catch { /* ignore */ }
+};
 
 const app = express();
 app.use(corsMiddleware);
 app.use(express.json({ limit: '50mb' }));
 
-// Health check
+// ============================================
+// ERROR HANDLER — attrape les erreurs non gérées
+// ============================================
+app.use((err, _req, res, _next) => {
+    console.error('[Server] Erreur non gérée:', err.message);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+});
+
+// Health check — enrichi avec infos disque
 app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
+    try {
+        const dataSize = fs.existsSync(DATA_FILE) ? fs.statSync(DATA_FILE).size : 0;
+        const galleryDir = path.join(SAVE_DIR, 'gallery');
+        let galleryCount = 0;
+        let gallerySize = 0;
+        if (fs.existsSync(galleryDir)) {
+            const files = fs.readdirSync(galleryDir).filter(f => !f.startsWith('.') && f !== 'index.json');
+            galleryCount = files.length;
+            gallerySize = files.reduce((sum, f) => {
+                try { return sum + fs.statSync(path.join(galleryDir, f)).size; } catch { return sum; }
+            }, 0);
+        }
+        res.json({
+            ok: true,
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            storage: {
+                dataFile: `${(dataSize / 1024).toFixed(1)} KB`,
+                gallery: { count: galleryCount, size: `${(gallerySize / 1024 / 1024).toFixed(1)} MB` },
+                backups: Array.from({ length: MAX_BACKUPS }, (_, i) => {
+                    const bp = backupPath(i + 1);
+                    return fs.existsSync(bp) ? { id: i + 1, size: fs.statSync(bp).size, date: fs.statSync(bp).mtime } : null;
+                }).filter(Boolean).length,
+            },
+        });
+    } catch (err) {
+        res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
+    }
 });
 
 // Load all data
@@ -110,12 +227,10 @@ app.get('/api/load', (_req, res) => {
 
 // Save all data (with validation, atomic write, backup rotation)
 app.post('/api/save', (req, res) => {
-    // Rate limit
-    const now = Date.now();
-    if (now - lastSaveTime < 1000) {
+    // Rate limit: 1 save/seconde
+    if (!checkRateLimit('save', 1000)) {
         return res.status(429).json({ error: 'Trop de requêtes, réessayez dans 1s' });
     }
-    lastSaveTime = now;
 
     // Validate
     const err = validatePayload(req.body);
@@ -126,9 +241,9 @@ app.post('/api/save', (req, res) => {
 
     try {
         rotateBackups();
-        writeDataAtomic(req.body);
+        writeDataAtomic(DATA_FILE, req.body);
         const n = req.body.models?.length || 0;
-        console.log(`[Server] Sauvegarde OK — ${n} modele(s) → ${DATA_FILE}`);
+        console.log(`[Server] Sauvegarde OK — ${n} modele(s)`);
         res.json({ ok: true });
     } catch (err) {
         console.error('[Server] Erreur ecriture:', err.message);
@@ -143,7 +258,19 @@ app.get('/api/backups', (_req, res) => {
         const bp = backupPath(i);
         if (fs.existsSync(bp)) {
             const stat = fs.statSync(bp);
-            backups.push({ id: i, file: `data.backup.${i}.json`, size: stat.size, date: stat.mtime });
+            try {
+                const data = JSON.parse(fs.readFileSync(bp, 'utf-8'));
+                backups.push({
+                    id: i,
+                    file: `data.backup.${i}.json`,
+                    size: stat.size,
+                    date: stat.mtime,
+                    models: data.models?.length || 0,
+                    valid: true,
+                });
+            } catch {
+                backups.push({ id: i, file: `data.backup.${i}.json`, size: stat.size, date: stat.mtime, valid: false });
+            }
         }
     }
     res.json(backups);
@@ -152,14 +279,21 @@ app.get('/api/backups', (_req, res) => {
 // Restore from a specific backup
 app.post('/api/restore/:n', (req, res) => {
     const n = parseInt(req.params.n);
-    if (n < 1 || n > MAX_BACKUPS) return res.status(400).json({ error: 'Backup invalide' });
+    if (isNaN(n) || n < 1 || n > MAX_BACKUPS) return res.status(400).json({ error: 'Backup invalide' });
     const bp = backupPath(n);
     if (!fs.existsSync(bp)) return res.status(404).json({ error: `Backup ${n} introuvable` });
+
     try {
+        // Validate backup integrity before restoring
+        const backupContent = fs.readFileSync(bp, 'utf-8');
+        const backupData = JSON.parse(backupContent);
+        if (!backupData || !Array.isArray(backupData.models)) {
+            return res.status(400).json({ error: `Backup ${n} corrompu: structure invalide` });
+        }
+
         rotateBackups();
         fs.copyFileSync(bp, DATA_FILE);
-        const data = readData();
-        const count = data.models?.length || 0;
+        const count = backupData.models.length;
         console.log(`[Server] Restauration backup ${n} OK — ${count} modele(s)`);
         res.json({ ok: true, models: count });
     } catch (err) {
@@ -182,7 +316,9 @@ if (!fs.existsSync(GALLERY_DIR)) {
 const readGalleryIndex = () => {
     try {
         if (fs.existsSync(GALLERY_INDEX)) {
-            return JSON.parse(fs.readFileSync(GALLERY_INDEX, 'utf-8'));
+            const entries = JSON.parse(fs.readFileSync(GALLERY_INDEX, 'utf-8'));
+            if (Array.isArray(entries)) return entries;
+            console.warn('[Server] Gallery index invalide, reset...');
         }
     } catch (err) {
         console.error('[Server] Erreur lecture gallery index:', err.message);
@@ -191,9 +327,7 @@ const readGalleryIndex = () => {
 };
 
 const writeGalleryIndex = (entries) => {
-    const tmpFile = path.join(GALLERY_DIR, `.index.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
-    fs.writeFileSync(tmpFile, JSON.stringify(entries, null, 2), 'utf-8');
-    fs.renameSync(tmpFile, GALLERY_INDEX);
+    writeDataAtomic(GALLERY_INDEX, entries);
 };
 
 // List gallery (returns metadata + base64 data)
@@ -201,7 +335,9 @@ app.get('/api/gallery', (_req, res) => {
     const entries = readGalleryIndex();
     const result = entries.map(entry => {
         try {
-            const imgPath = path.join(GALLERY_DIR, entry.filename);
+            // Prevent path traversal
+            const safeName = path.basename(entry.filename);
+            const imgPath = path.join(GALLERY_DIR, safeName);
             if (fs.existsSync(imgPath)) {
                 const base64 = fs.readFileSync(imgPath, 'base64');
                 return { ...entry, base64 };
@@ -216,11 +352,28 @@ app.get('/api/gallery', (_req, res) => {
 
 // Save a new gallery image
 app.post('/api/gallery', (req, res) => {
+    // Rate limit: 1 image/2 secondes
+    if (!checkRateLimit('gallery_post', 2000)) {
+        return res.status(429).json({ error: 'Trop rapide, attendez 2s entre les sauvegardes' });
+    }
+
     try {
         const { base64, mimeType, prompt, scene, modelName, locationName, accountHandle, seed } = req.body;
-        if (!base64) return res.status(400).json({ error: 'base64 requis' });
+        if (!base64 || typeof base64 !== 'string') return res.status(400).json({ error: 'base64 requis (string)' });
 
-        const ext = (mimeType || 'image/png').includes('jpeg') ? 'jpg' : 'png';
+        // Validate image size
+        const imageBytes = Math.ceil(base64.length * 3 / 4);
+        if (imageBytes > MAX_IMAGE_SIZE_BYTES) {
+            return res.status(400).json({ error: `Image trop grosse: ${(imageBytes / 1024 / 1024).toFixed(1)}MB (max ${MAX_IMAGE_SIZE_MB}MB)` });
+        }
+
+        // Validate mime type
+        const safeMime = (mimeType || 'image/png');
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(safeMime)) {
+            return res.status(400).json({ error: `Type MIME non supporté: ${safeMime}` });
+        }
+
+        const ext = safeMime.includes('jpeg') ? 'jpg' : safeMime.includes('webp') ? 'webp' : 'png';
         const id = `gal_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
         const filename = `${id}.${ext}`;
 
@@ -233,12 +386,12 @@ app.post('/api/gallery', (req, res) => {
         const entry = {
             id,
             filename,
-            mimeType: mimeType || 'image/png',
-            prompt: prompt || '',
+            mimeType: safeMime,
+            prompt: (prompt || '').slice(0, 5000), // Limit prompt length
             scene: scene || {},
-            modelName: modelName || '',
-            locationName: locationName || 'Sandbox',
-            accountHandle: accountHandle || '',
+            modelName: (modelName || '').slice(0, 100),
+            locationName: (locationName || 'Sandbox').slice(0, 100),
+            accountHandle: (accountHandle || '').slice(0, 100),
             seed: seed || null,
             timestamp: Date.now(),
             starred: false,
@@ -248,12 +401,12 @@ app.post('/api/gallery', (req, res) => {
         // Enforce max gallery size
         while (entries.length > MAX_GALLERY) {
             const removed = entries.pop();
-            const removedPath = path.join(GALLERY_DIR, removed.filename);
+            const removedPath = path.join(GALLERY_DIR, path.basename(removed.filename));
             try { fs.unlinkSync(removedPath); } catch { /* ignore */ }
         }
 
         writeGalleryIndex(entries);
-        console.log(`[Server] Gallery +1 — ${entries.length} images, ${filename}`);
+        console.log(`[Server] Gallery +1 — ${entries.length} images, ${filename} (${(imageBytes / 1024).toFixed(0)} KB)`);
         res.json({ ok: true, id, total: entries.length });
     } catch (err) {
         console.error('[Server] Erreur gallery save:', err.message);
@@ -263,6 +416,7 @@ app.post('/api/gallery', (req, res) => {
 
 // Toggle star on a gallery image
 app.patch('/api/gallery/:id/star', (req, res) => {
+    if (!isValidGalleryId(req.params.id)) return res.status(400).json({ error: 'ID invalide' });
     const entries = readGalleryIndex();
     const entry = entries.find(e => e.id === req.params.id);
     if (!entry) return res.status(404).json({ error: 'Image introuvable' });
@@ -273,11 +427,13 @@ app.patch('/api/gallery/:id/star', (req, res) => {
 
 // Delete a single gallery image
 app.delete('/api/gallery/:id', (req, res) => {
+    if (!isValidGalleryId(req.params.id)) return res.status(400).json({ error: 'ID invalide' });
     const entries = readGalleryIndex();
     const idx = entries.findIndex(e => e.id === req.params.id);
     if (idx === -1) return res.status(404).json({ error: 'Image introuvable' });
     const [removed] = entries.splice(idx, 1);
-    const removedPath = path.join(GALLERY_DIR, removed.filename);
+    // path.basename prevents path traversal
+    const removedPath = path.join(GALLERY_DIR, path.basename(removed.filename));
     try { fs.unlinkSync(removedPath); } catch { /* ignore */ }
     writeGalleryIndex(entries);
     console.log(`[Server] Gallery -1 — ${entries.length} images restantes`);
@@ -289,7 +445,7 @@ app.delete('/api/gallery', (_req, res) => {
     try {
         const entries = readGalleryIndex();
         for (const entry of entries) {
-            try { fs.unlinkSync(path.join(GALLERY_DIR, entry.filename)); } catch { /* ignore */ }
+            try { fs.unlinkSync(path.join(GALLERY_DIR, path.basename(entry.filename))); } catch { /* ignore */ }
         }
         writeGalleryIndex([]);
         console.log('[Server] Gallery videe');
@@ -300,13 +456,56 @@ app.delete('/api/gallery', (_req, res) => {
     }
 });
 
+// ============================================
+// STARTUP
+// ============================================
 const PORT = 3001;
-app.listen(PORT, () => {
-    console.log(`\n  💎 Velvet Studio Server`);
-    console.log(`  ➜  API:         http://localhost:${PORT}/api`);
-    console.log(`  ➜  CORS:        ${ALLOWED_ORIGINS.join(', ')}`);
-    console.log(`  ➜  Sauvegarde:  ${SAVE_DIR}/`);
-    console.log(`  ➜  Galerie:     ${GALLERY_DIR}/ (max ${MAX_GALLERY} images)`);
-    console.log(`  ➜  Backups:     ${MAX_BACKUPS} rotations automatiques`);
-    console.log(`  ➜  Sécurité:    écriture atomique + validation + rate limit\n`);
+
+// Clean up temp files from previous crashes
+cleanupTempFiles();
+
+// Validate data integrity on startup
+const startupData = readData();
+console.log(`\n  💎 Velvet Studio Server`);
+console.log(`  ➜  API:         http://localhost:${PORT}/api`);
+console.log(`  ➜  CORS:        ${ALLOWED_ORIGINS.join(', ')}`);
+console.log(`  ➜  Sauvegarde:  ${SAVE_DIR}/`);
+console.log(`  ➜  Galerie:     ${GALLERY_DIR}/ (max ${MAX_GALLERY} images)`);
+console.log(`  ➜  Backups:     ${MAX_BACKUPS} rotations automatiques`);
+console.log(`  ➜  Données:     ${startupData.models?.length || 0} modele(s)`);
+console.log(`  ➜  Sécurité:    écriture atomique + validation + rate limit + path sanitization`);
+
+const server = app.listen(PORT, () => {
+    console.log(`  ➜  Statut:      en ligne sur le port ${PORT}\n`);
+});
+
+// ============================================
+// GRACEFUL SHUTDOWN — sauvegarde propre à la fermeture
+// ============================================
+const gracefulShutdown = (signal) => {
+    console.log(`\n[Server] ${signal} reçu — arrêt propre...`);
+    cleanupTempFiles();
+    server.close(() => {
+        console.log('[Server] Serveur arrêté proprement.');
+        process.exit(0);
+    });
+    // Force exit after 5s if server.close hangs
+    setTimeout(() => {
+        console.warn('[Server] Arrêt forcé après timeout');
+        process.exit(1);
+    }, 5000).unref();
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Catch unhandled errors
+process.on('uncaughtException', (err) => {
+    console.error('[Server] ⚠ EXCEPTION NON GÉRÉE:', err.message);
+    console.error(err.stack);
+    // Don't exit — try to keep serving
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[Server] ⚠ PROMISE NON GÉRÉE:', reason);
 });
