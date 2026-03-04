@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { getSavedModels, saveModelData, getApiKey, uploadModelRefs } from '../utils/storage';
+import { getSavedModels, saveModelData, getApiKey, uploadModelRefs, getModelRefs, deleteModelRef, refImageUrl } from '../utils/storage';
 import { extractModelFromPhotos } from '../utils/googleAI';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
 import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
@@ -21,6 +21,12 @@ const ModelEditorShell = ({ mode }) => {
   const [photos, setPhotos] = useState([]); // { file, preview, base64, mimeType }
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Persistent reference photos
+  const [savedRefs, setSavedRefs] = useState([]); // [{ id, imageUrl, mimeType }]
+  const [pendingRefs, setPendingRefs] = useState([]); // [{ base64, mimeType, dataUrl }]
+  const [isLoadingRefs, setIsLoadingRefs] = useState(false);
+  const refFileInputRef = useRef(null);
 
   // JSON validation
   const jsonStatus = useMemo(() => {
@@ -52,12 +58,55 @@ const ModelEditorShell = ({ mode }) => {
         setModel({ ...modelFeatures, name: existingModel.name });
         setJsonText(modelToJsonText(existingModel));
       }
+      // Load existing reference photos
+      setIsLoadingRefs(true);
+      getModelRefs(modelId).then(refs => {
+        setSavedRefs(refs || []);
+        setIsLoadingRefs(false);
+      }).catch(() => setIsLoadingRefs(false));
     } else {
       setModel(DEFAULT_MODEL);
       setModelName('');
       setJsonText('');
     }
   }, [mode, modelId, setModel]);
+
+  // Reference photo handlers
+  const handleRefUpload = async (e) => {
+    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+    const maxNew = 5 - savedRefs.length - pendingRefs.length;
+    const toAdd = files.slice(0, maxNew);
+    if (toAdd.length === 0) { toast.info('Maximum 5 photos de reference'); return; }
+
+    const newRefs = await Promise.all(toAdd.map(async (file) => {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+      return { base64, mimeType: file.type || 'image/jpeg', dataUrl: URL.createObjectURL(file) };
+    }));
+    setPendingRefs(prev => [...prev, ...newRefs]);
+    toast.success(`${newRefs.length} photo(s) ajoutee(s)`);
+    e.target.value = '';
+  };
+
+  const handleDeleteSavedRef = async (refId) => {
+    const currentModelId = mode === 'edit' ? modelId : null;
+    if (!currentModelId) return;
+    await deleteModelRef(currentModelId, refId);
+    setSavedRefs(prev => prev.filter(r => r.id !== refId));
+    toast.success('Photo de reference supprimee');
+  };
+
+  const handleRemovePendingRef = (idx) => {
+    setPendingRefs(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[idx].dataUrl);
+      updated.splice(idx, 1);
+      return updated;
+    });
+  };
 
   const handleSave = async () => {
     if (!modelName.trim()) {
@@ -70,7 +119,7 @@ const ModelEditorShell = ({ mode }) => {
       return;
     }
 
-    const id = mode === 'edit' ? modelId : `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)} `;
+    const id = mode === 'edit' ? modelId : `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     let existingAccounts = [];
     if (mode === 'edit') {
       const existing = allModelsDatabase.find(m => m.id === modelId);
@@ -90,22 +139,23 @@ const ModelEditorShell = ({ mode }) => {
     const updatedDB = saveModelData(modelData);
     setAllModelsDatabase(updatedDB);
 
-    // Save uploaded photos as persistent reference images
-    if (photos.length > 0) {
+    // Save ALL pending reference photos (from both extraction mode AND standalone upload)
+    const allNewPhotos = [
+      ...photos.map(p => ({ base64: p.base64, mimeType: p.mimeType })),
+      ...pendingRefs.map(p => ({ base64: p.base64, mimeType: p.mimeType })),
+    ];
+
+    let refMsg = '';
+    if (allNewPhotos.length > 0) {
       try {
-        const result = await uploadModelRefs(id, photos.map(p => ({ base64: p.base64, mimeType: p.mimeType })));
-        if (result?.ok) {
-          toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} — ${result.added} photo(s) de reference sauvee(s)`);
-        } else {
-          toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
+        const result = await uploadModelRefs(id, allNewPhotos);
+        if (result?.ok && result.added > 0) {
+          refMsg = ` + ${result.added} photo(s) de reference`;
         }
-      } catch {
-        toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
-      }
-    } else {
-      toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'} `);
+      } catch { /* silent */ }
     }
 
+    toast.success(`${modelName.trim()} ${mode === 'edit' ? 'mise a jour' : 'creee'}${refMsg}`);
     navigate('/');
   };
 
@@ -390,6 +440,89 @@ const ModelEditorShell = ({ mode }) => {
               )}
             </div>
           )}
+
+          {/* REFERENCE PHOTOS SECTION — always visible */}
+          <div className="bg-zinc-900/60 border border-violet-500/20 rounded-xl p-5 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                  <CameraIcon size={14} className="text-violet-400" />
+                  Photos de Reference
+                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">coherence visuelle</span>
+                </h2>
+                <p className="text-[11px] text-zinc-600 mt-1">
+                  Ajoutez des photos multi-angles (face, profil, 3/4). Elles seront envoyees a Gemini a chaque generation pour verrouiller l'identite visuelle.
+                </p>
+              </div>
+              <span className="text-[11px] text-zinc-500">{savedRefs.length + pendingRefs.length}/5</span>
+            </div>
+
+            {/* Existing saved refs */}
+            <div className="flex flex-wrap gap-2">
+              {isLoadingRefs && <div className="text-[11px] text-zinc-500">Chargement...</div>}
+              {savedRefs.map((ref) => (
+                <div key={ref.id} className="relative group/ref shrink-0">
+                  <img
+                    src={ref.imageUrl}
+                    alt="Ref"
+                    className="w-16 h-16 rounded-lg object-cover border border-violet-500/30 ring-1 ring-violet-500/10"
+                  />
+                  <button
+                    onClick={() => handleDeleteSavedRef(ref.id)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/90 text-white text-[10px] flex items-center justify-center opacity-0 group-hover/ref:opacity-100 transition-opacity"
+                    title="Supprimer"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-emerald-500/80 text-[7px] text-center text-white font-semibold rounded-b-lg py-0.5">sauvee</div>
+                </div>
+              ))}
+
+              {/* Pending (not yet saved) refs */}
+              {pendingRefs.map((ref, idx) => (
+                <div key={`pending-${idx}`} className="relative group/ref shrink-0">
+                  <img
+                    src={ref.dataUrl}
+                    alt={`Nouvelle ref ${idx + 1}`}
+                    className="w-16 h-16 rounded-lg object-cover border border-amber-500/30 ring-1 ring-amber-500/10"
+                  />
+                  <button
+                    onClick={() => handleRemovePendingRef(idx)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/90 text-white text-[10px] flex items-center justify-center opacity-0 group-hover/ref:opacity-100 transition-opacity"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-amber-500/80 text-[7px] text-center text-white font-semibold rounded-b-lg py-0.5">en attente</div>
+                </div>
+              ))}
+
+              {/* Upload button */}
+              {(savedRefs.length + pendingRefs.length) < 5 && (
+                <button
+                  onClick={() => refFileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-lg border-2 border-dashed border-zinc-700/60 hover:border-violet-500/40 flex flex-col items-center justify-center text-zinc-500 hover:text-violet-400 transition-all cursor-pointer hover:bg-violet-500/5"
+                >
+                  <CameraIcon size={16} />
+                  <span className="text-[8px] mt-0.5 font-medium">Ajouter</span>
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={refFileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleRefUpload}
+            />
+
+            {savedRefs.length === 0 && pendingRefs.length === 0 && !isLoadingRefs && (
+              <p className="text-[11px] text-zinc-600 mt-2 italic">
+                Aucune photo de reference. Ajoutez-en pour ameliorer la coherence des generations.
+              </p>
+            )}
+          </div>
 
           {/* HELP */}
           <div className="mt-4 px-1">
