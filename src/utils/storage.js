@@ -256,6 +256,46 @@ export const deleteAccountData = (modelId, accountId) => {
     return models;
 };
 
+export const duplicateAccountData = (modelId, accountId) => {
+    const models = getSavedModels();
+    const model = models.find(m => m.id === modelId);
+    const account = model?.accounts?.find(a => a.id === accountId);
+    if (!account) return null;
+
+    const { id, ...rest } = account;
+    const newAccount = {
+        ...rest,
+        id: `acc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        handle: `${account.handle} (copie)`,
+        locations: (account.locations || []).map(loc => ({
+            ...loc,
+            id: `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        })),
+    };
+    model.accounts.push(newAccount);
+    _saveAll(models);
+    return models;
+};
+
+export const duplicateLocationLocal = (modelId, accountId, locationId) => {
+    const models = getSavedModels();
+    const model = models.find(m => m.id === modelId);
+    const account = model?.accounts?.find(a => a.id === accountId);
+    const location = account?.locations?.find(l => l.id === locationId);
+    if (!location) return null;
+
+    const { id, ...rest } = location;
+    const newLoc = {
+        ...rest,
+        id: `loc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        name: `${location.name} (copie)`,
+        seed: generateSeed(),
+    };
+    account.locations.push(newLoc);
+    _saveAll(models);
+    return models;
+};
+
 // ============================================
 // NIVEAU 3 : LOCATIONS (CRUD)
 // ============================================

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveAccountData, deleteAccountData } from '../utils/storage';
+import { saveAccountData, deleteAccountData, duplicateAccountData } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
-import { TrashIcon, PlusIcon, ChevronRightIcon, MapPinIcon, EditIcon } from '../components/Icons';
+import { TrashIcon, CopyIcon, PlusIcon, ChevronRightIcon, MapPinIcon, EditIcon } from '../components/Icons';
 
 const PLATFORMS = {
   Instagram: { color: 'from-fuchsia-500 to-purple-600', accent: 'text-fuchsia-400' },
@@ -50,8 +50,16 @@ const AccountsView = () => {
     }
   };
 
-  const handleDelete = (e, acc) => {
-    e.stopPropagation();
+  const handleDuplicate = (accId) => {
+    const updated = duplicateAccountData(modelId, accId);
+    if (updated) {
+      setAllModelsDatabase(updated);
+      const acc = currentModel.accounts.find(a => a.id === accId);
+      toast.success(`"${acc?.handle}" duplique`);
+    }
+  };
+
+  const handleDelete = (acc) => {
     setConfirmDelete(acc);
   };
 
@@ -116,7 +124,7 @@ const AccountsView = () => {
           </button>
         </div>
 
-        {/* GRID */}
+        {/* LIST */}
         {(currentModel.accounts || []).length === 0 ? (
           <div className="text-center py-24 rounded-2xl border border-dashed border-zinc-800/60 animate-fade-in-up">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-purple-500/15 flex items-center justify-center mx-auto mb-4">
@@ -126,42 +134,59 @@ const AccountsView = () => {
             <p className="text-zinc-600 text-sm">Ajoutez un profil ci-dessus.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+          <div className="space-y-3 stagger-children">
             {currentModel.accounts.map(acc => {
               const cfg = PLATFORMS[acc.platform] || PLATFORMS.Instagram;
               const locCount = (acc.locations || []).length;
               return (
                 <div
                   key={acc.id}
-                  onClick={() => navigate(`/models/${modelId}/accounts/${acc.id}/locations`)}
-                  className="velvet-card-interactive group p-5 cursor-pointer flex flex-col justify-between"
+                  className="velvet-card group p-4 flex items-center gap-4"
                 >
-                  <div className="flex justify-between items-start mb-5">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.color} flex items-center justify-center shrink-0 shadow-md`}>
-                        <span className="text-white text-sm font-bold">{acc.platform.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-zinc-100 text-sm leading-tight">{acc.handle}</h4>
+                  {/* Left: clickable area for navigation */}
+                  <div
+                    className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => navigate(`/models/${modelId}/accounts/${acc.id}/locations`)}
+                  >
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.color} flex items-center justify-center shrink-0 shadow-md`}>
+                      <span className="text-white text-sm font-bold">{acc.platform.charAt(0)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-zinc-100 text-sm leading-tight">{acc.handle}</h4>
+                      <div className="flex items-center gap-3 mt-0.5">
                         <span className={`text-[11px] ${cfg.accent} font-medium`}>{acc.platform}</span>
+                        <span className="flex items-center gap-1 text-[11px] text-zinc-600">
+                          <MapPinIcon size={10} />
+                          {locCount} lieu{locCount !== 1 ? 'x' : ''}
+                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => handleDelete(e, acc)}
-                      className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <TrashIcon size={14} />
-                    </button>
                   </div>
-                  <div className="flex items-center justify-between text-[12px]">
-                    <span className="flex items-center gap-1.5 text-zinc-600">
-                      <MapPinIcon size={12} />
-                      {locCount} lieu{locCount !== 1 ? 'x' : ''}
-                    </span>
-                    <span className="flex items-center gap-1 text-zinc-600 group-hover:text-zinc-300 transition-colors font-medium">
+
+                  {/* Right: action buttons — SEPARATE from navigation */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => handleDuplicate(acc.id)}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                      title="Dupliquer"
+                    >
+                      <CopyIcon size={15} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(acc)}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                      title="Supprimer"
+                    >
+                      <TrashIcon size={15} />
+                    </button>
+                    <div className="w-px h-5 bg-zinc-800 mx-1" />
+                    <button
+                      onClick={() => navigate(`/models/${modelId}/accounts/${acc.id}/locations`)}
+                      className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[12px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
+                    >
                       Ouvrir
                       <ChevronRightIcon size={14} />
-                    </span>
+                    </button>
                   </div>
                 </div>
               );

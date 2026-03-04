@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
+import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
 import { autoFillLocation } from '../utils/googleAI';
-import { TrashIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon } from '../components/Icons';
+import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
@@ -65,16 +65,8 @@ const LocationsAndSandboxView = () => {
         return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Compte introuvable. <button onClick={() => navigate('/')} className="text-violet-400 ml-1.5 hover:underline font-medium">Retour</button></div>;
     }
 
-    const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
-    const otherAccounts = [];
-    allModelsDatabase.forEach(m => {
-        m.accounts?.forEach(a => {
-            if (!(m.id === modelId && a.id === accountId)) {
-                otherAccounts.push({ modelId: m.id, modelName: m.name, accountId: a.id, handle: a.handle, platform: a.platform });
-            }
-        });
-    });
+    const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
     const handleSaveLocation = () => {
         if (!newLocName.trim()) return;
@@ -115,9 +107,10 @@ const LocationsAndSandboxView = () => {
         setConfirmDelete(null);
     };
 
-    const handleDuplicateLocation = (e, locId, targetModelId, targetAccountId) => {
+    const handleDuplicateLocation = (e, locId) => {
         e.stopPropagation();
-        const updated = duplicateLocation(modelId, accountId, locId, targetModelId, targetAccountId);
+        e.preventDefault();
+        const updated = duplicateLocationLocal(modelId, accountId, locId);
         if (updated) {
             setAllModelsDatabase(updated);
             toast.success('Lieu duplique');
@@ -365,11 +358,14 @@ const LocationsAndSandboxView = () => {
                                 {currentAccount.locations.map(loc => (
                                     <div
                                         key={loc.id}
-                                        onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                        className="velvet-card-interactive group p-4 cursor-pointer"
+                                        className="velvet-card group p-4"
                                     >
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3">
+                                            {/* Left: clickable area for navigation */}
+                                            <div
+                                                className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                            >
                                                 <div className="flex items-center gap-2.5 mb-0.5">
                                                     <MapPinIcon size={14} className="text-violet-400 shrink-0" />
                                                     <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
@@ -377,45 +373,47 @@ const LocationsAndSandboxView = () => {
                                                 </div>
                                                 <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
                                             </div>
-                                            <div className="flex gap-1 ml-3 shrink-0">
-                                                {otherAccounts.length > 0 && (
-                                                    <div className="relative">
-                                                        <select
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onChange={(e) => {
-                                                                if (!e.target.value) return;
-                                                                const [tModelId, tAccountId] = e.target.value.split('::');
-                                                                handleDuplicateLocation(e, loc.id, tModelId, tAccountId);
-                                                                e.target.value = '';
-                                                            }}
-                                                            className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-white/[0.04]"
-                                                            defaultValue=""
-                                                            title="Dupliquer vers..."
-                                                        >
-                                                            <option value="" disabled>D</option>
-                                                            {otherAccounts.map(oa => (
-                                                                <option key={`${oa.modelId}::${oa.accountId}`} value={`${oa.modelId}::${oa.accountId}`}>
-                                                                    {oa.modelName} / {oa.handle}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
+
+                                            {/* Right: action buttons — SEPARATE from navigation */}
+                                            <div className="flex items-center gap-1.5 shrink-0">
                                                 <button
-                                                    onClick={(e) => enterEditMode(e, loc)}
-                                                    className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => enterEditMode({ stopPropagation: () => { }, preventDefault: () => { } }, loc)}
+                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                    title="Modifier"
                                                 >
-                                                    <EditIcon size={14} />
+                                                    <EditIcon size={15} />
                                                 </button>
                                                 <button
-                                                    onClick={(e) => handleDeleteLocation(e, loc)}
-                                                    className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => {
+                                                        const updated = duplicateLocationLocal(modelId, accountId, loc.id);
+                                                        if (updated) {
+                                                            setAllModelsDatabase(updated);
+                                                            toast.success('Lieu duplique');
+                                                        }
+                                                    }}
+                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                    title="Dupliquer"
                                                 >
-                                                    <TrashIcon size={14} />
+                                                    <CopyIcon size={15} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmDelete(loc)}
+                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                                    title="Supprimer"
+                                                >
+                                                    <TrashIcon size={15} />
+                                                </button>
+                                                <div className="w-px h-5 bg-zinc-800 mx-1" />
+                                                <button
+                                                    onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                                    className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[12px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
+                                                >
+                                                    Studio
+                                                    <ChevronRightIcon size={14} />
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5 pl-[22px]">
+                                        <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
                                             {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
                                             {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
                                             {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
