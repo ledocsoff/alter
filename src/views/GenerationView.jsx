@@ -144,10 +144,6 @@ const GenerationView = () => {
 
     useEffect(() => {
         const handler = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
-                e.preventDefault();
-                handleRandomize();
-            }
             if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
                 e.preventDefault();
                 setRightPanel('image');
@@ -156,7 +152,7 @@ const GenerationView = () => {
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [handleRandomize, handleGenerateImage]);
+    }, [handleGenerateImage]);
 
     if (!isLoaded || !currentModel) {
         return (
