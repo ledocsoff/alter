@@ -7,6 +7,7 @@ import logger from './utils/logger';
 import ApiKeyModal from './features/ApiKeyModal/ApiKeyModal';
 import DebugPanel from './features/DebugPanel/DebugPanel';
 import ErrorBoundary from './features/ErrorBoundary/ErrorBoundary';
+import ShortcutsModal from './features/ShortcutsModal/ShortcutsModal';
 import ModelsView from './views/ModelsView';
 
 const ModelEditorShell = lazy(() => import('./views/ModelEditorShell'));
@@ -80,6 +81,7 @@ const AppLayout = ({ children }) => {
   const fileInputRef = useRef(null);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [hasKey, setHasKey] = useState(() => !!getApiKey());
   const [errorCount, setErrorCount] = useState(0);
   const [serverOnline, setServerOnline] = useState(true);
@@ -101,6 +103,19 @@ const AppLayout = ({ children }) => {
     };
     window.addEventListener('nanabanana:synced', onSynced);
     return () => window.removeEventListener('nanabanana:synced', onSynced);
+  }, []);
+
+  // Global ? shortcut to show shortcuts modal
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShowShortcuts(s => !s);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   useEffect(() => {
@@ -223,6 +238,10 @@ const AppLayout = ({ children }) => {
       <DebugPanel
         isOpen={showDebugPanel}
         onClose={() => setShowDebugPanel(false)}
+      />
+      <ShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
       />
     </div>
   );
