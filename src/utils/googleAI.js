@@ -646,7 +646,7 @@ export const generateLocationPresets = async (apiKey, location) => {
     generationConfig: {
       responseMimeType: 'application/json',
       temperature: 0.7,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
     },
   };
 
@@ -667,22 +667,30 @@ export const generateLocationPresets = async (apiKey, location) => {
 
   try {
     const parsed = extractJSON(text);
+
+    // Validate and filter items to ensure required fields exist
+    const validPreset = p => p && typeof p === 'object' && p.id && p.label && p.scene;
+    const validOutfit = o => o && typeof o === 'object' && o.id && o.label && o.value;
+    const validPose = p => p && typeof p === 'object' && p.promptEN && p.labelFR;
+
     // Handle both { presets, outfits, poses } and flat array format
     let presets, outfits, poses;
     if (Array.isArray(parsed)) {
-      presets = parsed;
+      presets = parsed.filter(validPreset);
       outfits = [];
       poses = [];
     } else {
-      presets = Array.isArray(parsed.presets) ? parsed.presets : [];
-      outfits = Array.isArray(parsed.outfits) ? parsed.outfits : [];
-      poses = Array.isArray(parsed.poses) ? parsed.poses : [];
+      presets = (Array.isArray(parsed.presets) ? parsed.presets : []).filter(validPreset);
+      outfits = (Array.isArray(parsed.outfits) ? parsed.outfits : []).filter(validOutfit);
+      poses = (Array.isArray(parsed.poses) ? parsed.poses : []).filter(validPose);
     }
-    if (presets.length === 0) throw new Error('No presets generated');
+
+    if (presets.length === 0) throw new Error('No valid presets generated');
+
     logger.success('generation', `${presets.length} presets + ${outfits.length} outfits + ${poses.length} poses en ${elapsed}s pour "${location.name}"`);
     return { presets: presets.slice(0, 8), outfits: outfits.slice(0, 8), poses: poses.slice(0, 8) };
   } catch (e) {
-    logger.error('generation', 'JSON invalide pour presets lieu', text.slice(0, 500));
+    logger.error('generation', 'Presets invalides', `${e.message} — raw: ${text.slice(0, 300)}`);
     throw new Error('Gemini a retourné un format invalide pour les presets. Réessaie.');
   }
 };

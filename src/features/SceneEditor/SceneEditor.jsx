@@ -61,8 +61,11 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 vibe: prev.vibe,
                 lighting: prev.lighting,
             }),
+            // Apply outfit from AI preset if present, otherwise keep current
+            outfit: preset.scene?.outfit
+                ? { id: `ai_${preset.id}`, label: preset.label, value: preset.scene.outfit, icon: '' }
+                : prev.outfit,
             // Always keep these
-            outfit: prev.outfit,
             aspect_ratio: prev.aspect_ratio,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
@@ -74,12 +77,16 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
 
     /* ─── Randomize ─── */
     const handleRandomize = () => {
-        const preset = pickRandom(SCENE_PRESETS);
-        const outfit = pickRandom(OUTFIT_PRESETS);
+        const availablePresets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
+        const availableOutfits = (!isSandbox && location?.ai_outfits?.length > 0) ? location.ai_outfits : OUTFIT_PRESETS;
+        const preset = pickRandom(availablePresets);
+        const outfit = pickRandom(availableOutfits);
         setScene(prev => ({
             ...prev,
             ...preset.scene,
-            outfit,
+            outfit: preset.scene?.outfit
+                ? { id: `ai_${preset.id}`, label: preset.label, value: preset.scene.outfit, icon: '' }
+                : outfit,
             ...(isSandbox ? {} : {
                 environment: prev.environment,
                 location_meta: prev.location_meta,
@@ -218,7 +225,7 @@ const SceneEditor = ({ isSandbox = false, location = null }) => {
                 <div className="mb-4">
                     <div className="flex items-center justify-between mb-2.5">
                         <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : waitingForPresets ? `⏳ Ambiances — ${location.name}` : '📸 Ambiance'}
+                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : (!isSandbox && location) ? `📸 Ambiance — ${location.name}` : '📸 Ambiance'}
                         </span>
                         {hasAiPresets && (
                             <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>

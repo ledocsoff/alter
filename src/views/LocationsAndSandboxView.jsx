@@ -82,10 +82,12 @@ const LocationsAndSandboxView = () => {
 
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
+    const safeStr = v => (typeof v === 'string' ? v : String(v || '')).trim();
+
     const handleSaveLocation = async () => {
         try {
             if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
-            const finalEnvironment = newLocEnvCustom.trim() || newLocEnvDrop;
+            const finalEnvironment = safeStr(newLocEnvCustom) || newLocEnvDrop;
             if (!finalEnvironment) { toast.error('Environnement requis'); return; }
 
             const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
@@ -96,9 +98,9 @@ const LocationsAndSandboxView = () => {
                 default_lighting: newLocLighting,
                 default_vibe: newLocVibe,
                 time_of_day: newLocTimeOfDay,
-                anchor_details: newLocAnchorDetails.trim(),
-                color_palette: newLocColorPalette.trim(),
-                negative_prompt: newLocNegativePrompt.trim(),
+                anchor_details: safeStr(newLocAnchorDetails),
+                color_palette: safeStr(newLocColorPalette),
+                negative_prompt: safeStr(newLocNegativePrompt),
             };
             if (!isCreating) locationData.id = locFormMode;
 
@@ -135,7 +137,6 @@ const LocationsAndSandboxView = () => {
                 toast.error('Erreur: impossible de sauvegarder');
             }
         } catch (err) {
-            console.error('[SAVE] Unexpected error:', err);
             toast.error(`Erreur inattendue: ${err.message}`);
         }
     };
