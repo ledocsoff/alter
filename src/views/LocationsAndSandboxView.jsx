@@ -168,7 +168,7 @@ const LocationsAndSandboxView = () => {
             if (result.negative_prompt) setNewLocNegativePrompt(result.negative_prompt);
             toast.success('Lieu auto-rempli par l\'IA');
         } catch (err) {
-            toast.error(`Auto-fill echoue: ${err.message}`);
+            toast.error(`Auto-fill échoué: ${err.message}`);
         } finally {
             setIsAutoFilling(false);
         }
@@ -183,9 +183,9 @@ const LocationsAndSandboxView = () => {
                     <div className="max-w-3xl mx-auto px-6 py-10">
 
                         <div className="mb-8 animate-fade-in">
-                            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
+                            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Lieux & Décors</h2>
                             <p className="text-zinc-500 text-sm mt-1.5">
-                                {(currentAccount.locations || []).length} lieu{(currentAccount.locations || []).length !== 1 ? 'x' : ''} · Definissez des lieux precis pour la coherence visuelle.
+                                {(currentAccount.locations || []).length} lieu{(currentAccount.locations || []).length !== 1 ? 'x' : ''} · Définissez des lieux précis pour la cohérence visuelle.
                             </p>
                         </div>
 
@@ -289,7 +289,7 @@ const LocationsAndSandboxView = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                                            Details d'ancrage <span className="text-violet-400/60 normal-case font-normal">coherence</span>
+                                            Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
                                         </label>
                                         <textarea
                                             placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."

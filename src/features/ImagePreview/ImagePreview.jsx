@@ -45,7 +45,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     if (!apiKey) { onRequestApiKey?.(); return; }
 
     const now = Date.now();
-    if (now - lastGenTime < 2000) { toast.info('Patientez avant de regenerer'); return; }
+    if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
 
     setStatus('generating');
     setErrorMsg('');
@@ -133,7 +133,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     }
     setBatchProgress(null);
     setLastGenTime(Date.now()); // Restore cooldown after batch
-    toast.success(`Batch termine — ${count} image(s) generee(s)`);
+    toast.success(`Batch terminé — ${count} image(s) générée(s)`);
   }, [handleGenerateWithPrompt, generatedPrompt, toast, lastGenTime]);
 
   const handleDownload = useCallback(() => {
@@ -152,7 +152,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
       const res = await fetch(currentImage.dataUrl);
       const blob = await res.blob();
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-      toast.success('Image copiee');
+      toast.success('Image copiée');
     } catch { toast.error("Impossible de copier l'image"); }
   }, [currentImage, toast]);
 
@@ -162,7 +162,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     setCurrentImage(null);
     setStatus('idle');
     setGenCount(0);
-    toast.info('Nouvelle session — coherence reinitalisee');
+    toast.info('Nouvelle session — cohérence réinitialisée');
   };
 
   const hasApiKey = !!getApiKey();
@@ -179,7 +179,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
             <span className="text-[11px] text-zinc-400 font-medium">
               Session active — {turnCount} generation{turnCount > 1 ? 's' : ''}
             </span>
-            <span className="text-[10px] text-zinc-600">coherence liee</span>
+            <span className="text-[10px] text-zinc-600">cohérence liée</span>
           </div>
           <button
             onClick={handleNewSession}
@@ -204,13 +204,13 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
               </div>
               {hasApiKey ? (
                 <>
-                  <p className="text-zinc-400 text-[13px] font-medium mb-1">Pret a generer</p>
-                  <p className="text-zinc-600 text-[11px] mb-3">Chaque generation dans la meme session renforce la coherence</p>
+                  <p className="text-zinc-400 text-[13px] font-medium mb-1">Prêt à générer</p>
+                  <p className="text-zinc-600 text-[11px] mb-3">Chaque génération dans la même session renforce la cohérence</p>
                   <button
                     onClick={handleGenerate}
                     className="velvet-btn-primary h-9 px-5 rounded-lg text-[12px] active:scale-[0.97]"
                   >
-                    Generer
+                    Générer
                   </button>
                   <p className="text-zinc-800 text-[10px] mt-2 font-mono">Cmd+G</p>
                 </>
@@ -276,7 +276,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                 disabled={status === 'generating'}
                 className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
               >
-                Regenerer
+                Régénérer
               </button>
               <div className="w-px h-3 bg-white/10"></div>
               {sessionImages.length >= 2 && (

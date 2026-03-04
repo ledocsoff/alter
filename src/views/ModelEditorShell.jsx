@@ -238,7 +238,7 @@ const ModelEditorShell = ({ mode }) => {
           </button>
           <div className="h-4 w-px bg-zinc-800"></div>
           <span className="text-[14px] font-semibold text-zinc-200">
-            {mode === 'edit' ? 'Editer' : 'Nouveau modele'}
+            {mode === 'edit' ? 'Éditer' : 'Nouveau modèle'}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ const ModelEditorShell = ({ mode }) => {
               <input
                 type="text"
                 autoFocus
-                placeholder="Nom du modele..."
+                placeholder="Nom du modèle..."
                 className="flex-1 bg-transparent text-zinc-100 text-xl font-semibold outline-none placeholder-zinc-700 border-b border-zinc-800 pb-2 focus:border-zinc-600 transition-colors"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
@@ -361,7 +361,7 @@ const ModelEditorShell = ({ mode }) => {
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-zinc-200">Extraction depuis photos</h2>
                 <p className="text-[12px] text-zinc-600 mt-0.5">
-                  Uploadez 1 a 5 photos de la modele. Gemini analysera les images et extraira automatiquement
+                  Uploadez 1 à 5 photos de la modèle. Gemini analysera les images et extraira automatiquement
                   le profil physique complet en JSON.
                 </p>
               </div>
@@ -450,7 +450,7 @@ const ModelEditorShell = ({ mode }) => {
                 <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
                   <CameraIcon size={14} className="text-violet-400" />
                   Photos de Reference
-                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">coherence visuelle</span>
+                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">cohérence visuelle</span>
                 </h2>
                 <p className="text-[11px] text-zinc-600 mt-1">
                   Ajoutez des photos multi-angles (face, profil, 3/4). Elles seront envoyees a Gemini a chaque generation pour verrouiller l'identite visuelle.
@@ -521,7 +521,7 @@ const ModelEditorShell = ({ mode }) => {
 
             {savedRefs.length === 0 && pendingRefs.length === 0 && !isLoadingRefs && (
               <p className="text-[11px] text-zinc-600 mt-2 italic">
-                Aucune photo de reference. Ajoutez-en pour ameliorer la coherence des generations.
+                Aucune photo de référence. Ajoutez-en pour améliorer la cohérence des générations.
               </p>
             )}
           </div>
@@ -534,15 +534,15 @@ const ModelEditorShell = ({ mode }) => {
                 {inputMode === 'json' ? (
                   <>
                     Utilisez le bouton <strong className="text-zinc-400">"Template AI Studio"</strong> pour obtenir
-                    le prompt a coller dans Google AI Studio avec une photo de la modele.
+                    le prompt à coller dans Google AI Studio avec une photo de la modèle.
                     Ou passez en mode <strong className="text-zinc-400">"Extraire depuis photo"</strong> pour
                     laisser Gemini analyser automatiquement les photos.
                   </>
                 ) : (
                   <>
-                    Gemini Flash analysera les photos et generera un profil JSON complet.
-                    Plus il y a de photos (visage, corps, profil), plus l'extraction sera precise.
-                    Le resultat sera editable dans l'onglet JSON avant de sauvegarder.
+                    Gemini Flash analysera les photos et générera un profil JSON complet.
+                    Plus il y a de photos (visage, corps, profil), plus l'extraction sera précise.
+                    Le résultat sera éditable dans l'onglet JSON avant de sauvegarder.
                   </>
                 )}
               </p>

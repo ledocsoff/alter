@@ -277,7 +277,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* ENVIRONNEMENT */}
-                <Section id="environment" label="Environnement" badge={!isSandbox ? 'verrouille' : null}>
+                <Section id="environment" label="Environnement" badge={!isSandbox ? 'verrouillé' : null}>
                     <select
                         className={"velvet-input w-full text-sm" + (isSandbox ? '' : ' opacity-40 cursor-not-allowed')}
                         value={scene.environment || ""}
@@ -299,7 +299,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* VIBE + LIGHTING */}
-                <Section id="vibelighting" label="Vibe & Eclairage" badge={!isSandbox && (scene.vibe || scene.lighting) ? 'verrouille' : null}>
+                <Section id="vibelighting" label="Vibe & Éclairage" badge={!isSandbox && (scene.vibe || scene.lighting) ? 'verrouillé' : null}>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</span>
@@ -316,7 +316,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                             </select>
                         </div>
                         <div>
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Eclairage</span>
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</span>
                             <select
                                 className={"velvet-input w-full text-sm" + (!isSandbox && scene.lighting ? ' opacity-40 cursor-not-allowed' : '')}
                                 value={scene.lighting || ""}
@@ -335,7 +335,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                         <div className="mt-2 p-2 rounded-lg border border-white/[0.04] bg-[#0a0a0c]">
                             <div className="flex items-center justify-between">
                                 <span className="text-[10px] text-zinc-500 font-medium">Moment du jour</span>
-                                <span className="text-[10px] text-violet-400/50 font-medium">verrouille</span>
+                                <span className="text-[10px] text-violet-400/50 font-medium">verrouillé</span>
                             </div>
                             <p className="text-[12px] text-zinc-400 mt-1">{scene.location_meta.time_of_day}</p>
                         </div>
@@ -347,7 +347,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                     <textarea
                         value={scene.custom_negative_prompt || ''}
                         onChange={(e) => updateSceneEntry('custom_negative_prompt', e.target.value)}
-                        placeholder="Ajouter des elements a eviter (en anglais, separes par des virgules)..."
+                        placeholder="Ajouter des éléments à éviter (en anglais, séparés par des virgules)..."
                         rows={3}
                         className="velvet-input w-full text-[11px] font-mono resize-none"
                     />

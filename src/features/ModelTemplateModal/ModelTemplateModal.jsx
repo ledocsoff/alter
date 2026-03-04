@@ -95,7 +95,7 @@ const ModelTemplateModal = ({ isOpen, onClose }) => {
                     <div>
                         <h2 className="text-base font-bold text-zinc-100">Template AI Studio</h2>
                         <p className="text-[12px] text-zinc-500 mt-0.5">
-                            Copiez ce prompt, collez-le dans Google AI Studio avec une photo de la modele.
+                            Copiez ce prompt, collez-le dans Google AI Studio avec une photo de la modèle.
                         </p>
                     </div>
                     <button

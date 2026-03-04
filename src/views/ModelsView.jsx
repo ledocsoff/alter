@@ -78,7 +78,7 @@ const ModelsView = () => {
             <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Modeles</h2>
             <p className="text-zinc-500 text-sm mt-1">
               {allModelsDatabase.length > 0
-                ? <>{allModelsDatabase.length} modele{allModelsDatabase.length > 1 ? 's' : ''} · {totalAccounts} compte{totalAccounts > 1 ? 's' : ''} · {totalLocations} lieu{totalLocations > 1 ? 'x' : ''}</>
+                ? <>{allModelsDatabase.length} modèle{allModelsDatabase.length > 1 ? 's' : ''} · {totalAccounts} compte{totalAccounts > 1 ? 's' : ''} · {totalLocations} lieu{totalLocations > 1 ? 'x' : ''}</>
                 : 'Créez votre premier profil pour commencer.'
               }
             </p>
@@ -128,7 +128,7 @@ const ModelsView = () => {
           </div>
         ) : filteredModels.length === 0 ? (
           <div className="text-center py-12 rounded-xl border border-dashed border-zinc-800/60 animate-fade-in">
-            <p className="text-zinc-500 text-sm">Aucun resultat pour "{search}"</p>
+            <p className="text-zinc-500 text-sm">Aucun résultat pour "{search}"</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2 stagger-children">
@@ -199,7 +199,7 @@ const ModelsView = () => {
       </div>
       <ConfirmModal
         isOpen={!!confirmDelete}
-        title="Supprimer ce modele ?"
+        title="Supprimer ce modèle ?"
         message={`"${confirmDelete?.name}" et tous ses comptes/lieux seront définitivement supprimés.`}
         onConfirm={executeDelete}
         onCancel={() => setConfirmDelete(null)}

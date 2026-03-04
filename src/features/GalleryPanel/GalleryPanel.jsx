@@ -221,7 +221,7 @@ const GalleryPanel = () => {
                                     {filter === 'starred' ? 'Aucun favori' : 'Aucune image'}
                                 </p>
                                 <p className="text-zinc-700 text-[11px] mt-0.5">
-                                    {filter === 'starred' ? 'Marquez des images avec le bouton etoile' : 'Les generations seront sauvegardees ici'}
+                                    {filter === 'starred' ? 'Marquez des images avec le bouton étoile' : 'Les générations seront sauvegardées ici'}
                                 </p>
                             </div>
                         </div>

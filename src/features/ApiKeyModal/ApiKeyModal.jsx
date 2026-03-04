@@ -70,8 +70,8 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">
-          Deux cles API = deux quotas separes. Si l'une est saturee (503),
-          basculez sur l'autre pour continuer a generer.
+          Deux clés API = deux quotas séparés. Si l'une est saturée (503),
+          basculez sur l'autre pour continuer à générer.
         </p>
 
         {/* PROVIDER SELECTOR */}
@@ -129,7 +129,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
 
         {status === 'valid' && (
           <div className="mb-4 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-            <p className="text-[11px] text-emerald-400">Cle valide et sauvegardee</p>
+            <p className="text-[11px] text-emerald-400">Clé valide et sauvegardée</p>
           </div>
         )}
 

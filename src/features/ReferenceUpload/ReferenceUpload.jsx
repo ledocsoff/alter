@@ -72,7 +72,7 @@ const ReferenceUpload = () => {
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
                     className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors border border-violet-500/20 hover:border-violet-500/30"
-                    title="Uploader une image de reference pour la coherence du visage"
+                    title="Uploader une image de référence pour la cohérence du visage"
                 >
                     <CameraIcon size={12} />
                     <span>Ref{referenceImages.length > 0 ? ` (${referenceImages.length}/${MAX_REFS})` : ''}</span>

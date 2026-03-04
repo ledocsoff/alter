@@ -215,7 +215,7 @@ const GenerationView = () => {
                         <button
                             onClick={handleRegenerateSeed}
                             className="ml-0.5 w-4 h-4 rounded flex items-center justify-center text-[9px] text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
-                            title="Regenerer la seed"
+                            title="Régénérer la seed"
                         >
                             ↻
                         </button>
@@ -224,12 +224,12 @@ const GenerationView = () => {
                         onClick={() => setShowRecap(!showRecap)}
                         className={`text-[10px] font-medium px-2.5 py-1 rounded-lg transition-all ${showRecap ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]'}`}
                     >
-                        Fiche modele
+                        Fiche modèle
                     </button>
                     {!isSandbox && (
                         <span className="text-[10px] text-emerald-400/60 font-medium shrink-0 flex items-center gap-1">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-                            verrouille
+                            verrouillé
                         </span>
                     )}
                 </div>
@@ -240,7 +240,7 @@ const GenerationView = () => {
                 <div className="shrink-0 px-5 py-3 border-b border-white/[0.04] bg-[#0a0a0c] animate-slide-in-down">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
                         <div>
-                            <span className="text-zinc-600 block mb-0.5">Identite</span>
+                            <span className="text-zinc-600 block mb-0.5">Identité</span>
                             <span className="text-zinc-300">{model.age} ans · {(model.ethnicity || '').split(',')[0]}</span>
                         </div>
                         <div>
@@ -313,11 +313,11 @@ const GenerationView = () => {
                                         <SparklesIcon size={11} />
                                         Batch x3
                                     </button>
-                                    <span className="text-[10px] text-zinc-700 font-mono">⌘G generer</span>
+                                    <span className="text-[10px] text-zinc-700 font-mono">⌘G générer</span>
                                 </>
                             )}
                             {rightPanel === 'matrice' && (
-                                <span className="text-[10px] text-zinc-700 font-mono">Prompt ultra-precis</span>
+                                <span className="text-[10px] text-zinc-700 font-mono">Prompt ultra-précis</span>
                             )}
                         </div>
                     </div>
@@ -356,7 +356,7 @@ const GenerationView = () => {
                                                 try {
                                                     const result = await generateAnchorMatrixViaGemini(key, anchorMatrix);
                                                     setEnrichedMatrix(result);
-                                                    toast.success('Matrice enrichie — generation en cours...');
+                                                    toast.success('Matrice enrichie — génération en cours...');
                                                     const enrichedPrompt = JSON.stringify(result, null, 2);
                                                     setRightPanel('image');
                                                     setTimeout(() => {
@@ -371,13 +371,13 @@ const GenerationView = () => {
                                             disabled={isEnriching}
                                             className="velvet-btn-primary text-[10px] font-semibold px-2.5 py-1 disabled:opacity-50"
                                         >
-                                            {isEnriching ? '...' : <><ZapIcon size={10} className="inline -mt-px" /> Enrichir &amp; Generer</>}
+                                            {isEnriching ? '...' : <><ZapIcon size={10} className="inline -mt-px" /> Enrichir &amp; Générer</>}
                                         </button>
                                         <button
                                             onClick={() => {
                                                 const data = enrichedMatrix ? JSON.stringify(enrichedMatrix, null, 2) : generatedPrompt;
                                                 navigator.clipboard.writeText(data);
-                                                toast.success('Matrice copiee');
+                                                toast.success('Matrice copiée');
                                             }}
                                             className="velvet-btn-ghost text-[10px] font-semibold px-2.5 py-1"
                                         >

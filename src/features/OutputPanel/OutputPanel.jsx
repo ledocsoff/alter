@@ -86,7 +86,7 @@ const OutputPanel = ({ meta = {} }) => {
     try {
       const text = JSON.stringify(variant, null, 2);
       await navigator.clipboard.writeText(text);
-      toast.success(`Variation ${idx + 1} copiee`);
+      toast.success(`Variation ${idx + 1} copiée`);
       savePromptToHistory(text, { ...meta, variant: idx + 1 });
     } catch {
       toast.error('Erreur de copie');
@@ -129,8 +129,8 @@ const OutputPanel = ({ meta = {} }) => {
           <button
             onClick={() => handleCopy()}
             className={`text-[11px] px-3 py-1 rounded-md font-semibold transition-all ${copied
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+              ? 'bg-emerald-500/15 text-emerald-400'
+              : 'bg-zinc-100 text-zinc-900 hover:bg-white'
               }`}
           >
             {copied ? 'Copie' : 'Copier'}
@@ -166,7 +166,7 @@ const OutputPanel = ({ meta = {} }) => {
       {batchResults && (
         <div className="mb-3 shrink-0 max-h-44 overflow-y-auto custom-scrollbar bg-zinc-950/80 border border-zinc-800/60 rounded-lg p-2 space-y-1">
           <div className="flex items-center justify-between px-1 mb-1">
-            <span className="text-[11px] font-medium text-zinc-400">5 variations generees</span>
+            <span className="text-[11px] font-medium text-zinc-400">5 variations générées</span>
             <button onClick={() => setBatchResults(null)} className="text-[10px] text-zinc-600 hover:text-zinc-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
           </div>
           {batchResults.map((v, i) => (
@@ -193,8 +193,8 @@ const OutputPanel = ({ meta = {} }) => {
           onChange={(e) => handlePromptEdit(e.target.value)}
           spellCheck={false}
           className={`flex-1 w-full bg-zinc-950 border rounded-lg text-zinc-400 p-3 font-mono text-[11px] leading-relaxed focus:outline-none focus:border-zinc-600 resize-none custom-scrollbar transition-colors ${isManuallyEdited
-              ? isValidJSON ? 'border-violet-500/20' : 'border-red-500/30'
-              : 'border-zinc-800/60'
+            ? isValidJSON ? 'border-violet-500/20' : 'border-red-500/30'
+            : 'border-zinc-800/60'
             }`}
         />
         <div className="flex justify-between items-center mt-1.5 text-[10px] text-zinc-700">
