@@ -148,9 +148,9 @@ const SceneEditor = ({ isSandbox = false }) => {
                                     </div>
                                     <button
                                         onClick={(e) => handleDeleteTemplate(e, tpl.id)}
-                                        className="text-zinc-700 hover:text-red-400 opacity-0 group-hover:opacity-100 text-xs transition-all"
+                                        className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
-                                        &times;
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                                     </button>
                                 </div>
                             ))}

@@ -335,7 +335,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
           <img src={currentImage.dataUrl} alt="Zoomed" className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl" />
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} className="h-8 px-3 rounded-lg text-[12px] font-medium bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors">Telecharger</button>
-            <button onClick={() => setIsZoomed(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white bg-white/10 hover:bg-white/20 transition-colors">&times;</button>
+            <button onClick={() => setIsZoomed(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white bg-white/10 hover:bg-white/20 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
         </div>
       )}

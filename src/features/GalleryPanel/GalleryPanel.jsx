@@ -211,7 +211,7 @@ const GalleryPanel = () => {
                                             onClick={(e) => { e.stopPropagation(); handleDelete(img.id); }}
                                             className={`w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors ${pendingDeleteId === img.id ? 'text-red-400 bg-red-500/30' : 'text-white/60 bg-black/40 hover:text-red-400'}`}
                                         >
-                                            ×
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                                         </button>
                                     </div>
                                     {/* Starred indicator */}

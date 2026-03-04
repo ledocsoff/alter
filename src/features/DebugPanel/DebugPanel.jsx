@@ -64,9 +64,9 @@ const DebugPanel = ({ isOpen, onClose }) => {
                         </button>
                         <button
                             onClick={onClose}
-                            className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors w-6 h-6 flex items-center justify-center"
+                            className="velvet-btn-delete"
                         >
-                            &times;
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                         </button>
                     </div>
                 </div>
@@ -83,8 +83,8 @@ const DebugPanel = ({ isOpen, onClose }) => {
                             key={f.id}
                             onClick={() => setFilter(f.id)}
                             className={`text-[10px] font-semibold px-2 py-1 rounded-md transition-all ${filter === f.id
-                                    ? 'bg-zinc-800 text-zinc-200'
-                                    : 'text-zinc-600 hover:text-zinc-400'
+                                ? 'bg-zinc-800 text-zinc-200'
+                                : 'text-zinc-600 hover:text-zinc-400'
                                 }`}
                         >
                             {f.label}

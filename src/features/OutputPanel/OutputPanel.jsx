@@ -168,7 +168,7 @@ const OutputPanel = ({ meta = {} }) => {
         <div className="mb-3 shrink-0 max-h-44 overflow-y-auto custom-scrollbar bg-zinc-950/80 border border-zinc-800/60 rounded-lg p-2 space-y-1">
           <div className="flex items-center justify-between px-1 mb-1">
             <span className="text-[11px] font-medium text-zinc-400">5 variations generees</span>
-            <button onClick={() => setBatchResults(null)} className="text-[10px] text-zinc-600 hover:text-zinc-300">&times;</button>
+            <button onClick={() => setBatchResults(null)} className="text-[10px] text-zinc-600 hover:text-zinc-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
           {batchResults.map((v, i) => (
             <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-zinc-800/40 transition-colors">

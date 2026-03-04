@@ -4,6 +4,7 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
 import { autoFillLocation } from '../utils/googleAI';
+import { TrashIcon, EditIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
@@ -388,15 +389,15 @@ const LocationsAndSandboxView = () => {
                                                 )}
                                                 <button
                                                     onClick={(e) => enterEditMode(e, loc)}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors opacity-0 group-hover:opacity-100 text-xs"
+                                                    className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
-                                                    E
+                                                    <EditIcon size={14} />
                                                 </button>
                                                 <button
                                                     onClick={(e) => handleDeleteLocation(e, loc)}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10"
+                                                    className="velvet-btn-delete opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
-                                                    \u00D7
+                                                    <TrashIcon size={14} />
                                                 </button>
                                             </div>
                                         </div>

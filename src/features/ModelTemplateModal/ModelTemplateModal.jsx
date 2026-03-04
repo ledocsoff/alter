@@ -100,9 +100,9 @@ const ModelTemplateModal = ({ isOpen, onClose }) => {
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                        className="velvet-btn-delete"
                     >
-                        ×
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                     </button>
                 </div>
 
@@ -140,8 +140,8 @@ const ModelTemplateModal = ({ isOpen, onClose }) => {
                     <button
                         onClick={handleCopy}
                         className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all ${copied
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-zinc-100 text-zinc-900 hover:bg-white'
                             }`}
                     >
                         {copied ? '✓ Copie !' : 'Copier le prompt'}

@@ -66,7 +66,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
       <div className="relative bg-zinc-900 border border-zinc-800/80 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-zinc-100">Configuration API</h3>
-          <button onClick={() => onClose(false)} className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors">&times;</button>
+          <button onClick={() => onClose(false)} className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">

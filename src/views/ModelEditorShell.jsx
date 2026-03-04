@@ -217,8 +217,8 @@ const ModelEditorShell = ({ mode }) => {
             <button
               onClick={() => setInputMode('json')}
               className={`flex-1 text-[12px] font-semibold py-2 rounded-md transition-all ${inputMode === 'json'
-                  ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-300'
                 }`}
             >
               📝 Coller le JSON
@@ -226,8 +226,8 @@ const ModelEditorShell = ({ mode }) => {
             <button
               onClick={() => setInputMode('photo')}
               className={`flex-1 text-[12px] font-semibold py-2 rounded-md transition-all ${inputMode === 'photo'
-                  ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-300'
                 }`}
             >
               📷 Extraire depuis photo
@@ -330,7 +330,7 @@ const ModelEditorShell = ({ mode }) => {
                           onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
                           className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/90 text-white text-[10px] flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
                         >
-                          ×
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                         </button>
                       </div>
                     ))}

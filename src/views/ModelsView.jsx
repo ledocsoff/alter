@@ -4,15 +4,16 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { deleteModelData, saveModelData, getLastSession } from '../utils/storage';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
+import { TrashIcon, CopyIcon, PlayIcon, SearchIcon, PlusIcon, UsersIcon, MapPinIcon } from '../components/Icons';
 
 const MODEL_COLORS = [
-  { from: 'from-amber-500', to: 'to-orange-600', shadow: 'shadow-amber-500/10', accent: 'text-amber-400' },
-  { from: 'from-rose-500', to: 'to-pink-600', shadow: 'shadow-rose-500/10', accent: 'text-rose-400' },
-  { from: 'from-violet-500', to: 'to-purple-600', shadow: 'shadow-violet-500/10', accent: 'text-violet-400' },
-  { from: 'from-cyan-500', to: 'to-teal-600', shadow: 'shadow-cyan-500/10', accent: 'text-cyan-400' },
-  { from: 'from-emerald-500', to: 'to-green-600', shadow: 'shadow-emerald-500/10', accent: 'text-emerald-400' },
-  { from: 'from-blue-500', to: 'to-indigo-600', shadow: 'shadow-blue-500/10', accent: 'text-blue-400' },
-  { from: 'from-fuchsia-500', to: 'to-pink-600', shadow: 'shadow-fuchsia-500/10', accent: 'text-fuchsia-400' },
+  { gradient: 'from-violet-500 to-fuchsia-600', glow: 'shadow-violet-500/20' },
+  { gradient: 'from-amber-500 to-orange-600', glow: 'shadow-amber-500/20' },
+  { gradient: 'from-rose-500 to-pink-600', glow: 'shadow-rose-500/20' },
+  { gradient: 'from-cyan-500 to-teal-600', glow: 'shadow-cyan-500/20' },
+  { gradient: 'from-emerald-500 to-green-600', glow: 'shadow-emerald-500/20' },
+  { gradient: 'from-blue-500 to-indigo-600', glow: 'shadow-blue-500/20' },
+  { gradient: 'from-fuchsia-500 to-pink-600', glow: 'shadow-fuchsia-500/20' },
 ];
 
 const getModelColor = (index) => MODEL_COLORS[index % MODEL_COLORS.length];
@@ -60,76 +61,89 @@ const ModelsView = () => {
     navigate(`/models/${id}/accounts`);
   };
 
+  const lastSession = getLastSession();
+  const hasResume = lastSession && allModelsDatabase.some(m => m.id === lastSession.modelId);
+  const totalAccounts = allModelsDatabase.reduce((sum, m) => sum + (m.accounts?.length || 0), 0);
+  const totalLocations = allModelsDatabase.reduce((sum, m) => sum + (m.accounts || []).reduce((s, a) => s + (a.locations?.length || 0), 0), 0);
+
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar">
       <div className="max-w-5xl mx-auto px-6 py-10">
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-10">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-10 animate-fade-in">
           <div>
-            <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Modeles</h2>
-            <p className="text-zinc-500 text-sm mt-1">Selectionnez un profil pour commencer.</p>
+            <h2 className="text-3xl font-bold text-zinc-100 tracking-tight">Modeles</h2>
+            <p className="text-zinc-500 text-sm mt-1.5">
+              {allModelsDatabase.length > 0
+                ? <>{allModelsDatabase.length} modele{allModelsDatabase.length > 1 ? 's' : ''} · {totalAccounts} compte{totalAccounts > 1 ? 's' : ''} · {totalLocations} lieu{totalLocations > 1 ? 'x' : ''}</>
+                : 'Creez votre premier profil pour commencer.'
+              }
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            {(() => {
-              const lastSession = getLastSession();
-              if (!lastSession) return null;
-              // Vérifier que le modèle existe toujours
-              const stillExists = allModelsDatabase.some(m => m.id === lastSession.modelId);
-              if (!stillExists) return null;
-              return (
-                <button
-                  onClick={() => navigate(lastSession.path)}
-                  className="flex items-center gap-2 h-9 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/15 transition-colors"
-                  title={`Reprendre : ${lastSession.modelName} — ${lastSession.locationName}`}
-                >
-                  <span>▶</span>
-                  <span className="hidden sm:inline">Reprendre</span>
-                  <span className="text-amber-500/60 text-[10px] hidden md:inline">({lastSession.modelName})</span>
-                </button>
-              );
-            })()}
+            {hasResume && (
+              <button
+                onClick={() => navigate(lastSession.path)}
+                className="velvet-btn-primary flex items-center gap-2 h-9 text-xs"
+                title={`Reprendre : ${lastSession.modelName} — ${lastSession.locationName}`}
+              >
+                <PlayIcon size={12} />
+                <span>Reprendre</span>
+                <span className="text-white/50 text-[10px]">({lastSession.modelName})</span>
+              </button>
+            )}
             {allModelsDatabase.length > 0 && (
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 w-44 bg-zinc-950 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg px-3 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700"
-              />
+              <div className="relative">
+                <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="velvet-input h-9 w-44 pl-8 text-sm"
+                />
+              </div>
             )}
             <button
               onClick={() => navigate('/models/new')}
-              className="h-9 px-4 rounded-lg text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-colors"
+              className="h-9 px-4 rounded-xl text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-all hover:shadow-lg hover:shadow-white/5 flex items-center gap-1.5"
             >
-              + Nouveau
+              <PlusIcon size={14} />
+              Nouveau
             </button>
           </div>
         </div>
 
+        {/* Empty state */}
         {allModelsDatabase.length === 0 ? (
-          <div className="text-center py-28 rounded-2xl border border-dashed border-zinc-800">
-            <div className="text-4xl mb-4 opacity-20">+</div>
-            <p className="text-zinc-400 font-medium mb-1">Aucun modele</p>
-            <p className="text-zinc-600 text-sm">Creez votre premiere influenceuse.</p>
+          <div className="text-center py-28 rounded-2xl border border-dashed border-zinc-800/60 animate-fade-in-up">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mx-auto mb-5">
+              <PlusIcon size={28} className="text-violet-400" />
+            </div>
+            <p className="text-zinc-300 font-semibold text-lg mb-1">Aucun modele</p>
+            <p className="text-zinc-600 text-sm">Creez votre premiere influenceuse pour demarrer.</p>
           </div>
         ) : filteredModels.length === 0 ? (
-          <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800">
+          <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800/60 animate-fade-in">
             <p className="text-zinc-500 text-sm">Aucun resultat pour "{search}"</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
             {filteredModels.map((m, idx) => {
               const globalIdx = allModelsDatabase.indexOf(m);
               const color = getModelColor(globalIdx);
+              const accountCount = (m.accounts || []).length;
+              const locationCount = (m.accounts || []).reduce((s, a) => s + (a.locations?.length || 0), 0);
               return (
                 <div
                   key={m.id}
                   onClick={() => handleSelect(m)}
-                  className="group relative bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-5 cursor-pointer hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all duration-200"
+                  className="velvet-card-interactive group p-5 cursor-pointer"
                 >
-                  <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.from} ${color.to} flex items-center justify-center text-base font-bold text-white shrink-0 shadow-lg ${color.shadow}`}>
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center text-base font-bold text-white shrink-0 shadow-lg ${color.glow}`}>
                         {m.name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                       <div>
@@ -140,27 +154,36 @@ const ModelsView = () => {
                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => handleDuplicate(e, m)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700/50 transition-colors text-xs"
+                        className="velvet-btn-delete"
+                        title="Dupliquer"
                       >
-                        +
+                        <CopyIcon size={14} />
                       </button>
                       <button
                         onClick={(e) => handleDelete(e, m)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                        className="velvet-btn-delete"
+                        title="Supprimer"
                       >
-                        \u00D7
+                        <TrashIcon size={14} />
                       </button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex gap-1.5">
-                      <span className="text-[11px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">{(m.ethnicity || '').split(',')[0]}</span>
-                      <span className="text-[11px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">{(m.hair?.color || '').split(',')[0]}</span>
+                      {m.ethnicity && <span className="velvet-tag">{(m.ethnicity || '').split(',')[0]}</span>}
+                      {m.hair?.color && <span className="velvet-tag">{(m.hair.color || '').split(',')[0]}</span>}
                     </div>
-                    <span className="text-[11px] text-zinc-600">
-                      {(m.accounts || []).length} compte{(m.accounts || []).length !== 1 ? 's' : ''}
-                    </span>
+                    <div className="flex items-center gap-3 text-[11px] text-zinc-600">
+                      <span className="flex items-center gap-1">
+                        <UsersIcon size={11} />
+                        {accountCount}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPinIcon size={11} />
+                        {locationCount}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
