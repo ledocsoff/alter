@@ -45,6 +45,7 @@ export const PromptProvider = ({ children }) => {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [scene, setScene] = useState(DEFAULT_SCENE);
   const [referenceImages, setReferenceImages] = useState([]);
+  const [locationRefImages, setLocationRefImages] = useState([]);
 
   // Resolve active account
   const activeAccount = useMemo(() => {
@@ -62,9 +63,9 @@ export const PromptProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(() => ({
-    model, scene, generatedPrompt, anchorMatrix, referenceImages,
-    setModel, setScene, setReferenceImages, updateSceneEntry,
-  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, updateSceneEntry]);
+    model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages,
+    setModel, setScene, setReferenceImages, setLocationRefImages, updateSceneEntry,
+  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, updateSceneEntry]);
 
   return (
     <PromptContext.Provider value={value}>

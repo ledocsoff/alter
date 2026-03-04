@@ -7,7 +7,7 @@ import { generateImage } from '../../utils/googleAI';
 const MAX_HISTORY_TURNS = 5; // Garder les 5 derniers échanges pour la cohérence
 
 const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryUpdate }, ref) => {
-  const { anchorMatrix, generatedPrompt, referenceImages } = useStudio();
+  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages } = useStudio();
   const toast = useToast();
 
   const [status, setStatus] = useState('idle');
@@ -63,9 +63,18 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
       ],
     }] : [];
 
+    // Build location reference anchor for environment consistency
+    const locationAnchor = locationRefImages.length > 0 ? [{
+      role: 'user',
+      parts: [
+        { text: 'LOCATION REFERENCE — This is the EXACT environment/location to reproduce. Match this background, architecture, décor, lighting, colors, and atmosphere precisely. The model should be placed IN this environment.' },
+        ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+      ],
+    }] : [];
+
     try {
       const aspectRatio = anchorMatrix?.aspect_ratio_and_output?.ratio === '1:1' ? '1:1' : '9:16';
-      const fullHistory = [...refAnchor, ...conversationHistory];
+      const fullHistory = [...refAnchor, ...locationAnchor, ...conversationHistory];
       const seed = galleryMetaRef.current?.seed || null;
       const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory, { seed });
 

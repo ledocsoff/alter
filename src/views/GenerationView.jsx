@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE } from '../constants/sceneOptions';
-import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
+import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64, getLocationRefs, loadLocationRefBase64 } from '../utils/storage';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
@@ -24,7 +24,7 @@ const TABS = [
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -117,6 +117,21 @@ const GenerationView = () => {
             } catch { /* silent */ }
         })();
     }, [modelId, isLoaded, setReferenceImages]);
+
+    // Auto-load persistent location reference photos
+    useEffect(() => {
+        if (!locationId || !isLoaded) { setLocationRefImages([]); return; }
+        (async () => {
+            try {
+                const refs = await getLocationRefs(locationId);
+                if (!refs || refs.length === 0) { setLocationRefImages([]); return; }
+                const loaded = (await Promise.all(
+                    refs.map(r => loadLocationRefBase64(locationId, r.id))
+                )).filter(Boolean).map(r => ({ base64: r.base64, mimeType: r.mimeType, dataUrl: `data:${r.mimeType};base64,${r.base64}` }));
+                setLocationRefImages(loaded);
+            } catch { setLocationRefImages([]); }
+        })();
+    }, [locationId, isLoaded, setLocationRefImages]);
 
 
     // Lightweight djb2 hash for model fingerprinting

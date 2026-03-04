@@ -7,6 +7,7 @@ import { autoFillLocation, generateLocationPresets } from '../utils/googleAI';
 import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
+import LocationRefUpload from '../features/LocationRefUpload/LocationRefUpload';
 
 const TIME_OF_DAY_OPTIONS = [
     { labelFR: "Matin (lumiere douce)", promptEN: "morning, soft early light" },
@@ -398,6 +399,11 @@ const LocationsAndSandboxView = () => {
                                             className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
                                         />
                                     </div>
+
+                                    {/* LOCATION REFERENCE PHOTOS (only in edit mode where ID is known) */}
+                                    {isEditing && (
+                                        <LocationRefUpload locationId={locFormMode} />
+                                    )}
 
                                     <div className="flex justify-end gap-2 pt-2">
                                         {(locFormMode === 'review' || locFormMode === 'manual') && (

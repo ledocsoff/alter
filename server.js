@@ -724,6 +724,147 @@ app.delete('/api/refs/:modelId/:refId', (req, res) => {
 });
 
 // ============================================
+// LOCATION REFERENCE PHOTOS — environment anchoring
+// ============================================
+const LOC_REFS_DIR = path.join(SAVE_DIR, 'location-refs');
+const MAX_REFS_PER_LOCATION = 3;
+
+if (!fs.existsSync(LOC_REFS_DIR)) {
+    fs.mkdirSync(LOC_REFS_DIR, { recursive: true });
+}
+
+const isValidLocationId = (id) => typeof id === 'string' && /^[a-zA-Z0-9_\-]{3,80}$/.test(id);
+const isValidLocRefId = (id) => typeof id === 'string' && /^locref_[a-zA-Z0-9_\-]+$/.test(id);
+
+const getLocationRefsDir = (locationId) => {
+    const safe = sanitizeFilename(locationId);
+    return path.join(LOC_REFS_DIR, safe);
+};
+
+const readLocRefsIndex = (locationId) => {
+    const dir = getLocationRefsDir(locationId);
+    const indexPath = path.join(dir, 'index.json');
+    try {
+        if (fs.existsSync(indexPath)) return JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+    } catch { }
+    return [];
+};
+
+const writeLocRefsIndex = (locationId, entries) => {
+    const dir = getLocationRefsDir(locationId);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
+};
+
+// Upload reference photo(s) for a location
+app.post('/api/location-refs/:locationId', (req, res) => {
+    try {
+        const { locationId } = req.params;
+        if (!isValidLocationId(locationId)) return res.status(400).json({ error: 'Location ID invalide' });
+
+        const { photos } = req.body; // [{ base64, mimeType }]
+        if (!Array.isArray(photos) || photos.length === 0) {
+            return res.status(400).json({ error: 'photos[] requis' });
+        }
+
+        const existing = readLocRefsIndex(locationId);
+        const remaining = MAX_REFS_PER_LOCATION - existing.length;
+        if (remaining <= 0) {
+            return res.status(400).json({ error: `Max ${MAX_REFS_PER_LOCATION} photos de reference atteint` });
+        }
+
+        const toAdd = photos.slice(0, remaining);
+        const dir = getLocationRefsDir(locationId);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        const added = [];
+        for (const photo of toAdd) {
+            if (!photo.base64 || typeof photo.base64 !== 'string') continue;
+            const safeMime = photo.mimeType || 'image/jpeg';
+            if (!['image/png', 'image/jpeg', 'image/webp'].includes(safeMime)) continue;
+
+            const imageBytes = Math.ceil(photo.base64.length * 3 / 4);
+            if (imageBytes > MAX_IMAGE_SIZE_BYTES) continue;
+
+            const ext = safeMime.includes('jpeg') ? 'jpg' : safeMime.includes('webp') ? 'webp' : 'png';
+            const id = `locref_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+            const filename = `${id}.${ext}`;
+
+            const imgBuffer = Buffer.from(photo.base64, 'base64');
+            fs.writeFileSync(path.join(dir, filename), imgBuffer);
+
+            added.push({ id, filename, mimeType: safeMime, fileSize: imgBuffer.length, timestamp: Date.now() });
+        }
+
+        const updated = [...existing, ...added];
+        writeLocRefsIndex(locationId, updated);
+        console.log(`[Server] Location refs ${locationId}: +${added.length} → ${updated.length} total`);
+        res.json({ ok: true, added: added.length, total: updated.length });
+    } catch (err) {
+        console.error('[Server] Erreur location ref upload:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// List reference photos for a location (metadata only)
+app.get('/api/location-refs/:locationId', (req, res) => {
+    const { locationId } = req.params;
+    if (!isValidLocationId(locationId)) return res.status(400).json({ error: 'Location ID invalide' });
+    const entries = readLocRefsIndex(locationId);
+    res.json(entries.map(e => ({
+        ...e,
+        imageUrl: `/api/location-refs/${locationId}/${e.id}/image`,
+    })));
+});
+
+// Serve a location reference photo as binary
+app.get('/api/location-refs/:locationId/:refId/image', (req, res) => {
+    const { locationId, refId } = req.params;
+    if (!isValidLocationId(locationId) || !isValidLocRefId(refId)) return res.status(400).end();
+    const entries = readLocRefsIndex(locationId);
+    const entry = entries.find(e => e.id === refId);
+    if (!entry) return res.status(404).end();
+
+    const imgPath = path.join(getLocationRefsDir(locationId), path.basename(entry.filename));
+    if (!fs.existsSync(imgPath)) return res.status(404).end();
+
+    res.setHeader('Content-Type', entry.mimeType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Content-Length', fs.statSync(imgPath).size);
+    fs.createReadStream(imgPath).pipe(res);
+});
+
+// Serve a location reference photo as base64 (for prompt generation)
+app.get('/api/location-refs/:locationId/:refId/base64', (req, res) => {
+    const { locationId, refId } = req.params;
+    if (!isValidLocationId(locationId) || !isValidLocRefId(refId)) return res.status(400).end();
+    const entries = readLocRefsIndex(locationId);
+    const entry = entries.find(e => e.id === refId);
+    if (!entry) return res.status(404).json({ error: 'Ref introuvable' });
+
+    const imgPath = path.join(getLocationRefsDir(locationId), path.basename(entry.filename));
+    if (!fs.existsSync(imgPath)) return res.status(404).json({ error: 'Fichier introuvable' });
+
+    const buf = fs.readFileSync(imgPath);
+    res.json({ base64: buf.toString('base64'), mimeType: entry.mimeType });
+});
+
+// Delete a specific location reference photo
+app.delete('/api/location-refs/:locationId/:refId', (req, res) => {
+    const { locationId, refId } = req.params;
+    if (!isValidLocationId(locationId) || !isValidLocRefId(refId)) return res.status(400).json({ error: 'ID invalide' });
+    const entries = readLocRefsIndex(locationId);
+    const idx = entries.findIndex(e => e.id === refId);
+    if (idx === -1) return res.status(404).json({ error: 'Ref introuvable' });
+
+    const [removed] = entries.splice(idx, 1);
+    try { fs.unlinkSync(path.join(getLocationRefsDir(locationId), path.basename(removed.filename))); } catch { }
+    writeLocRefsIndex(locationId, entries);
+    console.log(`[Server] Location refs ${locationId}: -1 → ${entries.length} restantes`);
+    res.json({ ok: true, remaining: entries.length });
+});
+
+// ============================================
 // ERROR HANDLER — attrape les erreurs non gérées (DOIT être après les routes)
 // ============================================
 app.use((err, _req, res, _next) => {

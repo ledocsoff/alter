@@ -693,3 +693,87 @@ export const deleteModelRef = async (modelId, refId) => {
  * @param {string} refId
  */
 export const refImageUrl = (modelId, refId) => `${API_BASE}/api/refs/${encodeURIComponent(modelId)}/${encodeURIComponent(refId)}/image`;
+
+// ============================================
+// LOCATION REFERENCE PHOTOS
+// ============================================
+
+let _locRefCache = new Map();
+let _locRefCacheLocationId = null;
+
+/**
+ * List reference photos metadata for a location (no base64)
+ */
+export const getLocationRefs = async (locationId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur get location refs:', err.message);
+        return [];
+    }
+};
+
+/**
+ * Load a single location ref as base64 (with cache)
+ */
+export const loadLocationRefBase64 = async (locationId, refId) => {
+    if (_locRefCacheLocationId !== locationId) {
+        _locRefCache.clear();
+        _locRefCacheLocationId = locationId;
+    }
+    const cacheKey = `${locationId}:${refId}`;
+    if (_locRefCache.has(cacheKey)) return _locRefCache.get(cacheKey);
+    try {
+        const res = await fetch(`${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}/${encodeURIComponent(refId)}/base64`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        _locRefCache.set(cacheKey, data);
+        return data;
+    } catch (err) {
+        console.warn('[Velvet] Erreur load location ref base64:', err.message);
+        return null;
+    }
+};
+
+/**
+ * Upload location reference photos
+ * @param {string} locationId
+ * @param {Array<{base64: string, mimeType: string}>} photos
+ */
+export const uploadLocationRefs = async (locationId, photos) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photos }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur upload location refs:', err.message);
+        return null;
+    }
+};
+
+/**
+ * Delete a location reference photo
+ */
+export const deleteLocationRef = async (locationId, refId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}/${encodeURIComponent(refId)}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur delete location ref:', err.message);
+        return null;
+    }
+};
+
+/**
+ * Get the image URL for a location reference photo (for <img> display)
+ */
+export const locationRefImageUrl = (locationId, refId) => `${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}/${encodeURIComponent(refId)}/image`;
