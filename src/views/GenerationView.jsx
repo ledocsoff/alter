@@ -2,10 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
-import { CONTROLNET_PRESETS } from '../constants/controlnetPresets';
+import { DEFAULT_SCENE } from '../constants/sceneOptions';
 import { saveLocationData, generateSeed, getApiKey, saveLastSession, getModelRefs, loadModelRefBase64 } from '../utils/storage';
-import { pickRandom } from '../utils/helpers';
 import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
@@ -121,17 +119,6 @@ const GenerationView = () => {
     }, [modelId, isLoaded, setReferenceImages]);
 
 
-    const handleRandomize = useCallback(() => {
-        setScene(prev => ({
-            ...prev,
-            outfit: pickRandom(OUTFIT_PRESETS),
-            controlnet_preset: pickRandom(CONTROLNET_PRESETS).id,
-            camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
-            pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
-            expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
-        }));
-    }, [setScene]);
-
     // Lightweight djb2 hash for model fingerprinting
     const modelHash = (() => {
         const str = JSON.stringify(currentModel || {});
@@ -179,13 +166,7 @@ const GenerationView = () => {
         );
     }
 
-    const handleRegenerateSeed = () => {
-        const newSeed = generateSeed();
-        updateSceneEntry('seed', newSeed);
-        if (currentLocation) {
-            saveLocationData(modelId, accountId, { ...currentLocation, seed: newSeed });
-        }
-    };
+
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -207,13 +188,6 @@ const GenerationView = () => {
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                         <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
                         <span className="text-[11px] text-violet-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
-                        <button
-                            onClick={handleRegenerateSeed}
-                            className="ml-0.5 w-4 h-4 rounded flex items-center justify-center text-[9px] text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
-                            title="Régénérer la seed"
-                        >
-                            ↻
-                        </button>
                     </div>
                     <button
                         onClick={() => setShowRecap(!showRecap)}

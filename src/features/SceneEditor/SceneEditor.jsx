@@ -3,9 +3,9 @@ import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
 import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData, getSavedModels } from '../../utils/storage';
-import { generateLocationPresets, regenerateSection } from '../../utils/googleAI';
+import { generateLocationPresets } from '../../utils/googleAI';
 import { TrashIcon, SparklesIcon } from '../../components/Icons';
-import { pickRandom } from '../../utils/helpers';
+
 
 /* ─── Stable sub-components (defined outside render to avoid focus loss) ─── */
 
@@ -74,32 +74,6 @@ const SceneEditor = ({ location = null }) => {
         toast.info(`${preset.label}`);
     };
 
-    /* ─── Randomize ─── */
-    const handleRandomize = () => {
-        const availablePresets = hasAiPresets ? location.ai_presets : SCENE_PRESETS;
-        const availableOutfits = location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS;
-        const preset = pickRandom(availablePresets);
-        const outfit = pickRandom(availableOutfits);
-        const { outfit: presetOutfit, ...sceneWithoutOutfit } = preset.scene || {};
-        setScene(prev => ({
-            ...prev,
-            ...sceneWithoutOutfit,
-            outfit: presetOutfit
-                ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
-                : outfit,
-            environment: prev.environment,
-            location_meta: prev.location_meta,
-            vibe: prev.vibe,
-            lighting: prev.lighting,
-            aspect_ratio: prev.aspect_ratio,
-            seed: prev.seed,
-            custom_negative_prompt: prev.custom_negative_prompt,
-            custom_details: prev.custom_details,
-        }));
-        setActivePresetId(preset.id);
-        toast.info(`🎲 ${preset.label} + ${outfit.label}`);
-    };
-
     /* ─── Generate ALL AI data ─── */
     const handleGenerateAI = async () => {
         const apiKey = getApiKey();
@@ -120,30 +94,6 @@ const SceneEditor = ({ location = null }) => {
             toast.error(`Erreur: ${err.message}`);
         } finally {
             setIsGeneratingPresets(false);
-        }
-    };
-
-    /* ─── Regenerate a single section ─── */
-    const [regenLoading, setRegenLoading] = useState(null); // 'presets' | 'outfits' | 'poses' | null
-    const handleRegenSection = async (section) => {
-        const apiKey = getApiKey();
-        if (!apiKey) { toast.error('Clé API requise'); return; }
-        const sectionKey = section === 'presets' ? 'ai_presets' : section === 'outfits' ? 'ai_outfits' : 'ai_poses';
-        const sectionLabel = section === 'presets' ? 'ambiances' : section === 'outfits' ? 'tenues' : 'poses';
-        setRegenLoading(section);
-        try {
-            const items = await regenerateSection(apiKey, location, section);
-            console.log(`[Velvet] Regen ${section}:`, items.length, 'items');
-            // Save and force React to detect the change via deep copy
-            saveLocationData(modelId, accountId, { ...location, [sectionKey]: items });
-            // Re-read from localStorage to get a guaranteed fresh deep copy
-            const freshModels = JSON.parse(JSON.stringify(getSavedModels()));
-            setAllModelsDatabase(freshModels);
-            toast.success(`${items.length} ${sectionLabel} régénérées`);
-        } catch (err) {
-            toast.error(`Erreur: ${err.message}`);
-        } finally {
-            setRegenLoading(null);
         }
     };
 
@@ -193,12 +143,7 @@ const SceneEditor = ({ location = null }) => {
                     >
                         Mes templates
                     </button>
-                    <button
-                        onClick={handleRandomize}
-                        className="text-[11px] font-medium text-violet-400 hover:text-violet-300 hover:bg-violet-500/8 px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                        🎲 Surprise
-                    </button>
+
                 </div>
             </div>
 
@@ -280,18 +225,7 @@ const SceneEditor = ({ location = null }) => {
                                 <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
                             )}
                         </div>
-                        {hasAiPresets && (
-                            <button
-                                onClick={() => handleRegenSection('presets')}
-                                disabled={regenLoading === 'presets'}
-                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
-                                title="Régénérer les ambiances"
-                            >
-                                {regenLoading === 'presets' ? (
-                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
-                                ) : (<><span className="text-[11px]">♻️</span></>)}
-                            </button>
-                        )}
+
                     </div>
                     {location && !hasAiPresets && (
                         <div className="mb-2 p-3 rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] flex items-center justify-between">
@@ -348,18 +282,7 @@ const SceneEditor = ({ location = null }) => {
                                 <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
                             )}
                         </div>
-                        {location?.ai_outfits?.length > 0 && (
-                            <button
-                                onClick={() => handleRegenSection('outfits')}
-                                disabled={regenLoading === 'outfits'}
-                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
-                                title="Régénérer les tenues"
-                            >
-                                {regenLoading === 'outfits' ? (
-                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
-                                ) : (<><span className="text-[11px]">♻️</span></>)}
-                            </button>
-                        )}
+
                     </div>
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                         {(location?.ai_outfits?.length > 0 ? location.ai_outfits : OUTFIT_PRESETS).map(item => {
@@ -407,18 +330,7 @@ const SceneEditor = ({ location = null }) => {
                                 <span className="text-[8px] text-emerald-400/60 font-medium px-1 py-0.5 rounded bg-emerald-500/5">IA · {location.name}</span>
                             )}
                         </div>
-                        {location?.ai_poses?.length > 0 && (
-                            <button
-                                onClick={() => handleRegenSection('poses')}
-                                disabled={regenLoading === 'poses'}
-                                className="text-[10px] text-zinc-600 hover:text-violet-400 transition-all flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-violet-500/5"
-                                title="Régénérer les poses"
-                            >
-                                {regenLoading === 'poses' ? (
-                                    <div className="w-3 h-3 border border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
-                                ) : (<><span className="text-[11px]">♻️</span></>)}
-                            </button>
-                        )}
+
                     </div>
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                         {(location?.ai_poses?.length > 0 ? location.ai_poses : SCENE_OPTIONS.pose).map(item => {
