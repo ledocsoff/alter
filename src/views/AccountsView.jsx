@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveAccountData, deleteAccountData } from '../utils/storage';
+import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
 const PLATFORMS = {
   Instagram: { color: 'from-fuchsia-500 to-purple-600', accent: 'text-fuchsia-400', bg: 'bg-fuchsia-500/8' },
-  TikTok:    { color: 'from-cyan-400 to-blue-500',      accent: 'text-cyan-400',    bg: 'bg-cyan-500/8' },
-  Tinder:    { color: 'from-orange-500 to-rose-500',     accent: 'text-rose-400',    bg: 'bg-rose-500/8' },
-  OnlyFans:  { color: 'from-sky-400 to-blue-600',        accent: 'text-sky-400',     bg: 'bg-sky-500/8' },
+  TikTok: { color: 'from-cyan-400 to-blue-500', accent: 'text-cyan-400', bg: 'bg-cyan-500/8' },
+  Tinder: { color: 'from-orange-500 to-rose-500', accent: 'text-rose-400', bg: 'bg-rose-500/8' },
+  OnlyFans: { color: 'from-sky-400 to-blue-600', accent: 'text-sky-400', bg: 'bg-sky-500/8' },
 };
 
 const AccountsView = () => {
@@ -19,7 +20,7 @@ const AccountsView = () => {
 
   const [handle, setHandle] = useState('');
   const [platform, setPlatform] = useState('Instagram');
-  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const currentModel = allModelsDatabase.find(m => m.id === modelId);
 
@@ -37,18 +38,17 @@ const AccountsView = () => {
     }
   };
 
-  const handleDelete = (e, accountId) => {
+  const handleDelete = (e, acc) => {
     e.stopPropagation();
-    if (pendingDeleteId === accountId) {
-      const acc = currentModel.accounts.find(a => a.id === accountId);
-      const updated = deleteAccountData(modelId, accountId);
-      if (updated) setAllModelsDatabase(updated);
-      setPendingDeleteId(null);
-      toast.success(`${acc?.handle || 'Compte'} supprime`);
-    } else {
-      setPendingDeleteId(accountId);
-      setTimeout(() => setPendingDeleteId(null), 3000);
-    }
+    setConfirmDelete(acc);
+  };
+
+  const executeDelete = () => {
+    if (!confirmDelete) return;
+    const updated = deleteAccountData(modelId, confirmDelete.id);
+    if (updated) setAllModelsDatabase(updated);
+    toast.success(`${confirmDelete.handle || 'Compte'} supprime`);
+    setConfirmDelete(null);
   };
 
   return (
@@ -124,14 +124,10 @@ const AccountsView = () => {
                       </div>
                     </div>
                     <button
-                      onClick={(e) => handleDelete(e, acc.id)}
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${
-                        pendingDeleteId === acc.id
-                          ? 'bg-red-500/20 text-red-400 opacity-100'
-                          : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
-                      }`}
+                      onClick={(e) => handleDelete(e, acc)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10"
                     >
-                      {pendingDeleteId === acc.id ? '?' : '\u00D7'}
+                      \u00D7
                     </button>
                   </div>
                   <div className="flex items-center justify-between text-[12px]">
@@ -144,6 +140,13 @@ const AccountsView = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Supprimer ce compte ?"
+        message={`"${confirmDelete?.handle}" et tous ses lieux seront definitivement supprimes.`}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 };

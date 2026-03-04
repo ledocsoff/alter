@@ -5,6 +5,7 @@ import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
 import { autoFillLocation } from '../utils/googleAI';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
+import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
 const TIME_OF_DAY_OPTIONS = [
     { labelFR: "Matin (lumiere douce)", promptEN: "morning, soft early light" },
@@ -56,7 +57,7 @@ const LocationsAndSandboxView = () => {
     const [newLocAnchorDetails, setNewLocAnchorDetails] = useState('');
     const [newLocColorPalette, setNewLocColorPalette] = useState('');
     const [newLocNegativePrompt, setNewLocNegativePrompt] = useState('');
-    const [pendingDeleteId, setPendingDeleteId] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
     const [isAutoFilling, setIsAutoFilling] = useState(false);
 
     const currentModel = allModelsDatabase.find(m => m.id === modelId);
@@ -103,19 +104,18 @@ const LocationsAndSandboxView = () => {
         }
     };
 
-    const handleDeleteLocation = (e, locId) => {
+    const handleDeleteLocation = (e, loc) => {
         e.stopPropagation();
-        if (pendingDeleteId === locId) {
-            const loc = currentAccount.locations.find(l => l.id === locId);
-            const updated = deleteLocationData(modelId, accountId, locId);
-            if (updated) setAllModelsDatabase(updated);
-            if (locFormMode === locId) resetForm();
-            setPendingDeleteId(null);
-            toast.success(`"${loc?.name || 'Lieu'}" supprime`);
-        } else {
-            setPendingDeleteId(locId);
-            setTimeout(() => setPendingDeleteId(null), 3000);
-        }
+        setConfirmDelete(loc);
+    };
+
+    const executeDeleteLocation = () => {
+        if (!confirmDelete) return;
+        const updated = deleteLocationData(modelId, accountId, confirmDelete.id);
+        if (updated) setAllModelsDatabase(updated);
+        if (locFormMode === confirmDelete.id) resetForm();
+        toast.success(`"${confirmDelete.name || 'Lieu'}" supprime`);
+        setConfirmDelete(null);
     };
 
     const handleDuplicateLocation = (e, locId, targetModelId, targetAccountId) => {
@@ -186,255 +186,262 @@ const LocationsAndSandboxView = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <>
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
 
-            {/* LEFT: LOCATIONS */}
-            <div id="loc-scroll" className="flex-1 overflow-y-auto custom-scrollbar">
-                <div className="max-w-3xl mx-auto px-6 py-10">
+                {/* LEFT: LOCATIONS */}
+                <div id="loc-scroll" className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="max-w-3xl mx-auto px-6 py-10">
 
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
-                        <p className="text-zinc-500 text-sm mt-1">Definissez des lieux precis pour garantir la coherence visuelle.</p>
-                    </div>
-
-                    {/* FORM */}
-                    <div className={`rounded-xl border p-5 mb-10 transition-colors ${isEditing ? 'bg-amber-500/[0.03] border-amber-500/20' : 'bg-zinc-900/60 border-zinc-800/60'}`}>
-                        <div className="flex justify-between items-center mb-5">
-                            <h3 className="text-sm font-semibold text-zinc-300">
-                                {isEditing ? 'Modifier le lieu' : 'Nouveau lieu'}
-                            </h3>
-                            {isEditing && (
-                                <button onClick={resetForm} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Annuler</button>
-                            )}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-bold text-zinc-100 tracking-tight">Lieux & Decors</h2>
+                            <p className="text-zinc-500 text-sm mt-1">Definissez des lieux precis pour garantir la coherence visuelle.</p>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>Nom du lieu</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: Plage Bali, Café Paris..."
-                                        className={inputClass}
-                                        value={newLocName}
-                                        onChange={(e) => setNewLocName(e.target.value)}
-                                    />
-                                    {!isEditing && newLocName.trim() && (
-                                        <button
-                                            onClick={handleAutoFill}
-                                            disabled={isAutoFilling}
-                                            className={`mt-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${isAutoFilling ? 'text-zinc-500 bg-zinc-800/50 cursor-wait' : 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'}`}
-                                        >
-                                            {isAutoFilling ? '⏳ Analyse IA...' : '✨ Auto-fill IA'}
-                                        </button>
-                                    )}
-                                </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Environnement</span>
-                                        <button
-                                            onClick={() => setIsCustomEnv(!isCustomEnv)}
-                                            className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${isCustomEnv ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
-                                        >
-                                            {isCustomEnv ? 'Preset' : 'Custom'}
-                                        </button>
-                                    </div>
-                                    {isCustomEnv ? (
-                                        <textarea
-                                            placeholder="Description detaillee en anglais..."
-                                            value={newLocEnvCustom}
-                                            onChange={(e) => setNewLocEnvCustom(e.target.value)}
-                                            rows={2}
-                                            className={inputClass + " resize-none"}
+                        {/* FORM */}
+                        <div className={`rounded-xl border p-5 mb-10 transition-colors ${isEditing ? 'bg-amber-500/[0.03] border-amber-500/20' : 'bg-zinc-900/60 border-zinc-800/60'}`}>
+                            <div className="flex justify-between items-center mb-5">
+                                <h3 className="text-sm font-semibold text-zinc-300">
+                                    {isEditing ? 'Modifier le lieu' : 'Nouveau lieu'}
+                                </h3>
+                                {isEditing && (
+                                    <button onClick={resetForm} className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">Annuler</button>
+                                )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className={labelClass}>Nom du lieu</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: Plage Bali, Café Paris..."
+                                            className={inputClass}
+                                            value={newLocName}
+                                            onChange={(e) => setNewLocName(e.target.value)}
                                         />
-                                    ) : (
-                                        <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className={selectClass}>
-                                            {SCENE_OPTIONS.environment.map(env => (
-                                                <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
+                                        {!isEditing && newLocName.trim() && (
+                                            <button
+                                                onClick={handleAutoFill}
+                                                disabled={isAutoFilling}
+                                                className={`mt-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${isAutoFilling ? 'text-zinc-500 bg-zinc-800/50 cursor-wait' : 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'}`}
+                                            >
+                                                {isAutoFilling ? '⏳ Analyse IA...' : '✨ Auto-fill IA'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Environnement</span>
+                                            <button
+                                                onClick={() => setIsCustomEnv(!isCustomEnv)}
+                                                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${isCustomEnv ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
+                                            >
+                                                {isCustomEnv ? 'Preset' : 'Custom'}
+                                            </button>
+                                        </div>
+                                        {isCustomEnv ? (
+                                            <textarea
+                                                placeholder="Description detaillee en anglais..."
+                                                value={newLocEnvCustom}
+                                                onChange={(e) => setNewLocEnvCustom(e.target.value)}
+                                                rows={2}
+                                                className={inputClass + " resize-none"}
+                                            />
+                                        ) : (
+                                            <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className={selectClass}>
+                                                {SCENE_OPTIONS.environment.map(env => (
+                                                    <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className={labelClass}>Eclairage</label>
+                                        <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className={selectClass}>
+                                            <option value="">Libre</option>
+                                            {SCENE_OPTIONS.lighting.map(l => (
+                                                <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
                                             ))}
                                         </select>
-                                    )}
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Vibe</label>
+                                        <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className={selectClass}>
+                                            <option value="">Libre</option>
+                                            {SCENE_OPTIONS.vibe.map(v => (
+                                                <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Moment</label>
+                                        <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className={selectClass}>
+                                            <option value="">Libre</option>
+                                            {TIME_OF_DAY_OPTIONS.map(t => (
+                                                <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div>
-                                    <label className={labelClass}>Eclairage</label>
-                                    <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className={selectClass}>
-                                        <option value="">Libre</option>
-                                        {SCENE_OPTIONS.lighting.map(l => (
-                                            <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                        ))}
-                                    </select>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className={labelClass}>Details d'ancrage <span className="text-amber-500/60 normal-case font-normal">coherence</span></label>
+                                        <textarea
+                                            placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."
+                                            value={newLocAnchorDetails}
+                                            onChange={(e) => setNewLocAnchorDetails(e.target.value)}
+                                            rows={3}
+                                            className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Palette couleurs</label>
+                                        <textarea
+                                            placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
+                                            value={newLocColorPalette}
+                                            onChange={(e) => setNewLocColorPalette(e.target.value)}
+                                            rows={3}
+                                            className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className={labelClass}>Vibe</label>
-                                    <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className={selectClass}>
-                                        <option value="">Libre</option>
-                                        {SCENE_OPTIONS.vibe.map(v => (
-                                            <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Moment</label>
-                                    <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className={selectClass}>
-                                        <option value="">Libre</option>
-                                        {TIME_OF_DAY_OPTIONS.map(t => (
-                                            <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* NEGATIVE PROMPT */}
                                 <div>
-                                    <label className={labelClass}>Details d'ancrage <span className="text-amber-500/60 normal-case font-normal">coherence</span></label>
+                                    <label className={labelClass}>Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span></label>
                                     <textarea
-                                        placeholder="Objets recurrents: pink LED strip, grey duvet, cactus on nightstand..."
-                                        value={newLocAnchorDetails}
-                                        onChange={(e) => setNewLocAnchorDetails(e.target.value)}
-                                        rows={3}
+                                        placeholder="tattoo, piercing, neon lights, cluttered background..."
+                                        value={newLocNegativePrompt}
+                                        onChange={(e) => setNewLocNegativePrompt(e.target.value)}
+                                        rows={2}
                                         className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
                                     />
                                 </div>
-                                <div>
-                                    <label className={labelClass}>Palette couleurs</label>
-                                    <textarea
-                                        placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
-                                        value={newLocColorPalette}
-                                        onChange={(e) => setNewLocColorPalette(e.target.value)}
-                                        rows={3}
-                                        className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
-                                    />
+
+                                <div className="flex justify-end pt-2">
+                                    <button
+                                        onClick={handleSaveLocation}
+                                        disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
+                                        className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
+                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                                            }`}
+                                    >
+                                        {isEditing ? 'Mettre a jour' : 'Enregistrer'}
+                                    </button>
                                 </div>
                             </div>
-
-                            {/* NEGATIVE PROMPT */}
-                            <div>
-                                <label className={labelClass}>Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span></label>
-                                <textarea
-                                    placeholder="tattoo, piercing, neon lights, cluttered background..."
-                                    value={newLocNegativePrompt}
-                                    onChange={(e) => setNewLocNegativePrompt(e.target.value)}
-                                    rows={2}
-                                    className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
-                                />
-                            </div>
-
-                            <div className="flex justify-end pt-2">
-                                <button
-                                    onClick={handleSaveLocation}
-                                    disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
-                                    className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
-                                        ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
-                                        : 'bg-zinc-100 text-zinc-900 hover:bg-white'
-                                        }`}
-                                >
-                                    {isEditing ? 'Mettre a jour' : 'Enregistrer'}
-                                </button>
-                            </div>
                         </div>
-                    </div>
 
-                    {/* SAVED LOCATIONS */}
-                    <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Lieux enregistres</h3>
+                        {/* SAVED LOCATIONS */}
+                        <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Lieux enregistres</h3>
 
-                    {(currentAccount.locations || []).length === 0 ? (
-                        <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800">
-                            <p className="text-zinc-500 text-sm">Aucun lieu. Creez-en un ci-dessus.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {currentAccount.locations.map(loc => (
-                                <div
-                                    key={loc.id}
-                                    onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                    className="group bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-4 cursor-pointer hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all duration-200"
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2.5 mb-0.5">
-                                                <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
-                                                <LockScore location={loc} />
-                                            </div>
-                                            <p className="text-[12px] text-zinc-500 mt-0.5 truncate">{loc.environment}</p>
-                                        </div>
-                                        <div className="flex gap-1 ml-3 shrink-0">
-                                            {/* Duplicate dropdown */}
-                                            {otherAccounts.length > 0 && (
-                                                <div className="relative">
-                                                    <select
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        onChange={(e) => {
-                                                            if (!e.target.value) return;
-                                                            const [tModelId, tAccountId] = e.target.value.split('::');
-                                                            handleDuplicateLocation(e, loc.id, tModelId, tAccountId);
-                                                            e.target.value = '';
-                                                        }}
-                                                        className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-zinc-700/50"
-                                                        defaultValue=""
-                                                        title="Dupliquer vers..."
-                                                    >
-                                                        <option value="" disabled>D</option>
-                                                        {otherAccounts.map(oa => (
-                                                            <option key={`${oa.modelId}::${oa.accountId}`} value={`${oa.modelId}::${oa.accountId}`}>
-                                                                {oa.modelName} / {oa.handle}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                        {(currentAccount.locations || []).length === 0 ? (
+                            <div className="text-center py-16 rounded-xl border border-dashed border-zinc-800">
+                                <p className="text-zinc-500 text-sm">Aucun lieu. Creez-en un ci-dessus.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {currentAccount.locations.map(loc => (
+                                    <div
+                                        key={loc.id}
+                                        onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                        className="group bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-4 cursor-pointer hover:bg-zinc-800/50 hover:border-zinc-700/60 transition-all duration-200"
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2.5 mb-0.5">
+                                                    <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
+                                                    <LockScore location={loc} />
                                                 </div>
-                                            )}
-                                            <button
-                                                onClick={(e) => enterEditMode(e, loc)}
-                                                className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors opacity-0 group-hover:opacity-100 text-xs"
-                                            >
-                                                E
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDeleteLocation(e, loc.id)}
-                                                className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${pendingDeleteId === loc.id
-                                                    ? 'bg-red-500/20 text-red-400 opacity-100'
-                                                    : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
-                                                    }`}
-                                            >
-                                                {pendingDeleteId === loc.id ? '?' : '\u00D7'}
-                                            </button>
+                                                <p className="text-[12px] text-zinc-500 mt-0.5 truncate">{loc.environment}</p>
+                                            </div>
+                                            <div className="flex gap-1 ml-3 shrink-0">
+                                                {/* Duplicate dropdown */}
+                                                {otherAccounts.length > 0 && (
+                                                    <div className="relative">
+                                                        <select
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onChange={(e) => {
+                                                                if (!e.target.value) return;
+                                                                const [tModelId, tAccountId] = e.target.value.split('::');
+                                                                handleDuplicateLocation(e, loc.id, tModelId, tAccountId);
+                                                                e.target.value = '';
+                                                            }}
+                                                            className="w-7 h-7 rounded-lg bg-transparent text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs appearance-none text-center outline-none hover:bg-zinc-700/50"
+                                                            defaultValue=""
+                                                            title="Dupliquer vers..."
+                                                        >
+                                                            <option value="" disabled>D</option>
+                                                            {otherAccounts.map(oa => (
+                                                                <option key={`${oa.modelId}::${oa.accountId}`} value={`${oa.modelId}::${oa.accountId}`}>
+                                                                    {oa.modelName} / {oa.handle}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    onClick={(e) => enterEditMode(e, loc)}
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors opacity-0 group-hover:opacity-100 text-xs"
+                                                >
+                                                    E
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteLocation(e, loc)}
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10"
+                                                >
+                                                    \u00D7
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {loc.seed && <span className="text-[10px] text-amber-400/70 bg-amber-500/8 px-2 py-0.5 rounded-md font-mono">🎲 {loc.seed}</span>}
+                                            {loc.default_lighting && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Eclairage</span>}
+                                            {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
+                                            {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}
+                                            {loc.color_palette && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Palette</span>}
+                                            {loc.negative_prompt && <span className="text-[10px] text-red-400/70 bg-red-500/8 px-2 py-0.5 rounded-md">Neg prompt</span>}
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {loc.seed && <span className="text-[10px] text-amber-400/70 bg-amber-500/8 px-2 py-0.5 rounded-md font-mono">🎲 {loc.seed}</span>}
-                                        {loc.default_lighting && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Eclairage</span>}
-                                        {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
-                                        {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}
-                                        {loc.color_palette && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Palette</span>}
-                                        {loc.negative_prompt && <span className="text-[10px] text-red-400/70 bg-red-500/8 px-2 py-0.5 rounded-md">Neg prompt</span>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* RIGHT: SANDBOX */}
-            <div className="lg:w-72 bg-zinc-950/50 border-t lg:border-t-0 lg:border-l border-zinc-800/50 p-6 lg:p-8 flex flex-col justify-center">
-                <div className="max-w-xs mx-auto w-full">
-                    <h3 className="text-base font-bold text-zinc-200 mb-2">Bac a sable</h3>
-                    <p className="text-[13px] text-zinc-500 mb-8 leading-relaxed">
-                        Mode libre pour du contenu ponctuel, sans creer de lieu.
-                    </p>
-                    <button
-                        onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/sandbox/generate`)}
-                        className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/10 active:scale-[0.98]"
-                    >
-                        Lancer le studio
-                    </button>
+                {/* RIGHT: SANDBOX */}
+                <div className="lg:w-72 bg-zinc-950/50 border-t lg:border-t-0 lg:border-l border-zinc-800/50 p-6 lg:p-8 flex flex-col justify-center">
+                    <div className="max-w-xs mx-auto w-full">
+                        <h3 className="text-base font-bold text-zinc-200 mb-2">Bac a sable</h3>
+                        <p className="text-[13px] text-zinc-500 mb-8 leading-relaxed">
+                            Mode libre pour du contenu ponctuel, sans creer de lieu.
+                        </p>
+                        <button
+                            onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/sandbox/generate`)}
+                            className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/10 active:scale-[0.98]"
+                        >
+                            Lancer le studio
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-        </div>
+            </div>
+            <ConfirmModal
+                isOpen={!!confirmDelete}
+                title="Supprimer ce lieu ?"
+                message={`"${confirmDelete?.name}" sera definitivement supprime.`}
+                onConfirm={executeDeleteLocation}
+                onCancel={() => setConfirmDelete(null)}
+            />
+        </>
     );
 };
 
 export default LocationsAndSandboxView;
+

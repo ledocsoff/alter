@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { deleteModelData, saveModelData } from '../utils/storage';
+import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 
 const MODEL_COLORS = [
   { from: 'from-amber-500', to: 'to-orange-600', shadow: 'shadow-amber-500/10', accent: 'text-amber-400' },
@@ -20,20 +21,19 @@ const ModelsView = () => {
   const navigate = useNavigate();
   const { allModelsDatabase, setAllModelsDatabase, setModel } = useStudio();
   const toast = useToast();
-  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [search, setSearch] = useState('');
 
-  const handleDelete = (e, id) => {
+  const handleDelete = (e, model) => {
     e.stopPropagation();
-    if (pendingDeleteId === id) {
-      const model = allModelsDatabase.find(m => m.id === id);
-      setAllModelsDatabase(deleteModelData(id));
-      setPendingDeleteId(null);
-      toast.success(`${model?.name || 'Modele'} supprime`);
-    } else {
-      setPendingDeleteId(id);
-      setTimeout(() => setPendingDeleteId(null), 3000);
-    }
+    setConfirmDelete(model);
+  };
+
+  const executeDelete = () => {
+    if (!confirmDelete) return;
+    setAllModelsDatabase(deleteModelData(confirmDelete.id));
+    toast.success(`${confirmDelete.name || 'Modele'} supprime`);
+    setConfirmDelete(null);
   };
 
   const handleDuplicate = (e, m) => {
@@ -127,13 +127,10 @@ const ModelsView = () => {
                         +
                       </button>
                       <button
-                        onClick={(e) => handleDelete(e, m.id)}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors ${pendingDeleteId === m.id
-                          ? 'bg-red-500/20 text-red-400'
-                          : 'text-zinc-500 hover:text-red-400 hover:bg-red-500/10'
-                          }`}
+                        onClick={(e) => handleDelete(e, m)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
                       >
-                        {pendingDeleteId === m.id ? '?' : '\u00D7'}
+                        \u00D7
                       </button>
                     </div>
                   </div>
@@ -153,6 +150,13 @@ const ModelsView = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Supprimer ce modele ?"
+        message={`"${confirmDelete?.name}" et tous ses comptes/lieux seront definitivement supprimes.`}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 };

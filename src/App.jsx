@@ -83,6 +83,7 @@ const AppLayout = ({ children }) => {
   const [hasKey, setHasKey] = useState(() => !!getApiKey());
   const [errorCount, setErrorCount] = useState(0);
   const [serverOnline, setServerOnline] = useState(true);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   // Health check — ping server every 30s
   useEffect(() => {
@@ -90,6 +91,16 @@ const AppLayout = ({ children }) => {
     check();
     const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Flash "Sauvegardé ✓" on successful sync
+  useEffect(() => {
+    const onSynced = () => {
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
+    };
+    window.addEventListener('nanabanana:synced', onSynced);
+    return () => window.removeEventListener('nanabanana:synced', onSynced);
   }, []);
 
   useEffect(() => {
@@ -143,11 +154,13 @@ const AppLayout = ({ children }) => {
         </div>
         <div className="ml-auto flex items-center gap-1">
           <div
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md"
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all duration-300 ${savedFlash ? 'bg-emerald-500/10' : ''}`}
             title={serverOnline ? 'Serveur de sauvegarde connecté' : 'Serveur déconnecté — les données ne sont PAS sauvegardées sur le disque'}
           >
-            <div className={`w-1.5 h-1.5 rounded-full ${serverOnline ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div>
-            <span className={`text-[10px] font-medium ${serverOnline ? 'text-zinc-600' : 'text-red-400'}`}>{serverOnline ? 'Sync' : 'Hors ligne'}</span>
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors ${!serverOnline ? 'bg-red-500 animate-pulse' : savedFlash ? 'bg-emerald-400' : 'bg-emerald-500'}`}></div>
+            <span className={`text-[10px] font-medium transition-colors ${!serverOnline ? 'text-red-400' : savedFlash ? 'text-emerald-400' : 'text-zinc-600'}`}>
+              {!serverOnline ? 'Hors ligne' : savedFlash ? '✓' : 'Sync'}
+            </span>
           </div>
           <div className="h-3 w-px bg-zinc-800/60"></div>
           <button

@@ -23,12 +23,15 @@ const syncToServer = () => {
     hasPendingSync = true;
     syncTimeout = setTimeout(async () => {
         try {
-            await fetch('/api/save', {
+            const res = await fetch('/api/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(buildSyncPayload()),
             });
-            hasPendingSync = false;
+            if (res.ok) {
+                hasPendingSync = false;
+                window.dispatchEvent(new CustomEvent('nanabanana:synced'));
+            }
         } catch (err) {
             console.warn('[NanaBanana] Sync serveur echoue:', err.message);
         }
