@@ -1,38 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { getApiKey, saveApiKey, removeApiKey, getApiProvider, saveApiProvider } from '../../utils/storage';
+import { getApiKey, saveApiKey, removeApiKey } from '../../utils/storage';
 import { validateApiKey } from '../../utils/googleAI';
-
-const PROVIDERS = [
-  { id: 'ai_studio', label: 'Google AI Studio', desc: 'aistudio.google.com' },
-  { id: 'vertex_ai', label: 'Google Cloud (GCP)', desc: 'console.cloud.google.com' },
-];
 
 const ApiKeyModal = ({ isOpen, onClose }) => {
   const [key, setKey] = useState('');
-  const [provider, setProvider] = useState('ai_studio');
   const [showKey, setShowKey] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | validating | valid | invalid
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      const p = getApiProvider();
-      setProvider(p);
-      const k = getApiKey(p);
+      const k = getApiKey();
       setKey(k);
       setStatus(k ? 'valid' : 'idle');
       setError('');
     }
   }, [isOpen]);
-
-  // Quand on switch de provider, charger la clé correspondante
-  const handleProviderChange = (p) => {
-    setProvider(p);
-    const k = getApiKey(p);
-    setKey(k);
-    setStatus(k ? 'valid' : 'idle');
-    setError('');
-  };
 
   const handleSave = async () => {
     if (!key.trim()) return;
@@ -41,8 +24,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
 
     const result = await validateApiKey(key.trim());
     if (result.valid) {
-      saveApiKey(key.trim(), provider);
-      saveApiProvider(provider);
+      saveApiKey(key.trim());
       setStatus('valid');
       setTimeout(() => onClose(true), 600);
     } else {
@@ -52,7 +34,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
   };
 
   const handleRemove = () => {
-    removeApiKey(provider);
+    removeApiKey();
     setKey('');
     setStatus('idle');
     setError('');
@@ -70,35 +52,9 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">
-          Deux clés API = deux quotas séparés. Si l'une est saturée (503),
-          basculez sur l'autre pour continuer à générer.
+          Clé API <span className="text-violet-400 font-medium">Google AI Studio</span> — Obtenez-la sur{' '}
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">aistudio.google.com</a>
         </p>
-
-        {/* PROVIDER SELECTOR */}
-        <div className="mb-4">
-          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">Provider</label>
-          <div className="grid grid-cols-2 gap-2">
-            {PROVIDERS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleProviderChange(p.id)}
-                className={`relative text-left px-3 py-2.5 rounded-lg border transition-all duration-150 ${provider === p.id
-                  ? 'border-violet-500/50 bg-violet-500/5 ring-1 ring-violet-500/20'
-                  : 'border-zinc-800/60 bg-zinc-950 hover:border-zinc-700'
-                  }`}
-              >
-                <span className={`text-[12px] font-semibold block ${provider === p.id ? 'text-violet-400' : 'text-zinc-300'}`}>
-                  {p.label}
-                </span>
-                <span className="text-[10px] text-zinc-600 block mt-0.5">{p.desc}</span>
-                {provider === p.id && (
-                  <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-violet-500" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* API KEY INPUT */}
         <div className="mb-4">
@@ -159,7 +115,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-[10px] text-zinc-700 mt-4 text-center">
-          La cl\u00e9 est stock\u00e9e localement dans votre navigateur uniquement.
+          La clé est stockée localement dans votre navigateur uniquement.
         </p>
       </div>
     </div>

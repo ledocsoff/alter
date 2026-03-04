@@ -3,7 +3,6 @@ const HISTORY_KEY = 'velvet_history';
 const TEMPLATES_KEY = 'velvet_templates';
 
 const API_KEY_KEY = 'velvet_api_key';
-const API_PROVIDER_KEY = 'velvet_api_provider'; // 'ai_studio' | 'vertex_ai'
 
 // In Electron production (file://), API calls must target localhost:3001 directly
 // In browser/dev mode, Vite proxy handles /api → localhost:3001
@@ -91,58 +90,47 @@ export const loadFromServer = async () => {
 };
 
 // ============================================
-// API KEY (localStorage only — jamais dans les fichiers)
+// API KEY (localStorage only — Google AI Studio)
 // Obfuscation base64 pour éviter la lecture directe dans DevTools
-// Une clé par provider : ai_studio et vertex_ai
 // ============================================
-const _apiKeyFor = (provider) => `${API_KEY_KEY}_${provider}`;
+const _apiStorageKey = `${API_KEY_KEY}_ai_studio`;
 
 const _obfuscate = (key) => { try { return btoa(key); } catch { return key; } };
 const _deobfuscate = (val) => { try { return atob(val); } catch { return val; } };
 
-// Migration: si l'ancienne clé unique existe, la déplacer vers ai_studio (obfusquée)
+// Migration: anciennes clés vers le format actuel
 (() => {
     try {
+        // Old single-key format
         const old = localStorage.getItem(API_KEY_KEY);
         if (old) {
-            localStorage.setItem(_apiKeyFor('ai_studio'), _obfuscate(old));
+            localStorage.setItem(_apiStorageKey, _obfuscate(old));
             localStorage.removeItem(API_KEY_KEY);
         }
-        // Migrate plaintext keys stored before obfuscation
-        ['ai_studio', 'vertex_ai'].forEach(p => {
-            const k = localStorage.getItem(_apiKeyFor(p));
-            if (k && !k.includes('=') && k.startsWith('AI')) {
-                // Looks like a plaintext key starting with AI, obfuscate it
-                localStorage.setItem(_apiKeyFor(p), _obfuscate(k));
-            }
-        });
+        // Migrate plaintext key
+        const k = localStorage.getItem(_apiStorageKey);
+        if (k && !k.includes('=') && k.startsWith('AI')) {
+            localStorage.setItem(_apiStorageKey, _obfuscate(k));
+        }
+        // Clean up old vertex_ai key if it exists
+        localStorage.removeItem(`${API_KEY_KEY}_vertex_ai`);
+        localStorage.removeItem('velvet_api_provider');
     } catch { }
 })();
 
-export const getApiKey = (provider) => {
-    const p = provider || getApiProvider();
+export const getApiKey = () => {
     try {
-        const stored = localStorage.getItem(_apiKeyFor(p)) || '';
+        const stored = localStorage.getItem(_apiStorageKey) || '';
         return stored ? _deobfuscate(stored) : '';
     } catch { return ''; }
 };
 
-export const saveApiKey = (key, provider) => {
-    const p = provider || getApiProvider();
-    localStorage.setItem(_apiKeyFor(p), _obfuscate(key));
+export const saveApiKey = (key) => {
+    localStorage.setItem(_apiStorageKey, _obfuscate(key));
 };
 
-export const removeApiKey = (provider) => {
-    const p = provider || getApiProvider();
-    localStorage.removeItem(_apiKeyFor(p));
-};
-
-export const getApiProvider = () => {
-    try { return localStorage.getItem(API_PROVIDER_KEY) || 'ai_studio'; } catch { return 'ai_studio'; }
-};
-
-export const saveApiProvider = (provider) => {
-    localStorage.setItem(API_PROVIDER_KEY, provider);
+export const removeApiKey = () => {
+    localStorage.removeItem(_apiStorageKey);
 };
 
 // ============================================
