@@ -153,11 +153,11 @@ const GalleryPanel = () => {
                         <div className="bg-zinc-900/80 rounded-lg px-3 py-2 border border-zinc-800/40 text-[10px]">
                             <span className="text-zinc-600 block mb-1">Scene</span>
                             <div className="flex flex-wrap gap-1.5">
-                                {selected.scene.outfit && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">👗 {typeof selected.scene.outfit === 'object' ? (selected.scene.outfit.label || selected.scene.outfit.value) : selected.scene.outfit}</span>}
-                                {selected.scene.pose && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">🧍 {selected.scene.pose}</span>}
-                                {selected.scene.expression && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">😊 {selected.scene.expression}</span>}
-                                {selected.scene.environment && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">🏠 {selected.scene.environment}</span>}
-                                {selected.scene.lighting && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">💡 {selected.scene.lighting}</span>}
+                                {selected.scene.outfit && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">Tenue: {typeof selected.scene.outfit === 'object' ? (selected.scene.outfit.label || selected.scene.outfit.value) : selected.scene.outfit}</span>}
+                                {selected.scene.pose && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">Pose: {selected.scene.pose}</span>}
+                                {selected.scene.expression && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">Expr: {selected.scene.expression}</span>}
+                                {selected.scene.environment && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">Decor: {selected.scene.environment}</span>}
+                                {selected.scene.lighting && <span className="text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">Lumiere: {selected.scene.lighting}</span>}
                             </div>
                         </div>
                     )}

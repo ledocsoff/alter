@@ -70,7 +70,7 @@ const ModelEditorShell = ({ mode }) => {
       return;
     }
 
-    const id = mode === 'edit' ? modelId : crypto.randomUUID();
+    const id = mode === 'edit' ? modelId : `mod_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     let existingAccounts = [];
     if (mode === 'edit') {
       const existing = allModelsDatabase.find(m => m.id === modelId);
@@ -264,7 +264,7 @@ const ModelEditorShell = ({ mode }) => {
                       ? 'text-emerald-400 bg-emerald-500/10'
                       : 'text-red-400 bg-red-500/10'
                       }`}>
-                      {jsonStatus.valid ? '✓ Valide' : '✗ Invalide'}
+                      {jsonStatus.valid ? 'Valide' : 'Invalide'}
                     </span>
                   )}
                 </div>
@@ -353,7 +353,7 @@ const ModelEditorShell = ({ mode }) => {
                   </>
                 ) : (
                   <>
-                    ✨ Extraire le profil avec Gemini
+                    Extraire le profil avec Gemini
                   </>
                 )}
               </button>
