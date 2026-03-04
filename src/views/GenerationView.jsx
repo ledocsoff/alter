@@ -12,13 +12,13 @@ import EditableMatrix from '../features/EditableMatrix/EditableMatrix';
 import GalleryPanel from '../features/GalleryPanel/GalleryPanel';
 import PromptHistoryPanel from '../features/PromptHistoryPanel/PromptHistoryPanel';
 import ApiKeyModal from '../features/ApiKeyModal/ApiKeyModal';
-import { SparklesIcon } from '../components/Icons';
+import { SparklesIcon, ImageIcon, CameraIcon, FileTextIcon, SettingsIcon, ZapIcon } from '../components/Icons';
 
 const TABS = [
-    { id: 'image', icon: '🖼️', label: 'Image' },
-    { id: 'galerie', icon: '📷', label: 'Galerie' },
-    { id: 'historique', icon: '📝', label: 'Prompts' },
-    { id: 'matrice', icon: '⚙️', label: 'Matrice' },
+    { id: 'image', Icon: ImageIcon, label: 'Image' },
+    { id: 'galerie', Icon: CameraIcon, label: 'Galerie' },
+    { id: 'historique', Icon: FileTextIcon, label: 'Prompts' },
+    { id: 'matrice', Icon: SettingsIcon, label: 'Matrice' },
 ];
 
 const GenerationView = () => {
@@ -257,7 +257,7 @@ const GenerationView = () => {
                                         : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'
                                         }`}
                                 >
-                                    <span className="text-[13px]">{tab.icon}</span>
+                                    <tab.Icon size={13} />
                                     <span className="hidden md:inline">{tab.label}</span>
                                 </button>
                             ))}
@@ -344,7 +344,7 @@ const GenerationView = () => {
                                             disabled={isEnriching}
                                             className="velvet-btn-primary text-[10px] font-semibold px-2.5 py-1 disabled:opacity-50"
                                         >
-                                            {isEnriching ? '...' : '⚡ Enrichir & Generer'}
+                                            {isEnriching ? '...' : <><ZapIcon size={10} className="inline -mt-px" /> Enrichir &amp; Generer</>}
                                         </button>
                                         <button
                                             onClick={() => {

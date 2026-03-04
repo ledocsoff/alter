@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useToast } from '../../store/ToastContext';
 import { getGallery, deleteFromGallery, toggleGalleryStar, clearGallery } from '../../utils/storage';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import { ImageIcon } from '../../components/Icons';
 
 const GalleryPanel = () => {
     const toast = useToast();
@@ -169,7 +170,7 @@ const GalleryPanel = () => {
                     {filtered.length === 0 ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
-                                <div className="text-3xl mb-2 opacity-20">🖼️</div>
+                                <div className="mb-2 opacity-20"><ImageIcon size={32} /></div>
                                 <p className="text-zinc-500 text-[12px] font-medium">
                                     {filter === 'starred' ? 'Aucun favori' : 'Aucune image'}
                                 </p>

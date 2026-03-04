@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertIcon } from '../../components/Icons';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -20,7 +21,7 @@ class ErrorBoundary extends React.Component {
                 <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-8">
                     <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
                         <div className="w-14 h-14 mx-auto mb-5 rounded-xl bg-red-500/10 flex items-center justify-center">
-                            <span className="text-2xl">⚠️</span>
+                            <AlertIcon size={24} className="text-red-400" />
                         </div>
                         <h2 className="text-lg font-bold text-zinc-100 mb-2">Oups, quelque chose a planté</h2>
                         <p className="text-sm text-zinc-500 mb-6">

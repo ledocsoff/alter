@@ -6,6 +6,7 @@ import { saveModelData, getSavedModels, getApiKey } from '../utils/storage';
 import { extractModelFromPhotos } from '../utils/googleAI';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
 import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
+import { SparklesIcon, FileTextIcon, CameraIcon } from '../components/Icons';
 
 const ModelEditorShell = ({ mode }) => {
   const navigate = useNavigate();
@@ -178,7 +179,7 @@ const ModelEditorShell = ({ mode }) => {
               onClick={() => setShowTemplate(true)}
               className="h-8 px-3 rounded-lg text-[12px] font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
             >
-              ✦ Template AI Studio
+              <SparklesIcon size={12} className="inline" /> Template AI Studio
             </button>
           )}
           <button
@@ -221,7 +222,7 @@ const ModelEditorShell = ({ mode }) => {
                 : 'text-zinc-500 hover:text-zinc-300'
                 }`}
             >
-              📝 Coller le JSON
+              <FileTextIcon size={13} className="inline -mt-px" /> Coller le JSON
             </button>
             <button
               onClick={() => setInputMode('photo')}
@@ -230,7 +231,7 @@ const ModelEditorShell = ({ mode }) => {
                 : 'text-zinc-500 hover:text-zinc-300'
                 }`}
             >
-              📷 Extraire depuis photo
+              <CameraIcon size={13} className="inline -mt-px" /> Extraire depuis photo
             </button>
           </div>
 
@@ -310,7 +311,7 @@ const ModelEditorShell = ({ mode }) => {
                   onChange={handlePhotoUpload}
                   className="hidden"
                 />
-                <div className="text-3xl mb-3 opacity-30 group-hover:opacity-50 transition-opacity">📷</div>
+                <div className="mb-3 opacity-30 group-hover:opacity-50 transition-opacity"><CameraIcon size={32} /></div>
                 <p className="text-[13px] text-zinc-400 font-medium">Cliquez ou glissez des photos ici</p>
                 <p className="text-[11px] text-zinc-600 mt-1">JPG, PNG — max 5 images</p>
               </div>

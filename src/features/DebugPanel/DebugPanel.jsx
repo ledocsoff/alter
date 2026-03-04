@@ -4,7 +4,7 @@ import logger from '../../utils/logger';
 const LEVEL_STYLES = {
     info: { color: 'text-blue-400', bg: 'bg-blue-500/10', icon: 'ℹ' },
     success: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: '✓' },
-    warn: { color: 'text-amber-400', bg: 'bg-amber-500/10', icon: '⚠' },
+    warn: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', icon: '⚠' },
     error: { color: 'text-red-400', bg: 'bg-red-500/10', icon: '✕' },
     debug: { color: 'text-zinc-500', bg: 'bg-zinc-800/50', icon: '⚙' },
 };

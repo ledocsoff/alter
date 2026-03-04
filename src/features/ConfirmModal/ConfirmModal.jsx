@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { TrashIcon } from '../../components/Icons';
+import { TrashIcon, AlertIcon } from '../../components/Icons';
 
 /**
  * Modal de confirmation pour les actions destructives.
@@ -34,7 +34,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmLabel = 'Supprimer', canc
                 <div className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10' : 'bg-violet-500/10'}`}>
                     {isDanger
                         ? <TrashIcon size={22} className="text-red-400" />
-                        : <span className="text-xl">⚠️</span>
+                        : <AlertIcon size={22} className="text-violet-400" />
                     }
                 </div>
                 <h3 className="text-base font-bold text-zinc-100 text-center mb-1">{title}</h3>

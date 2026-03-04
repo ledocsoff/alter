@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { PencilIcon } from '../../components/Icons';
 
 // Render JSON with editable null fields
 const EditableMatrix = ({ matrix, onChange }) => {
@@ -42,7 +43,7 @@ const EditableMatrix = ({ matrix, onChange }) => {
                     className="text-zinc-600 cursor-pointer hover:text-violet-400 hover:bg-violet-500/5 rounded px-1 py-0.5 transition-colors group"
                     title="Cliquer pour remplir"
                 >
-                    null <span className="text-[9px] text-zinc-700 group-hover:text-violet-400">✏️</span>
+                    null <PencilIcon size={9} className="inline text-zinc-700 group-hover:text-violet-400" />
                 </span>
             );
         }

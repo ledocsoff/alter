@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useToast } from '../../store/ToastContext';
 import { getPromptHistory, clearPromptHistory } from '../../utils/storage';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import { FileTextIcon, ZapIcon } from '../../components/Icons';
 
 const PromptHistoryPanel = ({ onReuse }) => {
     const toast = useToast();
@@ -94,7 +95,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                     {filtered.length === 0 ? (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-center">
-                                <div className="text-2xl mb-2 opacity-20">📝</div>
+                                <div className="mb-2 opacity-20"><FileTextIcon size={28} /></div>
                                 <p className="text-zinc-500 text-[12px] font-medium">Aucun historique</p>
                                 <p className="text-zinc-700 text-[11px] mt-0.5">Les prompts generes apparaitront ici</p>
                             </div>
@@ -138,7 +139,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                                         onClick={() => { onReuse(entry.prompt); toast.info('Prompt reutilise'); }}
                                                         className="text-[10px] text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded-md hover:bg-violet-500/10 transition-colors"
                                                     >
-                                                        ⚡ Reutiliser
+                                                        <ZapIcon size={10} className="inline -mt-px" /> Reutiliser
                                                     </button>
                                                 )}
                                             </div>
