@@ -69,7 +69,7 @@ const GalleryPanel = () => {
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={() => handleStar(selected.id)}
-                            className={`text-[14px] px-1.5 py-0.5 rounded transition-colors ${selected.starred ? 'text-amber-400' : 'text-zinc-600 hover:text-amber-400'}`}
+                            className={`text-[14px] px-1.5 py-0.5 rounded transition-colors ${selected.starred ? 'text-violet-400' : 'text-zinc-600 hover:text-violet-400'}`}
                         >
                             {selected.starred ? '★' : '☆'}
                         </button>
@@ -111,7 +111,7 @@ const GalleryPanel = () => {
                         </div>
                         <div className="bg-zinc-900/80 rounded-lg px-2.5 py-1.5 border border-zinc-800/40">
                             <span className="text-zinc-600 block">Seed</span>
-                            <span className="text-amber-400 font-mono font-medium">{selected.seed || '—'}</span>
+                            <span className="text-violet-400 font-mono font-medium">{selected.seed || '—'}</span>
                         </div>
                         <div className="bg-zinc-900/80 rounded-lg px-2.5 py-1.5 border border-zinc-800/40">
                             <span className="text-zinc-600 block">Date</span>
@@ -149,7 +149,7 @@ const GalleryPanel = () => {
                     <div className="flex items-center gap-1.5">
                         <button
                             onClick={() => setFilter(filter === 'starred' ? 'all' : 'starred')}
-                            className={`text-[11px] px-2 py-0.5 rounded-md transition-colors ${filter === 'starred' ? 'text-amber-400 bg-amber-500/10' : 'text-zinc-600 hover:text-zinc-300'}`}
+                            className={`text-[11px] px-2 py-0.5 rounded-md transition-colors ${filter === 'starred' ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-300'}`}
                         >
                             ★ Favoris
                         </button>
@@ -203,7 +203,7 @@ const GalleryPanel = () => {
                                     <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleStar(img.id); }}
-                                            className={`w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors ${img.starred ? 'text-amber-400 bg-black/50' : 'text-white/60 bg-black/40 hover:text-amber-400'}`}
+                                            className={`w-5 h-5 rounded flex items-center justify-center text-[10px] transition-colors ${img.starred ? 'text-violet-400 bg-black/50' : 'text-white/60 bg-black/40 hover:text-violet-400'}`}
                                         >
                                             {img.starred ? '★' : '☆'}
                                         </button>
@@ -216,7 +216,7 @@ const GalleryPanel = () => {
                                     </div>
                                     {/* Starred indicator */}
                                     {img.starred && (
-                                        <div className="absolute top-1 left-1 text-[10px] text-amber-400 group-hover:opacity-0 transition-opacity">★</div>
+                                        <div className="absolute top-1 left-1 text-[10px] text-violet-400 group-hover:opacity-0 transition-opacity">★</div>
                                     )}
                                 </div>
                             ))}

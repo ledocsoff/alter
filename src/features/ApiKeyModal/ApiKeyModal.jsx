@@ -66,7 +66,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
       <div className="relative bg-zinc-900 border border-zinc-800/80 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-zinc-100">Configuration API</h3>
-          <button onClick={() => onClose(false)} className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <button onClick={() => onClose(false)} className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">
@@ -84,16 +84,16 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={() => handleProviderChange(p.id)}
                 className={`relative text-left px-3 py-2.5 rounded-lg border transition-all duration-150 ${provider === p.id
-                  ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20'
+                  ? 'border-violet-500/50 bg-violet-500/5 ring-1 ring-violet-500/20'
                   : 'border-zinc-800/60 bg-zinc-950 hover:border-zinc-700'
                   }`}
               >
-                <span className={`text-[12px] font-semibold block ${provider === p.id ? 'text-amber-400' : 'text-zinc-300'}`}>
+                <span className={`text-[12px] font-semibold block ${provider === p.id ? 'text-violet-400' : 'text-zinc-300'}`}>
                   {p.label}
                 </span>
                 <span className="text-[10px] text-zinc-600 block mt-0.5">{p.desc}</span>
                 {provider === p.id && (
-                  <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500" />
+                  <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-violet-500" />
                 )}
               </button>
             ))}
@@ -151,7 +151,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
             <button
               onClick={handleSave}
               disabled={!key.trim() || status === 'validating'}
-              className="h-9 px-5 rounded-lg text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all disabled:opacity-30"
+              className="velvet-btn-primary h-9 px-5 text-sm disabled:opacity-30"
             >
               {status === 'validating' ? 'Verification...' : 'Sauvegarder'}
             </button>

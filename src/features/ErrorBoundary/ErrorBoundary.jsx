@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component {
                         <div className="space-y-2">
                             <button
                                 onClick={() => window.location.reload()}
-                                className="w-full h-10 rounded-lg text-sm font-semibold bg-amber-500 text-zinc-900 hover:bg-amber-400 transition-colors"
+                                className="velvet-btn-primary w-full h-10 rounded-lg text-sm"
                             >
                                 Recharger la page
                             </button>

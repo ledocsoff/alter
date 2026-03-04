@@ -53,7 +53,7 @@ const ReferenceUpload = () => {
                     <img
                         src={img.dataUrl}
                         alt={`Ref ${i + 1}`}
-                        className="w-7 h-7 rounded-md object-cover border border-emerald-500/30 ring-1 ring-emerald-500/10"
+                        className="w-7 h-7 rounded-md object-cover border border-violet-500/30 ring-1 ring-violet-500/10"
                     />
                     <button
                         onClick={() => handleRemove(i)}
@@ -70,7 +70,7 @@ const ReferenceUpload = () => {
                     onClick={() => inputRef.current?.click()}
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
-                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20 hover:border-emerald-500/30"
+                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors border border-violet-500/20 hover:border-violet-500/30"
                     title="Uploader une image de reference pour la coherence du visage"
                 >
                     <span>📷</span>

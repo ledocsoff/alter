@@ -31,7 +31,7 @@ const EditableMatrix = ({ matrix, onChange }) => {
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={handleCommit}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCommit(); if (e.key === 'Escape') setEditingPath(null); }}
-                        className="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono rounded px-1.5 py-0.5 outline-none focus:border-amber-400 w-48"
+                        className="bg-violet-500/10 border border-violet-500/30 text-violet-300 text-[11px] font-mono rounded px-1.5 py-0.5 outline-none focus:border-violet-400 w-48"
                         placeholder="Taper une valeur..."
                     />
                 );
@@ -39,10 +39,10 @@ const EditableMatrix = ({ matrix, onChange }) => {
             return (
                 <span
                     onClick={() => handleStartEdit(path)}
-                    className="text-zinc-600 cursor-pointer hover:text-amber-400 hover:bg-amber-500/5 rounded px-1 py-0.5 transition-colors group"
+                    className="text-zinc-600 cursor-pointer hover:text-violet-400 hover:bg-violet-500/5 rounded px-1 py-0.5 transition-colors group"
                     title="Cliquer pour remplir"
                 >
-                    null <span className="text-[9px] text-zinc-700 group-hover:text-amber-500">✏️</span>
+                    null <span className="text-[9px] text-zinc-700 group-hover:text-violet-400">✏️</span>
                 </span>
             );
         }

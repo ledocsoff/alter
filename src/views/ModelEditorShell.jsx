@@ -176,7 +176,7 @@ const ModelEditorShell = ({ mode }) => {
           {inputMode === 'json' && (
             <button
               onClick={() => setShowTemplate(true)}
-              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
             >
               ✦ Template AI Studio
             </button>
@@ -197,7 +197,7 @@ const ModelEditorShell = ({ mode }) => {
           {/* MODEL NAME */}
           <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-amber-500/10">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-violet-500/10">
                 {modelName ? modelName.charAt(0).toUpperCase() : '?'}
               </div>
               <input
@@ -343,7 +343,7 @@ const ModelEditorShell = ({ mode }) => {
               <button
                 onClick={handleExtractFromPhotos}
                 disabled={photos.length === 0 || isExtracting}
-                className="mt-5 w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-400 hover:to-indigo-400 transition-all shadow-lg shadow-violet-500/10 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="mt-5 w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-400 hover:to-fuchsia-400 transition-all shadow-lg shadow-violet-500/10 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isExtracting ? (
                   <>
@@ -377,7 +377,7 @@ const ModelEditorShell = ({ mode }) => {
           {/* HELP */}
           <div className="mt-4 px-1">
             <div className="flex items-start gap-3 text-[11px] text-zinc-600">
-              <span className="text-amber-500/60 mt-0.5">i</span>
+              <span className="text-violet-400/60 mt-0.5">i</span>
               <p>
                 {inputMode === 'json' ? (
                   <>

@@ -84,7 +84,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                             placeholder="Filtrer..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-zinc-950 border border-zinc-800/40 text-zinc-300 text-[11px] rounded-md px-2.5 py-1 outline-none focus:border-zinc-600 transition-colors placeholder-zinc-700"
+                            className="velvet-input w-full text-[11px] px-2.5 py-1"
                         />
                     </div>
                 )}
@@ -110,10 +110,10 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                     <div className="flex items-center justify-between mb-0.5">
                                         <div className="flex items-center gap-1.5 min-w-0">
                                             {entry.modelName && (
-                                                <span className="text-[9px] text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.modelName}</span>
+                                                <span className="text-[9px] text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.modelName}</span>
                                             )}
                                             {entry.locationName && (
-                                                <span className="text-[9px] text-indigo-400/60 bg-indigo-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
+                                                <span className="text-[9px] text-fuchsia-400/60 bg-fuchsia-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
                                             )}
                                         </div>
                                         <span className="text-[9px] text-zinc-700 shrink-0">{formatTime(entry.timestamp)}</span>
@@ -136,7 +136,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                                 {onReuse && (
                                                     <button
                                                         onClick={() => { onReuse(entry.prompt); toast.info('Prompt reutilise'); }}
-                                                        className="text-[10px] text-amber-400 hover:text-amber-300 px-2 py-0.5 rounded-md hover:bg-amber-500/10 transition-colors"
+                                                        className="text-[10px] text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded-md hover:bg-violet-500/10 transition-colors"
                                                     >
                                                         ⚡ Reutiliser
                                                     </button>

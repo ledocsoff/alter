@@ -202,7 +202,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                   <p className="text-zinc-600 text-[11px] mb-3">Chaque generation dans la meme session renforce la coherence</p>
                   <button
                     onClick={handleGenerate}
-                    className="h-9 px-5 rounded-lg text-[12px] font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-zinc-900 hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/10 active:scale-[0.97]"
+                    className="velvet-btn-primary h-9 px-5 rounded-lg text-[12px] active:scale-[0.97]"
                   >
                     Generer
                   </button>
@@ -228,17 +228,17 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
           <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
             <div className="text-center">
               {batchProgress && (
-                <p className="text-[11px] text-indigo-400 font-semibold mb-2">
+                <p className="text-[11px] text-violet-400 font-semibold mb-2">
                   Batch {batchProgress.current}/{batchProgress.total}
                 </p>
               )}
               <div className="relative w-12 h-12 mx-auto mb-3">
                 <div className="absolute inset-0 rounded-full border-2 border-zinc-800"></div>
-                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-500 animate-spin"></div>
-                <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-orange-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-violet-500 animate-spin"></div>
+                <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-fuchsia-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
               <p className="text-zinc-400 text-[13px] font-medium mb-0.5">Generation...</p>
-              <span className="text-amber-500/60 text-[12px] font-mono tabular-nums">{elapsed}s</span>
+              <span className="text-violet-400/60 text-[12px] font-mono tabular-nums">{elapsed}s</span>
             </div>
           </div>
         )}
@@ -249,7 +249,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
             <div className="text-center max-w-xs px-4">
               <p className="text-red-400/80 text-[13px] font-medium mb-1">Erreur</p>
               <p className="text-zinc-500 text-[11px] mb-3 leading-relaxed">{errorMsg}</p>
-              <button onClick={handleGenerate} className="text-[11px] text-amber-500 hover:text-amber-400 font-medium">Reessayer</button>
+              <button onClick={handleGenerate} className="text-[11px] text-violet-400 hover:text-violet-300 font-medium">Reessayer</button>
             </div>
           </div>
         )}
@@ -268,7 +268,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
               <button
                 onClick={handleGenerate}
                 disabled={status === 'generating'}
-                className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
+                className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
               >
                 Regenerer
               </button>
@@ -277,7 +277,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                 <>
                   <button
                     onClick={() => setCompareMode(true)}
-                    className="text-[10px] font-medium text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
+                    className="text-[10px] font-medium text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
                   >
                     Comparer
                   </button>
@@ -317,8 +317,8 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                 key={img.id}
                 onClick={() => { setCurrentImage(img); setStatus('done'); }}
                 className={`w-9 h-9 rounded-md overflow-hidden shrink-0 border transition-all ${currentImage?.id === img.id
-                  ? 'border-amber-500/50 ring-1 ring-amber-500/20'
-                  : 'border-zinc-800/60 opacity-40 hover:opacity-100 hover:border-zinc-600'
+                  ? 'border-violet-500/50 ring-1 ring-violet-500/20'
+                  : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
                   }`}
               >
                 <img src={img.dataUrl} alt="" className="w-full h-full object-cover" />
@@ -335,7 +335,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
           <img src={currentImage.dataUrl} alt="Zoomed" className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl" />
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} className="h-8 px-3 rounded-lg text-[12px] font-medium bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm transition-colors">Telecharger</button>
-            <button onClick={() => setIsZoomed(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white bg-white/10 hover:bg-white/20 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button onClick={() => setIsZoomed(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white bg-white/10 hover:bg-white/20 transition-colors"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
           </div>
         </div>
       )}

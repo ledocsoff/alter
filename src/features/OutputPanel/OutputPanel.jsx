@@ -106,7 +106,7 @@ const OutputPanel = ({ meta = {} }) => {
           <h2 className="text-sm font-semibold text-zinc-200">Output</h2>
           <button
             onClick={() => { setShowHistory(!showHistory); setBatchResults(null); }}
-            className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${showHistory ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
+            className={`text-[10px] font-medium px-2 py-0.5 rounded transition-colors ${showHistory ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
           >
             Historique
           </button>
@@ -121,18 +121,17 @@ const OutputPanel = ({ meta = {} }) => {
           {isManuallyEdited && (
             <button
               onClick={handleRegenerate}
-              className="text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors text-amber-500 hover:bg-amber-500/8"
+              className="text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors text-violet-400 hover:bg-violet-500/8"
             >
               Reset
             </button>
           )}
           <button
             onClick={() => handleCopy()}
-            className={`text-[11px] px-3 py-1 rounded-md font-semibold transition-all ${
-              copied
+            className={`text-[11px] px-3 py-1 rounded-md font-semibold transition-all ${copied
                 ? 'bg-emerald-500/15 text-emerald-400'
                 : 'bg-zinc-100 text-zinc-900 hover:bg-white'
-            }`}
+              }`}
           >
             {copied ? 'Copie' : 'Copier'}
           </button>
@@ -168,7 +167,7 @@ const OutputPanel = ({ meta = {} }) => {
         <div className="mb-3 shrink-0 max-h-44 overflow-y-auto custom-scrollbar bg-zinc-950/80 border border-zinc-800/60 rounded-lg p-2 space-y-1">
           <div className="flex items-center justify-between px-1 mb-1">
             <span className="text-[11px] font-medium text-zinc-400">5 variations generees</span>
-            <button onClick={() => setBatchResults(null)} className="text-[10px] text-zinc-600 hover:text-zinc-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button onClick={() => setBatchResults(null)} className="text-[10px] text-zinc-600 hover:text-zinc-300"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg></button>
           </div>
           {batchResults.map((v, i) => (
             <div key={i} className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-zinc-800/40 transition-colors">
@@ -193,17 +192,16 @@ const OutputPanel = ({ meta = {} }) => {
           value={editedPrompt}
           onChange={(e) => handlePromptEdit(e.target.value)}
           spellCheck={false}
-          className={`flex-1 w-full bg-zinc-950 border rounded-lg text-zinc-400 p-3 font-mono text-[11px] leading-relaxed focus:outline-none focus:border-zinc-600 resize-none custom-scrollbar transition-colors ${
-            isManuallyEdited
-              ? isValidJSON ? 'border-amber-500/20' : 'border-red-500/30'
+          className={`flex-1 w-full bg-zinc-950 border rounded-lg text-zinc-400 p-3 font-mono text-[11px] leading-relaxed focus:outline-none focus:border-zinc-600 resize-none custom-scrollbar transition-colors ${isManuallyEdited
+              ? isValidJSON ? 'border-violet-500/20' : 'border-red-500/30'
               : 'border-zinc-800/60'
-          }`}
+            }`}
         />
         <div className="flex justify-between items-center mt-1.5 text-[10px] text-zinc-700">
           <span>{lineCount} lignes</span>
           <div className="flex gap-3">
             {isManuallyEdited && !isValidJSON && <span className="text-red-400/80">JSON invalide</span>}
-            {isManuallyEdited && isValidJSON && <span className="text-amber-500/40">modifie</span>}
+            {isManuallyEdited && isValidJSON && <span className="text-violet-400/40">modifie</span>}
             <span className="text-zinc-800">Cmd+C copie</span>
           </div>
         </div>

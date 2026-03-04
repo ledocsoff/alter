@@ -26,13 +26,13 @@ const LockScore = ({ location }) => {
                     <div
                         key={i}
                         className={`w-1.5 h-3.5 rounded-sm transition-colors ${i < filled
-                            ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
+                            ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-violet-400' : 'bg-zinc-600'
                             : 'bg-zinc-800/60'
                             }`}
                     />
                 ))}
             </div>
-            <span className={`text-[10px] font-semibold ${filled >= 5 ? 'text-emerald-400/80' : filled >= 3 ? 'text-amber-400/80' : 'text-zinc-600'
+            <span className={`text-[10px] font-semibold ${filled >= 5 ? 'text-emerald-400/80' : filled >= 3 ? 'text-violet-400/80' : 'text-zinc-600'
                 }`}>{pct}%</span>
         </div>
     );
@@ -198,11 +198,11 @@ const LocationsAndSandboxView = () => {
                         </div>
 
                         {/* FORM */}
-                        <div className={`velvet-card rounded-xl p-5 mb-10 animate-fade-in-up transition-all ${isEditing ? '!border-amber-500/20 !bg-amber-500/[0.02]' : ''}`}>
+                        <div className={`velvet-card rounded-xl p-5 mb-10 animate-fade-in-up transition-all ${isEditing ? '!border-violet-500/20 !bg-violet-500/[0.02]' : ''}`}>
                             <div className="flex justify-between items-center mb-5">
                                 <h3 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
                                     {isEditing ? (
-                                        <><EditIcon size={14} className="text-amber-400" /> Modifier le lieu</>
+                                        <><EditIcon size={14} className="text-violet-400" /> Modifier le lieu</>
                                     ) : (
                                         <><PlusIcon size={14} className="text-violet-400" /> Nouveau lieu</>
                                     )}
@@ -337,7 +337,7 @@ const LocationsAndSandboxView = () => {
                                         onClick={handleSaveLocation}
                                         disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
                                         className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
-                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400 hover:shadow-lg hover:shadow-amber-500/20'
+                                            ? 'bg-violet-500 text-white hover:bg-violet-400 hover:shadow-lg hover:shadow-violet-500/20'
                                             : 'velvet-btn-primary'
                                             }`}
                                     >

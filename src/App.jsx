@@ -17,7 +17,7 @@ const GenerationView = lazy(() => import('./views/GenerationView'));
 
 const LoadingFallback = () => (
   <div className="flex-1 flex items-center justify-center">
-    <div className="w-5 h-5 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin"></div>
+    <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin"></div>
   </div>
 );
 
