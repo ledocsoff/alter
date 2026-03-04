@@ -55,7 +55,7 @@ function createWindow() {
         backgroundColor: '#09090b',       // Match app background
         show: false,                      // Show when ready
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, 'preload.cjs'),
             nodeIntegration: false,
             contextIsolation: true,
         },
