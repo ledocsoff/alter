@@ -140,12 +140,21 @@ const GenerationView = () => {
         }));
     }, [isSandbox, setScene]);
 
+    // Lightweight djb2 hash for model fingerprinting
+    const modelHash = (() => {
+        const str = JSON.stringify(currentModel || {});
+        let hash = 5381;
+        for (let i = 0; i < str.length; i++) hash = ((hash << 5) + hash) + str.charCodeAt(i);
+        return (hash >>> 0).toString(36);
+    })();
+
     const meta = {
         modelName: currentModel?.name || '',
         locationName: isSandbox ? 'Sandbox' : currentLocation?.name || '',
         accountHandle: currentAccount?.handle || '',
         scene: scene,
         seed: scene.seed,
+        modelHash,
     };
 
     const handleGenerateImage = useCallback(() => {

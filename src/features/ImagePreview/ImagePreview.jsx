@@ -66,7 +66,8 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     try {
       const aspectRatio = anchorMatrix?.aspect_ratio_and_output?.ratio === '1:1' ? '1:1' : '9:16';
       const fullHistory = [...refAnchor, ...conversationHistory];
-      const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory);
+      const seed = galleryMetaRef.current?.seed || null;
+      const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory, { seed });
 
       const img = { ...result, id: `img_${Date.now()}`, timestamp: Date.now(), prompt: promptToSend };
       setCurrentImage(img);
@@ -83,9 +84,14 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
         window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
       } catch { /* silent — gallery save is best-effort */ }
 
-      // Auto-save prompt to history
+      // Auto-save prompt to history (enriched with context)
       try {
-        savePromptToHistory(promptToSend, galleryMetaRef.current);
+        const turnCount = Math.floor(conversationHistory.length / 2);
+        savePromptToHistory(promptToSend, {
+          ...galleryMetaRef.current,
+          refCount: referenceImages.length,
+          turnCount,
+        });
       } catch { /* silent */ }
 
       // Notify parent for gallery refresh

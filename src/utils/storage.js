@@ -518,6 +518,7 @@ export const saveToGallery = async (imageData, meta = {}) => {
                 locationName: meta.locationName || 'Sandbox',
                 accountHandle: meta.accountHandle || '',
                 seed: meta.seed || null,
+                modelHash: meta.modelHash || null,
             }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

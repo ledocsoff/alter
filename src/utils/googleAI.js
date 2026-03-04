@@ -57,10 +57,10 @@ export const validateApiKey = async (apiKey) => {
 };
 
 // conversationHistory: array of { role: 'user'|'model', parts: [...] }
-export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', conversationHistory = []) => {
+export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', conversationHistory = [], options = {}) => {
   return withRetry(async () => {
     const historyTurns = Math.floor(conversationHistory.length / 2);
-    logger.info('generation', `Lancement generation (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
+    logger.info('generation', `Lancement génération (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
       model: MODEL_ID,
       aspectRatio,
       historyTurns,
@@ -71,6 +71,18 @@ export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', co
       ...conversationHistory,
       { role: 'user', parts: [{ text: promptText }] },
     ];
+
+    const generationConfig = {
+      responseModalities: ['IMAGE'],
+      imageConfig: {
+        aspectRatio: aspectRatio,
+      },
+    };
+
+    // Pass seed at API level for best-effort deterministic generation
+    if (options.seed) {
+      generationConfig.seed = Number(options.seed);
+    }
 
     const body = {
       system_instruction: {
@@ -92,12 +104,7 @@ ABSOLUTE RULES — VIOLATION IS FORBIDDEN:
 OUTPUT: Generate a single photorealistic image matching ALL specifications above.` }]
       },
       contents,
-      generationConfig: {
-        responseModalities: ['IMAGE'],
-        imageConfig: {
-          aspectRatio: aspectRatio,
-        },
-      },
+      generationConfig,
     };
 
     const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;

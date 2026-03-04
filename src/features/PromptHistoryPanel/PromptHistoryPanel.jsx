@@ -33,7 +33,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
 
     const handleCopy = (prompt) => {
         navigator.clipboard.writeText(prompt);
-        toast.success('Prompt copie');
+        toast.success('Prompt copié');
     };
 
     const formatTime = (ts) => {
@@ -97,7 +97,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                             <div className="text-center">
                                 <div className="mb-2 opacity-20"><FileTextIcon size={28} /></div>
                                 <p className="text-zinc-500 text-[12px] font-medium">Aucun historique</p>
-                                <p className="text-zinc-700 text-[11px] mt-0.5">Les prompts generes apparaitront ici</p>
+                                <p className="text-zinc-700 text-[11px] mt-0.5">Les prompts générés apparaîtront ici</p>
                             </div>
                         </div>
                     ) : (
@@ -115,6 +115,12 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                             )}
                                             {entry.locationName && (
                                                 <span className="text-[9px] text-fuchsia-400/60 bg-fuchsia-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
+                                            )}
+                                            {entry.turnCount > 0 && (
+                                                <span className="text-[9px] text-emerald-400/60 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">Tour {entry.turnCount + 1}</span>
+                                            )}
+                                            {entry.refCount > 0 && (
+                                                <span className="text-[9px] text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.refCount} ref{entry.refCount > 1 ? 's' : ''}</span>
                                             )}
                                         </div>
                                         <span className="text-[9px] text-zinc-700 shrink-0">{formatTime(entry.timestamp)}</span>
@@ -136,10 +142,10 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                                 </button>
                                                 {onReuse && (
                                                     <button
-                                                        onClick={() => { onReuse(entry.prompt); toast.info('Prompt reutilise'); }}
+                                                        onClick={() => { onReuse(entry.prompt); toast.info('Prompt réutilisé'); }}
                                                         className="text-[10px] text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded-md hover:bg-violet-500/10 transition-colors"
                                                     >
-                                                        <ZapIcon size={10} className="inline -mt-px" /> Reutiliser
+                                                        <ZapIcon size={10} className="inline -mt-px" /> Réutiliser
                                                     </button>
                                                 )}
                                             </div>
