@@ -391,7 +391,7 @@ export const savePromptToHistory = (promptJSON, meta = {}) => {
         id: `hist_${Date.now()}`,
         prompt: promptJSON,
         modelName: meta.modelName || '',
-        locationName: meta.locationName || 'Sandbox',
+        locationName: meta.locationName || 'Lieu inconnu',
         accountHandle: meta.accountHandle || '',
         timestamp: Date.now(),
     };
@@ -551,7 +551,7 @@ export const saveToGallery = async (imageData, meta = {}) => {
                 prompt: meta.prompt || '',
                 scene: meta.scene || {},
                 modelName: meta.modelName || '',
-                locationName: meta.locationName || 'Sandbox',
+                locationName: meta.locationName || 'Lieu inconnu',
                 accountHandle: meta.accountHandle || '',
                 seed: meta.seed || null,
                 modelHash: meta.modelHash || null,
