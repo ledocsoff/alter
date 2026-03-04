@@ -74,12 +74,13 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
       setGenCount(prev => prev + 1);
       setStatus('done');
 
-      // Auto-save to gallery
+      // Auto-save to gallery (now async — server filesystem)
       try {
-        saveToGallery(
+        await saveToGallery(
           { base64: result.imageBase64, mimeType: result.mimeType },
           { ...galleryMetaRef.current, prompt: promptToSend }
         );
+        window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
       } catch { /* silent — gallery save is best-effort */ }
 
       // Auto-save prompt to history

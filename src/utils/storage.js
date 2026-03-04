@@ -434,69 +434,73 @@ export const getLocationLockScore = (location) => {
 };
 
 // ============================================
-// GALERIE D'IMAGES
+// GALERIE D'IMAGES — Server filesystem API
 // ============================================
-const MAX_GALLERY = 50;
 
-export const getGallery = () => {
+export const getGallery = async () => {
     try {
-        const data = localStorage.getItem(GALLERY_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch { return []; }
-};
-
-export const saveToGallery = (imageData, meta = {}) => {
-    const gallery = getGallery();
-    const entry = {
-        id: `gal_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        base64: imageData.base64,
-        mimeType: imageData.mimeType || 'image/png',
-        prompt: meta.prompt || '',
-        scene: meta.scene || {},
-        modelName: meta.modelName || '',
-        locationName: meta.locationName || 'Sandbox',
-        accountHandle: meta.accountHandle || '',
-        seed: meta.seed || null,
-        timestamp: Date.now(),
-        starred: false,
-    };
-    gallery.unshift(entry);
-    if (gallery.length > MAX_GALLERY) gallery.length = MAX_GALLERY;
-    try {
-        localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
-        syncToServer();
-    } catch (e) {
-        // localStorage quota exceeded — remove oldest entries
-        while (gallery.length > 5) {
-            gallery.pop();
-            try {
-                localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
-                syncToServer();
-                break;
-            } catch { /* continue shrinking */ }
-        }
+        const res = await fetch(`${API_BASE}/api/gallery`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur chargement galerie:', err.message);
+        return [];
     }
-    return gallery;
 };
 
-export const toggleGalleryStar = (imageId) => {
-    const gallery = getGallery();
-    const item = gallery.find(g => g.id === imageId);
-    if (item) item.starred = !item.starred;
-    localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
-    syncToServer();
-    return gallery;
+export const saveToGallery = async (imageData, meta = {}) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/gallery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                base64: imageData.base64,
+                mimeType: imageData.mimeType || 'image/png',
+                prompt: meta.prompt || '',
+                scene: meta.scene || {},
+                modelName: meta.modelName || '',
+                locationName: meta.locationName || 'Sandbox',
+                accountHandle: meta.accountHandle || '',
+                seed: meta.seed || null,
+            }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur sauvegarde galerie:', err.message);
+        return null;
+    }
 };
 
-export const deleteFromGallery = (imageId) => {
-    const gallery = getGallery().filter(g => g.id !== imageId);
-    localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
-    syncToServer();
-    return gallery;
+export const toggleGalleryStar = async (imageId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/gallery/${imageId}/star`, { method: 'PATCH' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur star galerie:', err.message);
+        return null;
+    }
 };
 
-export const clearGallery = () => {
-    localStorage.removeItem(GALLERY_KEY);
-    syncToServer();
-    return [];
+export const deleteFromGallery = async (imageId) => {
+    try {
+        const res = await fetch(`${API_BASE}/api/gallery/${imageId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur suppression galerie:', err.message);
+        return null;
+    }
+};
+
+export const clearGallery = async () => {
+    try {
+        const res = await fetch(`${API_BASE}/api/gallery`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (err) {
+        console.warn('[Velvet] Erreur vidage galerie:', err.message);
+        return null;
+    }
 };

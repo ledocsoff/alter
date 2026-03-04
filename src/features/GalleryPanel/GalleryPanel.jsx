@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useToast } from '../../store/ToastContext';
 import { getGallery, deleteFromGallery, toggleGalleryStar, clearGallery } from '../../utils/storage';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
@@ -6,11 +6,28 @@ import { ImageIcon } from '../../components/Icons';
 
 const GalleryPanel = () => {
     const toast = useToast();
-    const [gallery, setGallery] = useState(() => getGallery());
+    const [gallery, setGallery] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all | starred
     const [selectedId, setSelectedId] = useState(null);
     const [pendingDeleteId, setPendingDeleteId] = useState(null);
     const [confirmClear, setConfirmClear] = useState(false);
+
+    // Load gallery from server on mount
+    const loadGallery = useCallback(async () => {
+        const data = await getGallery();
+        setGallery(data);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => { loadGallery(); }, [loadGallery]);
+
+    // Allow parent to trigger refresh via custom event
+    useEffect(() => {
+        const handler = () => loadGallery();
+        window.addEventListener('velvet:gallery-updated', handler);
+        return () => window.removeEventListener('velvet:gallery-updated', handler);
+    }, [loadGallery]);
 
     const filtered = useMemo(() => {
         if (filter === 'starred') return gallery.filter(g => g.starred);
@@ -19,9 +36,10 @@ const GalleryPanel = () => {
 
     const selected = useMemo(() => gallery.find(g => g.id === selectedId), [gallery, selectedId]);
 
-    const handleDelete = (id) => {
+    const handleDelete = async (id) => {
         if (pendingDeleteId === id) {
-            setGallery(deleteFromGallery(id));
+            await deleteFromGallery(id);
+            await loadGallery();
             if (selectedId === id) setSelectedId(null);
             setPendingDeleteId(null);
             toast.success('Image supprimee');
@@ -31,16 +49,18 @@ const GalleryPanel = () => {
         }
     };
 
-    const handleStar = (id) => {
-        setGallery(toggleGalleryStar(id));
+    const handleStar = async (id) => {
+        await toggleGalleryStar(id);
+        await loadGallery();
     };
 
     const handleClear = () => {
         setConfirmClear(true);
     };
 
-    const executeClear = () => {
-        setGallery(clearGallery());
+    const executeClear = async () => {
+        await clearGallery();
+        setGallery([]);
         setSelectedId(null);
         setConfirmClear(false);
         toast.success('Galerie videe');
@@ -49,7 +69,7 @@ const GalleryPanel = () => {
     const handleDownload = (img) => {
         const a = document.createElement('a');
         a.href = `data:${img.mimeType};base64,${img.base64}`;
-        a.download = `nana_${img.modelName || 'gen'}_${new Date(img.timestamp).toISOString().slice(0, 10)}.png`;
+        a.download = `velvet_${img.modelName || 'gen'}_${new Date(img.timestamp).toISOString().slice(0, 10)}.png`;
         a.click();
     };
 
@@ -57,6 +77,15 @@ const GalleryPanel = () => {
         const d = new Date(ts);
         return `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
     };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     // Lightbox view
     if (selected) {
