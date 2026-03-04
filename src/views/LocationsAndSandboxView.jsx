@@ -84,10 +84,10 @@ const LocationsAndSandboxView = () => {
 
     const handleSaveLocation = async () => {
         if (!newLocName.trim()) return;
-        const finalEnvironment = isCustomEnv ? newLocEnvCustom.trim() : newLocEnvDrop;
+        const finalEnvironment = newLocEnvCustom.trim() || (isCustomEnv ? '' : newLocEnvDrop);
         if (!finalEnvironment) return;
 
-        const isCreating = locFormMode === 'create';
+        const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
 
         const locationData = {
             name: newLocName.trim(),
@@ -191,15 +191,16 @@ const LocationsAndSandboxView = () => {
         setNewLocNegativePrompt('');
     };
 
-    const isEditing = locFormMode !== 'create';
+    const isEditing = locFormMode !== 'create' && locFormMode !== 'review' && locFormMode !== 'manual';
 
     const handleAutoFill = async () => {
-        if (!newLocName.trim()) { toast.error('Entrez un nom de lieu d\'abord'); return; }
+        if (!newLocName.trim()) { toast.error('Entrez une description d\'abord'); return; }
         const apiKey = getApiKey();
-        if (!apiKey) { toast.error('Cle API requise'); return; }
+        if (!apiKey) { toast.error('Clé API requise'); return; }
         setIsAutoFilling(true);
         try {
             const result = await autoFillLocation(apiKey, newLocName.trim());
+            if (result.name) setNewLocName(result.name);
             if (result.environment) { setIsCustomEnv(true); setNewLocEnvCustom(result.environment); }
             if (result.lighting) setNewLocLighting(result.lighting);
             if (result.vibe) setNewLocVibe(result.vibe);
@@ -207,7 +208,8 @@ const LocationsAndSandboxView = () => {
             if (result.anchor_details) setNewLocAnchorDetails(result.anchor_details);
             if (result.color_palette) setNewLocColorPalette(result.color_palette);
             if (result.negative_prompt) setNewLocNegativePrompt(result.negative_prompt);
-            toast.success('Lieu auto-rempli par l\'IA');
+            setLocFormMode('review');
+            toast.success('Lieu rempli par l\'IA — vérifie et enregistre');
         } catch (err) {
             toast.error(`Auto-fill échoué: ${err.message}`);
         } finally {
@@ -237,147 +239,175 @@ const LocationsAndSandboxView = () => {
                                     {isEditing ? (
                                         <><EditIcon size={14} className="text-violet-400" /> Modifier le lieu</>
                                     ) : (
-                                        <><PlusIcon size={14} className="text-violet-400" /> Nouveau lieu</>
+                                        <><SparklesIcon size={14} className="text-violet-400" /> Nouveau lieu</>
                                     )}
                                 </h3>
                                 <div className="flex items-center gap-2">
-                                    {!isEditing && newLocName.trim() && (
-                                        <button
-                                            onClick={handleAutoFill}
-                                            disabled={isAutoFilling}
-                                            className={`velvet-btn-primary text-[11px] py-1.5 px-3 flex items-center gap-1.5 ${isAutoFilling ? 'opacity-50 cursor-wait' : ''}`}
-                                        >
-                                            <SparklesIcon size={12} />
-                                            {isAutoFilling ? 'Analyse...' : 'Auto-fill IA'}
-                                        </button>
-                                    )}
                                     {isEditing && (
                                         <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
+                                    )}
+                                    {!isEditing && locFormMode === 'create' && newLocName.trim() && (
+                                        <button onClick={() => { setIsCustomEnv(true); setLocFormMode('manual'); }} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
+                                            Mode manuel →
+                                        </button>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* STEP 1: AI DESCRIPTION INPUT (create mode only, before AI fill) */}
+                            {!isEditing && locFormMode === 'create' && (
+                                <div className="space-y-3">
                                     <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Nom du lieu</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Ex: Plage Bali, Café Paris..."
-                                            className="velvet-input w-full"
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                            Décris ton lieu en français
+                                        </label>
+                                        <textarea
+                                            placeholder="Ex: ma chambre avec un lit défait et des fairy lights, un petit café parisien avec terrasse..."
+                                            className="velvet-input w-full resize-none text-[13px]"
                                             value={newLocName}
                                             onChange={(e) => setNewLocName(e.target.value)}
+                                            rows={2}
                                         />
                                     </div>
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Environnement</span>
-                                            <button
-                                                onClick={() => setIsCustomEnv(!isCustomEnv)}
-                                                className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${isCustomEnv ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}
-                                            >
-                                                {isCustomEnv ? '← Preset' : 'Custom →'}
-                                            </button>
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={handleAutoFill}
+                                            disabled={isAutoFilling || !newLocName.trim()}
+                                            className={`velvet-btn-primary text-sm py-2.5 px-6 flex items-center gap-2 ${isAutoFilling ? 'opacity-50 cursor-wait' : ''}`}
+                                        >
+                                            {isAutoFilling ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                    Analyse en cours...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <SparklesIcon size={14} />
+                                                    Créer avec l'IA
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 2: FULL FORM (pre-filled after AI or in edit/manual mode) */}
+                            {(isEditing || locFormMode === 'manual' || locFormMode === 'review') && (
+                                <div className="space-y-4">
+                                    {locFormMode === 'review' && (
+                                        <div className="p-3 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] mb-2">
+                                            <p className="text-[12px] text-emerald-400 font-medium">✅ L'IA a rempli les champs ci-dessous. Vérifie et ajuste si besoin, puis enregistre.</p>
                                         </div>
-                                        {isCustomEnv ? (
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Nom du lieu</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Ex: Chambre Étudiante..."
+                                                className="velvet-input w-full"
+                                                value={newLocName}
+                                                onChange={(e) => setNewLocName(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Environnement</label>
                                             <textarea
-                                                placeholder="Description detaillee en anglais..."
+                                                placeholder="Description détaillée en anglais..."
                                                 value={newLocEnvCustom}
                                                 onChange={(e) => setNewLocEnvCustom(e.target.value)}
                                                 rows={2}
                                                 className="velvet-input w-full resize-none"
                                             />
-                                        ) : (
-                                            <select value={newLocEnvDrop} onChange={(e) => setNewLocEnvDrop(e.target.value)} className="velvet-input w-full">
-                                                {SCENE_OPTIONS.environment.map(env => (
-                                                    <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</label>
+                                            <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
+                                                <option value="">Libre</option>
+                                                {SCENE_OPTIONS.lighting.map(l => (
+                                                    <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
                                                 ))}
                                             </select>
-                                        )}
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
+                                            <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
+                                                <option value="">Libre</option>
+                                                {SCENE_OPTIONS.vibe.map(v => (
+                                                    <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
+                                            <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
+                                                <option value="">Libre</option>
+                                                {TIME_OF_DAY_OPTIONS.map(t => (
+                                                    <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Eclairage</label>
-                                        <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
-                                            <option value="">Libre</option>
-                                            {SCENE_OPTIONS.lighting.map(l => (
-                                                <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                            ))}
-                                        </select>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                                Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
+                                            </label>
+                                            <textarea
+                                                placeholder="Objets récurrents: pink LED strip, grey duvet, cactus on nightstand..."
+                                                value={newLocAnchorDetails}
+                                                onChange={(e) => setNewLocAnchorDetails(e.target.value)}
+                                                rows={3}
+                                                className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
+                                            <textarea
+                                                placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
+                                                value={newLocColorPalette}
+                                                onChange={(e) => setNewLocColorPalette(e.target.value)}
+                                                rows={3}
+                                                className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
-                                        <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
-                                            <option value="">Libre</option>
-                                            {SCENE_OPTIONS.vibe.map(v => (
-                                                <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
-                                        <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
-                                            <option value="">Libre</option>
-                                            {TIME_OF_DAY_OPTIONS.map(t => (
-                                                <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                                            Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
+                                            Negative prompt <span className="text-zinc-600 normal-case font-normal">éléments à éviter</span>
                                         </label>
                                         <textarea
-                                            placeholder="Objets récurrents: pink LED strip, grey duvet, cactus on nightstand..."
-                                            value={newLocAnchorDetails}
-                                            onChange={(e) => setNewLocAnchorDetails(e.target.value)}
-                                            rows={3}
+                                            placeholder="tattoo, piercing, neon lights, cluttered background..."
+                                            value={newLocNegativePrompt}
+                                            onChange={(e) => setNewLocNegativePrompt(e.target.value)}
+                                            rows={2}
                                             className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
-                                        <textarea
-                                            placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
-                                            value={newLocColorPalette}
-                                            onChange={(e) => setNewLocColorPalette(e.target.value)}
-                                            rows={3}
-                                            className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
-                                        />
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        {(locFormMode === 'review' || locFormMode === 'manual') && (
+                                            <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
+                                        )}
+                                        <button
+                                            onClick={handleSaveLocation}
+                                            disabled={!newLocName.trim() || !newLocEnvCustom.trim()}
+                                            className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
+                                                ? 'bg-violet-500 text-white hover:bg-violet-400 hover:shadow-lg hover:shadow-violet-500/20'
+                                                : 'velvet-btn-primary'
+                                                }`}
+                                        >
+                                            {isEditing ? 'Mettre à jour' : 'Enregistrer'}
+                                        </button>
                                     </div>
                                 </div>
-
-                                <div>
-                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                                        Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span>
-                                    </label>
-                                    <textarea
-                                        placeholder="tattoo, piercing, neon lights, cluttered background..."
-                                        value={newLocNegativePrompt}
-                                        onChange={(e) => setNewLocNegativePrompt(e.target.value)}
-                                        rows={2}
-                                        className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
-                                    />
-                                </div>
-
-                                <div className="flex justify-end pt-2">
-                                    <button
-                                        onClick={handleSaveLocation}
-                                        disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
-                                        className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
-                                            ? 'bg-violet-500 text-white hover:bg-violet-400 hover:shadow-lg hover:shadow-violet-500/20'
-                                            : 'velvet-btn-primary'
-                                            }`}
-                                    >
-                                        {isEditing ? 'Mettre à jour' : 'Enregistrer'}
-                                    </button>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* AI PRESETS LOADER */}

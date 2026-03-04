@@ -417,7 +417,7 @@ export const extractModelFromPhotos = async (apiKey, photos) => {
 // ============================================
 const LOCATION_AUTOFILL_PROMPT = `You are an expert at creating detailed photoshoot location descriptions for AI image generation.
 
-Given a location name/concept, generate ALL the attributes needed for a consistent photoshoot location.
+The user will describe a location in French (it can be a simple name like "chambre" or a full description like "ma chambre d'étudiante avec un lit blanc et des fairy lights"). Generate ALL the attributes needed for a consistent photoshoot location.
 
 IMPORTANT: For "lighting" and "vibe", you MUST pick from these EXACT values:
 
@@ -450,6 +450,7 @@ TIME_OF_DAY (pick one or leave empty):
 
 Output a JSON object with these EXACT keys:
 {
+  "name": "short French name for this location (2-4 words max, e.g. 'Chambre Étudiante', 'Café Parisien')",
   "environment": "detailed environment description in English (be very specific about objects, textures, materials)",
   "lighting": "one of the EXACT lighting values above",
   "vibe": "one of the EXACT vibe values above",
@@ -461,10 +462,11 @@ Output a JSON object with these EXACT keys:
 
 RULES:
 1. Output ONLY the JSON, no markdown, no explanation.
-2. "environment" should be 15-30 words, very descriptive and specific.
-3. "anchor_details" should list 3-5 specific recurring visual elements.
-4. "negative_prompt" should list 3-5 things to explicitly avoid.
-5. All values in English.`;
+2. "name" should be a short, catchy French name for the location (2-4 words).
+3. "environment" should be 15-30 words, very descriptive and specific.
+4. "anchor_details" should list 3-5 specific recurring visual elements.
+5. "negative_prompt" should list 3-5 things to explicitly avoid.
+6. All values in English EXCEPT "name" which must be in French.`;
 
 /**
  * Auto-fill location attributes from a name/concept via Gemini.
