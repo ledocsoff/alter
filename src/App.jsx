@@ -92,21 +92,33 @@ const AppLayout = ({ children }) => {
   useEffect(() => {
     let cancelled = false;
     let interval;
-    const ping = () => fetch(`${apiBase}/api/health`).then(() => true).catch(() => false);
+    let failCount = 0;
+    const ping = async () => {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const r = await fetch(`${apiBase}/api/health`, { signal: ctrl.signal });
+        clearTimeout(timer);
+        return r.ok;
+      } catch { return false; }
+    };
 
     // Startup: retry every 2s for up to 15s (server may be booting in Electron)
     const startup = async () => {
       for (let i = 0; i < 8; i++) {
         if (cancelled) return;
         const ok = await ping();
-        if (ok) { setServerOnline(true); break; }
+        if (ok) { setServerOnline(true); failCount = 0; break; }
         if (i === 7) { setServerOnline(false); break; }
         await new Promise(r => setTimeout(r, 2000));
       }
-      // Then check every 30s
+      // Then check every 30s — require 3 consecutive fails before going offline
       interval = setInterval(async () => {
         const ok = await ping();
-        if (!cancelled) setServerOnline(ok);
+        if (!cancelled) {
+          if (ok) { failCount = 0; setServerOnline(true); }
+          else { failCount++; if (failCount >= 3) setServerOnline(false); }
+        }
       }, 30000);
     };
     startup();

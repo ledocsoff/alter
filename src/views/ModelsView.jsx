@@ -73,7 +73,7 @@ const ModelsView = () => {
   const handleSelect = (m) => {
     const { id, accounts, ...traits } = m;
     setModel({ ...traits, name: m.name });
-    navigate(`/ models / ${id}/accounts`);
+    navigate(`/models/${id}/accounts`);
   };
 
   const lastSession = getLastSession();
