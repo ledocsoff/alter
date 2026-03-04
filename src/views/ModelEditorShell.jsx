@@ -6,7 +6,6 @@ import { getSavedModels, saveModelData, getApiKey, uploadModelRefs, getModelRefs
 import { extractModelFromPhotos } from '../utils/googleAI';
 import { compressImage } from '../utils/imageCompression';
 import { DEFAULT_MODEL } from '../constants/modelOptions';
-import ModelTemplateModal from '../features/ModelTemplateModal/ModelTemplateModal';
 import { SparklesIcon, FileTextIcon, CameraIcon } from '../components/Icons';
 
 const ModelEditorShell = ({ mode }) => {
@@ -17,8 +16,7 @@ const ModelEditorShell = ({ mode }) => {
 
   const [modelName, setModelName] = useState('');
   const [jsonText, setJsonText] = useState('');
-  const [showTemplate, setShowTemplate] = useState(false);
-  const [inputMode, setInputMode] = useState('json'); // 'json' | 'photo'
+  const [inputMode, setInputMode] = useState(mode === 'edit' ? 'json' : 'photo'); // photo-first for creation
   const [photos, setPhotos] = useState([]); // { file, preview, base64, mimeType }
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef(null);
@@ -242,14 +240,6 @@ const ModelEditorShell = ({ mode }) => {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {inputMode === 'json' && (
-            <button
-              onClick={() => setShowTemplate(true)}
-              className="h-8 px-3 rounded-lg text-[12px] font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
-            >
-              <SparklesIcon size={12} className="inline" /> Template AI Studio
-            </button>
-          )}
           <button
             onClick={handleSave}
             disabled={!jsonStatus.valid || !modelName.trim()}
@@ -281,17 +271,8 @@ const ModelEditorShell = ({ mode }) => {
             </div>
           </div>
 
-          {/* MODE TOGGLE */}
+          {/* MODE TOGGLE — Photo first */}
           <div className="flex gap-1 p-1 bg-zinc-900/80 rounded-lg border border-zinc-800/60 mb-4">
-            <button
-              onClick={() => setInputMode('json')}
-              className={`flex-1 text-[12px] font-semibold py-2 rounded-md transition-all ${inputMode === 'json'
-                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-            >
-              <FileTextIcon size={13} className="inline -mt-px" /> Coller le JSON
-            </button>
             <button
               onClick={() => setInputMode('photo')}
               className={`flex-1 text-[12px] font-semibold py-2 rounded-md transition-all ${inputMode === 'photo'
@@ -300,6 +281,15 @@ const ModelEditorShell = ({ mode }) => {
                 }`}
             >
               <CameraIcon size={13} className="inline -mt-px" /> Extraire depuis photo
+            </button>
+            <button
+              onClick={() => setInputMode('json')}
+              className={`flex-1 text-[12px] font-semibold py-2 rounded-md transition-all ${inputMode === 'json'
+                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+            >
+              <FileTextIcon size={13} className="inline -mt-px" /> Coller le JSON
             </button>
           </div>
 
@@ -361,8 +351,8 @@ const ModelEditorShell = ({ mode }) => {
               <div className="mb-4">
                 <h2 className="text-sm font-semibold text-zinc-200">Extraction depuis photos</h2>
                 <p className="text-[12px] text-zinc-600 mt-0.5">
-                  Uploadez 1 à 5 photos de la modèle. Gemini analysera les images et extraira automatiquement
-                  le profil physique complet en JSON.
+                  Uploadez 1 à 5 photos de la modèle. Gemini extraira le profil physique en JSON.
+                  <span className="text-violet-400/80"> Ces photos serviront aussi d'ancrage visuel pour chaque génération.</span>
                 </p>
               </div>
 
@@ -443,17 +433,17 @@ const ModelEditorShell = ({ mode }) => {
             </div>
           )}
 
-          {/* REFERENCE PHOTOS SECTION — always visible */}
+          {/* ENRICHMENT PHOTOS SECTION */}
           <div className="bg-zinc-900/60 border border-violet-500/20 rounded-xl p-5 mt-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
                   <CameraIcon size={14} className="text-violet-400" />
-                  Photos de Reference
-                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">cohérence visuelle</span>
+                  Photos complémentaires
+                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">enrichissement</span>
                 </h2>
                 <p className="text-[11px] text-zinc-600 mt-1">
-                  Ajoutez des photos multi-angles (face, profil, 3/4). Elles seront envoyées à Gemini à chaque génération pour verrouiller l'identité visuelle.
+                  Ajoutez des détails que l'IA doit connaître : tatouages, piercings, taches de naissance, cicatrices, angles spécifiques...
                 </p>
               </div>
               <span className="text-[11px] text-zinc-500">{savedRefs.length + pendingRefs.length}/5</span>
@@ -521,7 +511,7 @@ const ModelEditorShell = ({ mode }) => {
 
             {savedRefs.length === 0 && pendingRefs.length === 0 && !isLoadingRefs && (
               <p className="text-[11px] text-zinc-600 mt-2 italic">
-                Aucune photo de référence. Ajoutez-en pour améliorer la cohérence des générations.
+                Aucune photo complémentaire. Les photos d'extraction servent déjà d'ancrage principal.
               </p>
             )}
           </div>
@@ -533,16 +523,15 @@ const ModelEditorShell = ({ mode }) => {
               <p>
                 {inputMode === 'json' ? (
                   <>
-                    Utilisez le bouton <strong className="text-zinc-400">"Template AI Studio"</strong> pour obtenir
-                    le prompt à coller dans Google AI Studio avec une photo de la modèle.
-                    Ou passez en mode <strong className="text-zinc-400">"Extraire depuis photo"</strong> pour
+                    Collez un JSON de profil modèle existant. Si vous n'avez pas de JSON,
+                    passez en mode <strong className="text-zinc-400">"Extraire depuis photo"</strong> pour
                     laisser Gemini analyser automatiquement les photos.
                   </>
                 ) : (
                   <>
-                    Gemini Flash analysera les photos et générera un profil JSON complet.
-                    Plus il y a de photos (visage, corps, profil), plus l'extraction sera précise.
-                    Le résultat sera éditable dans l'onglet JSON avant de sauvegarder.
+                    Gemini analysera vos photos et extraira un profil JSON complet.
+                    Les photos uploadées ici seront aussi <strong className="text-violet-400/80">sauvées comme ancrage visuel</strong> pour
+                    chaque future génération. Plus il y a de photos (visage, corps, profil), mieux c'est.
                   </>
                 )}
               </p>
@@ -552,11 +541,6 @@ const ModelEditorShell = ({ mode }) => {
         </div>
       </div>
 
-      {/* TEMPLATE MODAL */}
-      <ModelTemplateModal
-        isOpen={showTemplate}
-        onClose={() => setShowTemplate(false)}
-      />
     </div>
   );
 };
