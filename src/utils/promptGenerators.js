@@ -81,7 +81,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
 
   // === POSE ===
   const poseConstraints = preset.pose_control.constraints;
-  const poseBody = scene.pose || null;
+  const poseBody = scene.pose || "natural relaxed pose";
 
   // === ENVIRONMENT ===
   const envSetting = scene.environment || null;

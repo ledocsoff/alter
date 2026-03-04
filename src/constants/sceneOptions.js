@@ -24,11 +24,9 @@ export const SCENE_OPTIONS = {
     { labelFR: "Photo Polaroid", promptEN: "Polaroid picture" },
     { labelFR: "Capture d'écran TikTok", promptEN: "Tiktok screenshot" },
     { labelFR: "Selfie amateur", promptEN: "amateur selfie" },
-    { labelFR: "Shooting professionnel", promptEN: "professional photoshoot" },
-    { labelFR: "Film argentique 35mm", promptEN: "35mm film photography" },
     { labelFR: "Appareil photo jetable", promptEN: "disposable camera shot" },
     { labelFR: "Quotidien décontracté", promptEN: "casual everyday snapshot" },
-    { labelFR: "Prise sur le vif (A l'improviste)", promptEN: "behind the scenes candid" }
+    { labelFR: "Prise sur le vif", promptEN: "behind the scenes candid" }
   ],
   lighting: [
     { labelFR: "Lumière dorée (Coucher de soleil)", promptEN: "golden hour sunlight" },
@@ -101,44 +99,60 @@ export const SCENE_OPTIONS = {
 // Presets de scènes complètes — appliquent environment + lighting + camera + pose + expression + vibe d'un coup
 export const SCENE_PRESETS = [
   {
-    id: 'shower_selfie', label: '🚿 Douche Selfie', icon: '🚿',
+    id: 'shower_selfie', label: '🚿 Douche', desc: 'Selfie miroir embué',
     scene: { environment: 'steamy shower, glass door, water droplets on skin', lighting: 'warm bathroom lighting', camera_angle: 'high angle selfie', pose: 'holding phone for selfie', expression: 'playful lip bite', vibe: 'amateur selfie' },
   },
   {
-    id: 'bedroom_cozy', label: '🛏️ Chambre Cozy', icon: '🛏️',
+    id: 'bedroom_cozy', label: '🛏️ Chambre', desc: 'Lit défait, lumière chaude',
     scene: { environment: 'cozy messy bedroom with clothes on bed', lighting: 'warm bedroom lamplight', camera_angle: 'medium shot from waist up', pose: 'sitting on bed, legs crossed', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
   },
   {
-    id: 'pool_tropical', label: '🏊 Pool Tropicale', icon: '🏊',
-    scene: { environment: 'tropical villa private pool', lighting: 'golden hour sunlight', camera_angle: 'eye-level portrait', pose: 'sitting on edge of pool', expression: 'laughing candidly', vibe: 'professional photoshoot' },
+    id: 'pool_tropical', label: '🏊 Piscine', desc: 'Villa tropicale, soleil',
+    scene: { environment: 'tropical villa private pool', lighting: 'golden hour sunlight', camera_angle: 'eye-level portrait', pose: 'sitting on edge of pool', expression: 'laughing candidly', vibe: 'candid Instagram photo' },
   },
   {
-    id: 'beach_sunset', label: '🏖️ Plage Sunset', icon: '🏖️',
-    scene: { environment: 'tropical beach, turquoise waves, white sand', lighting: 'golden hour sunlight', camera_angle: 'low angle shot', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: '35mm film photography' },
+    id: 'beach_sunset', label: '🏖️ Plage', desc: 'Sable, vagues, coucher de soleil',
+    scene: { environment: 'tropical beach, turquoise waves, white sand', lighting: 'golden hour sunlight', camera_angle: 'low angle shot', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: 'casual everyday snapshot' },
   },
   {
-    id: 'mirror_bathroom', label: '🪞 Miroir SdB', icon: '🪞',
+    id: 'mirror_bathroom', label: '🪞 Miroir SdB', desc: 'Selfie miroir classique',
     scene: { environment: 'standard apartment bathroom mirror', lighting: 'flash photography', camera_angle: 'mirror selfie, phone visible', pose: 'holding phone for selfie', expression: 'seductive smirk', vibe: 'amateur selfie' },
   },
   {
-    id: 'gym_locker', label: '💪 Vestiaire Gym', icon: '💪',
+    id: 'gym_locker', label: '💪 Vestiaire', desc: 'Miroir salle de sport',
     scene: { environment: 'local gym locker room mirror', lighting: 'harsh direct sunlight', camera_angle: 'mirror selfie, phone visible', pose: 'casual standing, hand on hip', expression: 'serious model stare', vibe: 'casual everyday snapshot' },
   },
   {
-    id: 'bed_laying', label: '😴 Allongée Lit', icon: '😴',
+    id: 'bed_laying', label: '😴 Au Lit', desc: 'Allongée, lumière douce',
     scene: { environment: 'simple white bedroom walls, unmade bed', lighting: 'warm bedroom lamplight', camera_angle: 'high angle selfie', pose: 'laying on stomach on bed', expression: 'mouth slightly open, relaxed', vibe: 'behind the scenes candid' },
   },
   {
-    id: 'car_seat', label: '🚗 Voiture', icon: '🚗',
+    id: 'car_seat', label: '🚗 Voiture', desc: 'Selfie passager',
     scene: { environment: 'passenger seat of a regular car', lighting: 'soft overcast daylight', camera_angle: 'high angle selfie', pose: 'holding phone for selfie', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
   },
   {
-    id: 'yacht_luxury', label: '🛥️ Yacht Luxe', icon: '🛥️',
-    scene: { environment: 'luxury yacht deck', lighting: 'golden hour sunlight', camera_angle: 'full body shot', pose: 'leaning against wall', expression: 'seductive smirk', vibe: 'professional photoshoot' },
+    id: 'yacht_luxury', label: '🛥️ Yacht', desc: 'Deck luxe, golden hour',
+    scene: { environment: 'luxury yacht deck', lighting: 'golden hour sunlight', camera_angle: 'full body shot', pose: 'leaning against wall', expression: 'seductive smirk', vibe: 'candid Instagram photo' },
   },
   {
-    id: 'balcony_city', label: '🌆 Balcon Ville', icon: '🌆',
+    id: 'balcony_city', label: '🌆 Balcon', desc: 'Vue urbaine, soirée',
     scene: { environment: 'city apartment balcony with plants', lighting: 'moody low light', camera_angle: 'eye-level portrait', pose: 'looking over shoulder', expression: 'serious model stare', vibe: 'Polaroid picture' },
+  },
+  {
+    id: 'cafe_terrace', label: '☕ Café', desc: 'Terrasse, lumière naturelle',
+    scene: { environment: 'local coffee shop interior', lighting: 'soft overcast daylight', camera_angle: 'medium shot from waist up', pose: 'sitting on bed, legs crossed', expression: 'laughing candidly', vibe: 'candid Instagram photo' },
+  },
+  {
+    id: 'street_walk', label: '🚶 Rue', desc: 'Trottoir, snap spontané',
+    scene: { environment: 'regular city street sidewalk', lighting: 'soft overcast daylight', camera_angle: 'full body shot', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: 'casual everyday snapshot' },
+  },
+  {
+    id: 'gym_workout', label: '🏋️ Sport', desc: 'Salle de gym, en action',
+    scene: { environment: 'modern gym interior equipment', lighting: 'harsh direct sunlight', camera_angle: 'mirror selfie, phone visible', pose: 'casual standing, hand on hip', expression: 'serious model stare', vibe: 'casual everyday snapshot' },
+  },
+  {
+    id: 'kitchen_casual', label: '🍳 Cuisine', desc: 'Petite cuisine, quotidien',
+    scene: { environment: 'small modern domestic kitchen', lighting: 'window natural light crossing room', camera_angle: 'medium shot from waist up', pose: 'adjusting hair casually', expression: 'soft natural smile', vibe: 'behind the scenes candid' },
   },
 ];
 

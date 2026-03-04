@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { SCENE_OPTIONS, OUTFIT_PRESETS, DEFAULT_SCENE, SCENE_PRESETS } from '../../constants/sceneOptions';
@@ -6,21 +6,22 @@ import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate } from '../..
 import { TrashIcon } from '../../components/Icons';
 import { pickRandom } from '../../utils/helpers';
 
-const Section = ({ id, label, badge, children, isOpen, onToggle }) => (
+/* ─── Stable sub-components (defined outside render to avoid focus loss) ─── */
+
+const Section = ({ id, label, children, isOpen, onToggle }) => (
     <div className="border-b border-white/[0.04] last:border-0">
         <button
             onClick={() => onToggle(id)}
             className="w-full flex items-center justify-between py-2.5 group"
         >
-            <div className="flex items-center gap-2">
-                <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{label}</span>
-                {badge && <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5">{badge}</span>}
-            </div>
+            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{label}</span>
             <span className={`text-[9px] text-zinc-600 transition-transform ${isOpen?.[id] ? 'rotate-0' : '-rotate-90'}`}>▼</span>
         </button>
         {isOpen?.[id] && <div className="pb-3">{children}</div>}
     </div>
 );
+
+/* ─── Main Component ─── */
 
 const SceneEditor = ({ isSandbox = false }) => {
     const { scene, updateSceneEntry, setScene } = useStudio();
@@ -28,26 +29,62 @@ const SceneEditor = ({ isSandbox = false }) => {
     const [showTemplates, setShowTemplates] = useState(false);
     const [templateName, setTemplateName] = useState('');
     const [templates, setTemplates] = useState(() => getSceneTemplates());
-    const [openSections, setOpenSections] = useState({ outfit: true, pose: true });
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [activePresetId, setActivePresetId] = useState(null);
 
-    const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+    /* ─── Detect active preset ─── */
+    const detectedPreset = useMemo(() => {
+        if (activePresetId) return activePresetId;
+        const match = SCENE_PRESETS.find(p =>
+            p.scene.camera_angle === scene.camera_angle &&
+            p.scene.pose === scene.pose &&
+            p.scene.expression === scene.expression &&
+            p.scene.vibe === scene.vibe
+        );
+        return match?.id || null;
+    }, [activePresetId, scene.camera_angle, scene.pose, scene.expression, scene.vibe]);
 
-    const handleRandomize = () => {
+    /* ─── Apply a scene preset ─── */
+    const applyPreset = (preset) => {
         setScene(prev => ({
-            outfit: pickRandom(OUTFIT_PRESETS),
-            vibe: isSandbox ? pickRandom(SCENE_OPTIONS.vibe).promptEN : prev.vibe,
-            camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
-            pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
-            lighting: isSandbox ? pickRandom(SCENE_OPTIONS.lighting).promptEN : prev.lighting,
-            expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
+            ...prev,
+            ...preset.scene,
+            // Keep location-locked values in non-sandbox mode
+            ...(isSandbox ? {} : {
+                environment: prev.environment,
+                location_meta: prev.location_meta,
+            }),
+            // Always keep these
+            outfit: prev.outfit,
             aspect_ratio: prev.aspect_ratio,
-            environment: prev.environment,
-            location_meta: prev.location_meta,
             seed: prev.seed,
             custom_negative_prompt: prev.custom_negative_prompt,
         }));
+        setActivePresetId(preset.id);
+        toast.info(`${preset.label}`);
     };
 
+    /* ─── Randomize ─── */
+    const handleRandomize = () => {
+        const preset = pickRandom(SCENE_PRESETS);
+        const outfit = pickRandom(OUTFIT_PRESETS);
+        setScene(prev => ({
+            ...prev,
+            ...preset.scene,
+            outfit,
+            ...(isSandbox ? {} : {
+                environment: prev.environment,
+                location_meta: prev.location_meta,
+            }),
+            aspect_ratio: prev.aspect_ratio,
+            seed: prev.seed,
+            custom_negative_prompt: prev.custom_negative_prompt,
+        }));
+        setActivePresetId(preset.id);
+        toast.info(`🎲 ${preset.label} + ${outfit.label}`);
+    };
+
+    /* ─── Templates ─── */
     const handleSaveTemplate = () => {
         if (!templateName.trim()) return;
         const updated = saveSceneTemplate(templateName.trim(), scene);
@@ -66,7 +103,8 @@ const SceneEditor = ({ isSandbox = false }) => {
             ...(isSandbox ? {} : { vibe: prev.vibe, lighting: prev.lighting }),
         }));
         setShowTemplates(false);
-        toast.info(`Template "${tpl.name}" charge`);
+        setActivePresetId(null);
+        toast.info(`Template "${tpl.name}" chargé`);
     };
 
     const handleDeleteTemplate = (e, id) => {
@@ -75,36 +113,25 @@ const SceneEditor = ({ isSandbox = false }) => {
         setTemplates(updated);
     };
 
+    const toggleSection = (key) => setShowAdvanced(prev => prev === key ? false : key);
+
     return (
         <div className="bg-[#0e0e10] border border-white/[0.05] rounded-xl p-4 flex flex-col h-full overflow-hidden animate-fade-in">
             {/* HEADER */}
             <div className="flex items-center justify-between mb-3 shrink-0">
-                <h3 className="text-sm font-semibold text-zinc-200">Scene</h3>
+                <h3 className="text-sm font-semibold text-zinc-200">Scène</h3>
                 <div className="flex gap-1">
                     <button
                         onClick={() => setShowTemplates(!showTemplates)}
                         className={`text-[11px] font-medium px-2.5 py-1 rounded-lg transition-all ${showTemplates ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.04]'}`}
                     >
-                        Templates
+                        Mes templates
                     </button>
                     <button
                         onClick={handleRandomize}
                         className="text-[11px] font-medium text-violet-400 hover:text-violet-300 hover:bg-violet-500/8 px-2.5 py-1 rounded-lg transition-colors"
                     >
-                        Surprise
-                    </button>
-                    <button
-                        onClick={() => setScene(prev => ({
-                            ...DEFAULT_SCENE,
-                            environment: prev.environment,
-                            location_meta: prev.location_meta,
-                            seed: prev.seed,
-                            custom_negative_prompt: prev.custom_negative_prompt,
-                            ...(isSandbox ? {} : { vibe: prev.vibe, lighting: prev.lighting }),
-                        }))}
-                        className="text-[11px] font-medium text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors"
-                    >
-                        Reset
+                        🎲 Surprise
                     </button>
                 </div>
             </div>
@@ -156,34 +183,8 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </div>
             )}
 
-            {/* SCENE PRESETS — Sandbox uniquement */}
-            {isSandbox && (
-                <div className="shrink-0 mb-3">
-                    <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-1">
-                        {SCENE_PRESETS.map(preset => (
-                            <button
-                                key={preset.id}
-                                onClick={() => {
-                                    setScene(prev => ({
-                                        ...prev,
-                                        ...preset.scene,
-                                        seed: prev.seed,
-                                        custom_negative_prompt: prev.custom_negative_prompt,
-                                        location_meta: prev.location_meta,
-                                    }));
-                                    toast.info(`Scene "${preset.label}" appliquee`);
-                                }}
-                                className="text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.05] text-zinc-400 hover:text-zinc-200 hover:border-violet-500/20 hover:bg-violet-500/5 transition-all whitespace-nowrap shrink-0"
-                            >
-                                {preset.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* FORMAT — always visible */}
-            <div className="shrink-0 mb-2">
+            <div className="shrink-0 mb-3">
                 <div className="flex gap-1.5">
                     {SCENE_OPTIONS.aspect_ratio.map(ratio => (
                         <button
@@ -202,8 +203,42 @@ const SceneEditor = ({ isSandbox = false }) => {
 
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
 
-                {/* TENUE */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="outfit" label="Tenue">
+                {/* ═══ ZONE 1: AMBIANCE PRESETS ═══ */}
+                <div className="mb-4">
+                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 block">📸 Ambiance</span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        {SCENE_PRESETS.map(preset => {
+                            const isActive = detectedPreset === preset.id;
+                            return (
+                                <button
+                                    key={preset.id}
+                                    onClick={() => applyPreset(preset)}
+                                    className={`relative text-left px-3 py-2.5 rounded-xl border transition-all ${isActive
+                                        ? 'bg-violet-500/10 border-violet-500/30 shadow-lg shadow-violet-500/5'
+                                        : 'bg-white/[0.015] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.03]'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[13px]">{preset.label.split(' ')[0]}</span>
+                                        <span className={`text-[12px] font-semibold truncate ${isActive ? 'text-violet-300' : 'text-zinc-300'}`}>
+                                            {preset.label.split(' ').slice(1).join(' ')}
+                                        </span>
+                                    </div>
+                                    <p className={`text-[10px] mt-0.5 truncate ${isActive ? 'text-violet-400/60' : 'text-zinc-600'}`}>
+                                        {preset.desc}
+                                    </p>
+                                    {isActive && (
+                                        <div className="absolute top-1.5 right-2 text-[9px] text-violet-400 font-bold">✓</div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ═══ ZONE 2: TENUE ═══ */}
+                <div className="mb-4 border-t border-white/[0.04] pt-3">
+                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 block">👗 Tenue</span>
                     <div className="grid grid-cols-3 gap-1.5 mb-2">
                         {OUTFIT_PRESETS.map(item => (
                             <button
@@ -225,133 +260,132 @@ const SceneEditor = ({ isSandbox = false }) => {
                         value={scene.outfit?.value || ""}
                         onChange={(e) => updateSceneEntry('outfit', { id: 'custom', label: 'Custom', value: e.target.value, icon: '' })}
                     />
-                </Section>
+                </div>
 
-                {/* POSE */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="pose" label="Pose">
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                        {SCENE_OPTIONS.pose.map(item => (
-                            <button
-                                key={item.promptEN}
-                                onClick={() => updateSceneEntry('pose', item.promptEN)}
-                                className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${scene.pose === item.promptEN
-                                    ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
-                                    : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
-                                    }`}
-                            >
-                                {item.labelFR}
-                            </button>
-                        ))}
-                    </div>
-                    <input
-                        className="velvet-input w-full text-sm"
-                        type="text"
-                        placeholder="Pose personnalisee..."
-                        value={scene.pose || ""}
-                        onChange={(e) => updateSceneEntry('pose', e.target.value)}
-                    />
-                </Section>
-
-                {/* CAMERA + EXPRESSION */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="camera" label="Camera & Expression">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Camera</span>
-                            <select className="velvet-input w-full text-sm" value={scene.camera_angle || ""} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)}>
-                                <option value="">Auto</option>
-                                {SCENE_OPTIONS.camera_angle?.map(shot => (
-                                    <option key={shot.promptEN} value={shot.promptEN}>{shot.labelFR}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Expression</span>
-                            <select className="velvet-input w-full text-sm" value={scene.expression || ""} onChange={(e) => updateSceneEntry('expression', e.target.value)}>
-                                <option value="">Auto</option>
-                                {SCENE_OPTIONS.expression?.map(eff => (
-                                    <option key={eff.promptEN} value={eff.promptEN}>{eff.labelFR}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </Section>
-
-                {/* ENVIRONNEMENT */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="environment" label="Environnement" badge={!isSandbox ? 'verrouillé' : null}>
-                    <select
-                        className={"velvet-input w-full text-sm" + (isSandbox ? '' : ' opacity-40 cursor-not-allowed')}
-                        value={scene.environment || ""}
-                        onChange={(e) => updateSceneEntry('environment', e.target.value)}
-                        disabled={!isSandbox}
+                {/* ═══ ZONE 3: OPTIONS AVANCÉES (replié) ═══ */}
+                <div className="border-t border-white/[0.04] pt-2">
+                    <button
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="w-full flex items-center justify-between py-2 group"
                     >
-                        {SCENE_OPTIONS.environment.map(env => (
-                            <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
-                        ))}
-                    </select>
-                    {isSandbox && (
-                        <input
-                            className="velvet-input w-full mt-1.5 text-sm"
-                            type="text"
-                            placeholder="...ou decor custom en anglais"
-                            onChange={(e) => { if (e.target.value.trim()) updateSceneEntry('environment', e.target.value); }}
-                        />
-                    )}
-                </Section>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">
+                                ⚙️ Options avancées
+                            </span>
+                            {!showAdvanced && (scene.pose || scene.expression) && (
+                                <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5">personnalisé</span>
+                            )}
+                        </div>
+                        <span className={`text-[9px] text-zinc-600 transition-transform ${showAdvanced ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+                    </button>
 
-                {/* VIBE + LIGHTING */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="vibelighting" label="Vibe & Éclairage" badge={!isSandbox && (scene.vibe || scene.lighting) ? 'verrouillé' : null}>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</span>
-                            <select
-                                className={"velvet-input w-full text-sm" + (!isSandbox && scene.vibe ? ' opacity-40 cursor-not-allowed' : '')}
-                                value={scene.vibe || ""}
-                                onChange={(e) => updateSceneEntry('vibe', e.target.value)}
-                                disabled={!isSandbox && !!scene.vibe}
-                            >
-                                <option value="">Neutre</option>
-                                {SCENE_OPTIONS.vibe?.map(v => (
-                                    <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</span>
-                            <select
-                                className={"velvet-input w-full text-sm" + (!isSandbox && scene.lighting ? ' opacity-40 cursor-not-allowed' : '')}
-                                value={scene.lighting || ""}
-                                onChange={(e) => updateSceneEntry('lighting', e.target.value)}
-                                disabled={!isSandbox && !!scene.lighting}
-                            >
-                                <option value="">Auto</option>
-                                {SCENE_OPTIONS.lighting?.map(l => (
-                                    <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    {/* MOMENT DU JOUR */}
-                    {!isSandbox && scene.location_meta?.time_of_day && (
-                        <div className="mt-2 p-2 rounded-lg border border-white/[0.04] bg-[#0a0a0c]">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] text-zinc-500 font-medium">Moment du jour</span>
-                                <span className="text-[10px] text-violet-400/50 font-medium">verrouillé</span>
+                    {showAdvanced && (
+                        <div className="pb-3 space-y-4 animate-fade-in">
+
+                            {/* POSE */}
+                            <div>
+                                <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Pose</span>
+                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {SCENE_OPTIONS.pose.map(item => (
+                                        <button
+                                            key={item.promptEN}
+                                            onClick={() => updateSceneEntry('pose', item.promptEN)}
+                                            className={`text-[11px] py-1 px-2.5 rounded-full border transition-all ${scene.pose === item.promptEN
+                                                ? 'bg-violet-500/10 border-violet-500/25 text-violet-300 font-semibold'
+                                                : 'bg-transparent border-white/[0.04] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.1]'
+                                                }`}
+                                        >
+                                            {item.labelFR}
+                                        </button>
+                                    ))}
+                                </div>
+                                <input
+                                    className="velvet-input w-full text-sm"
+                                    type="text"
+                                    placeholder="Pose personnalisée..."
+                                    value={scene.pose || ""}
+                                    onChange={(e) => updateSceneEntry('pose', e.target.value)}
+                                />
                             </div>
-                            <p className="text-[12px] text-zinc-400 mt-1">{scene.location_meta.time_of_day}</p>
+
+                            {/* CAMERA + EXPRESSION */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Caméra</span>
+                                    <select className="velvet-input w-full text-sm" value={scene.camera_angle || ""} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)}>
+                                        <option value="">Auto</option>
+                                        {SCENE_OPTIONS.camera_angle?.map(shot => (
+                                            <option key={shot.promptEN} value={shot.promptEN}>{shot.labelFR}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Expression</span>
+                                    <select className="velvet-input w-full text-sm" value={scene.expression || ""} onChange={(e) => updateSceneEntry('expression', e.target.value)}>
+                                        <option value="">Auto</option>
+                                        {SCENE_OPTIONS.expression?.map(eff => (
+                                            <option key={eff.promptEN} value={eff.promptEN}>{eff.labelFR}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* VIBE + LIGHTING (Sandbox only) */}
+                            {isSandbox && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Vibe</span>
+                                        <select className="velvet-input w-full text-sm" value={scene.vibe || ""} onChange={(e) => updateSceneEntry('vibe', e.target.value)}>
+                                            <option value="">Auto</option>
+                                            {SCENE_OPTIONS.vibe?.map(v => (
+                                                <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Éclairage</span>
+                                        <select className="velvet-input w-full text-sm" value={scene.lighting || ""} onChange={(e) => updateSceneEntry('lighting', e.target.value)}>
+                                            <option value="">Auto</option>
+                                            {SCENE_OPTIONS.lighting?.map(l => (
+                                                <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ENVIRONMENT (Sandbox only) */}
+                            {isSandbox && (
+                                <div>
+                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Environnement</span>
+                                    <select className="velvet-input w-full text-sm" value={scene.environment || ""} onChange={(e) => updateSceneEntry('environment', e.target.value)}>
+                                        {SCENE_OPTIONS.environment.map(env => (
+                                            <option key={env.promptEN} value={env.promptEN}>{env.labelFR}</option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        className="velvet-input w-full mt-1.5 text-sm"
+                                        type="text"
+                                        placeholder="...ou décor custom en anglais"
+                                        onChange={(e) => { if (e.target.value.trim()) updateSceneEntry('environment', e.target.value); }}
+                                    />
+                                </div>
+                            )}
+
+                            {/* NEGATIVE PROMPT */}
+                            <div>
+                                <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Éléments à éviter</span>
+                                <textarea
+                                    value={scene.custom_negative_prompt || ''}
+                                    onChange={(e) => updateSceneEntry('custom_negative_prompt', e.target.value)}
+                                    placeholder="tattoo, piercing, neon lights..."
+                                    rows={2}
+                                    className="velvet-input w-full text-[11px] font-mono resize-none"
+                                />
+                            </div>
                         </div>
                     )}
-                </Section>
-
-                {/* NEGATIVE PROMPT */}
-                <Section isOpen={openSections} onToggle={toggleSection} id="negprompt" label="Negative Prompt">
-                    <textarea
-                        value={scene.custom_negative_prompt || ''}
-                        onChange={(e) => updateSceneEntry('custom_negative_prompt', e.target.value)}
-                        placeholder="Ajouter des éléments à éviter (en anglais, séparés par des virgules)..."
-                        rows={3}
-                        className="velvet-input w-full text-[11px] font-mono resize-none"
-                    />
-                </Section>
+                </div>
 
             </div>
         </div>
