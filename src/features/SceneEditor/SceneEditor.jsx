@@ -6,6 +6,22 @@ import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate } from '../..
 import { TrashIcon } from '../../components/Icons';
 import { pickRandom } from '../../utils/helpers';
 
+const Section = ({ id, label, badge, children, isOpen, onToggle }) => (
+    <div className="border-b border-white/[0.04] last:border-0">
+        <button
+            onClick={() => onToggle(id)}
+            className="w-full flex items-center justify-between py-2.5 group"
+        >
+            <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{label}</span>
+                {badge && <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5">{badge}</span>}
+            </div>
+            <span className={`text-[9px] text-zinc-600 transition-transform ${isOpen?.[id] ? 'rotate-0' : '-rotate-90'}`}>▼</span>
+        </button>
+        {isOpen?.[id] && <div className="pb-3">{children}</div>}
+    </div>
+);
+
 const SceneEditor = ({ isSandbox = false }) => {
     const { scene, updateSceneEntry, setScene } = useStudio();
     const toast = useToast();
@@ -15,22 +31,6 @@ const SceneEditor = ({ isSandbox = false }) => {
     const [openSections, setOpenSections] = useState({ outfit: true, pose: true });
 
     const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
-
-    const Section = ({ id, label, badge, children }) => (
-        <div className="border-b border-white/[0.04] last:border-0">
-            <button
-                onClick={() => toggleSection(id)}
-                className="w-full flex items-center justify-between py-2.5 group"
-            >
-                <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{label}</span>
-                    {badge && <span className="text-[9px] text-violet-400/50 font-medium px-1.5 py-0.5 rounded bg-violet-500/5">{badge}</span>}
-                </div>
-                <span className={`text-[9px] text-zinc-600 transition-transform ${openSections[id] ? 'rotate-0' : '-rotate-90'}`}>▼</span>
-            </button>
-            {openSections[id] && <div className="pb-3">{children}</div>}
-        </div>
-    );
 
     const handleRandomize = () => {
         setScene(prev => ({
@@ -203,7 +203,7 @@ const SceneEditor = ({ isSandbox = false }) => {
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
 
                 {/* TENUE */}
-                <Section id="outfit" label="Tenue">
+                <Section isOpen={openSections} onToggle={toggleSection} id="outfit" label="Tenue">
                     <div className="grid grid-cols-3 gap-1.5 mb-2">
                         {OUTFIT_PRESETS.map(item => (
                             <button
@@ -228,7 +228,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* POSE */}
-                <Section id="pose" label="Pose">
+                <Section isOpen={openSections} onToggle={toggleSection} id="pose" label="Pose">
                     <div className="flex flex-wrap gap-1.5 mb-2">
                         {SCENE_OPTIONS.pose.map(item => (
                             <button
@@ -253,7 +253,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* CAMERA + EXPRESSION */}
-                <Section id="camera" label="Camera & Expression">
+                <Section isOpen={openSections} onToggle={toggleSection} id="camera" label="Camera & Expression">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Camera</span>
@@ -277,7 +277,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* ENVIRONNEMENT */}
-                <Section id="environment" label="Environnement" badge={!isSandbox ? 'verrouillé' : null}>
+                <Section isOpen={openSections} onToggle={toggleSection} id="environment" label="Environnement" badge={!isSandbox ? 'verrouillé' : null}>
                     <select
                         className={"velvet-input w-full text-sm" + (isSandbox ? '' : ' opacity-40 cursor-not-allowed')}
                         value={scene.environment || ""}
@@ -299,7 +299,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* VIBE + LIGHTING */}
-                <Section id="vibelighting" label="Vibe & Éclairage" badge={!isSandbox && (scene.vibe || scene.lighting) ? 'verrouillé' : null}>
+                <Section isOpen={openSections} onToggle={toggleSection} id="vibelighting" label="Vibe & Éclairage" badge={!isSandbox && (scene.vibe || scene.lighting) ? 'verrouillé' : null}>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</span>
@@ -343,7 +343,7 @@ const SceneEditor = ({ isSandbox = false }) => {
                 </Section>
 
                 {/* NEGATIVE PROMPT */}
-                <Section id="negprompt" label="Negative Prompt">
+                <Section isOpen={openSections} onToggle={toggleSection} id="negprompt" label="Negative Prompt">
                     <textarea
                         value={scene.custom_negative_prompt || ''}
                         onChange={(e) => updateSceneEntry('custom_negative_prompt', e.target.value)}

@@ -104,6 +104,8 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     "extra fingers", "mutated hands", "blurry", "watermark",
     "text", "logo", "cgi", "3d render", "cartoon", "anime",
     "inconsistent background", "changing room layout",
+    "bokeh", "depth of field", "shallow DOF", "DSLR", "studio lighting",
+    "professional photography", "cinematic color grading", "film grain",
   ].join(', ');
 
   // Append custom negative prompt if user provided one
@@ -153,19 +155,19 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     style_and_realism: {
-      aesthetic: "Raw, unfiltered phone photography. Amateur selfie aesthetic. Photorealistic.",
-      fidelity: "Photorealistic, high-fidelity skin texture. No airbrushing or artistic stylization. RAW photo, 8K UHD, DSLR quality, film grain.",
+      aesthetic: "Candid smartphone photo. Natural phone camera look. No professional photography, no studio lighting, no bokeh. Looks like a real Instagram/TikTok post taken with an iPhone.",
+      fidelity: "Photorealistic, natural skin texture. No airbrushing or over-processing. Casual, unposed feel. Slight phone camera grain, natural imperfections.",
     },
 
     colors_and_tone: {
       palette: meta.color_palette || "Natural, realistic color palette",
-      contrast: "High contrast, natural cinematic tones",
+      contrast: "Natural contrast, ambient tones — NOT cinematic or graded",
       saturation: "Natural, slightly warm skin tones, not oversaturated",
     },
 
     quality_and_technical_details: {
-      resolution: "High definition, sharp focus, 8K UHD",
-      texture_emphasis: "Visible pores, natural skin texture, subsurface scattering, hair strand detail",
+      resolution: "Sharp focus, clear details, phone camera quality",
+      texture_emphasis: "Natural skin texture, realistic hair, no artificial smoothing",
     },
 
     aspect_ratio_and_output: {
