@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations } from '../utils/storage';
-import { autoFillLocation } from '../utils/googleAI';
+import { autoFillLocation, generateLocationPresets } from '../utils/googleAI';
 import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
@@ -57,6 +57,7 @@ const LocationsAndSandboxView = () => {
     const [newLocNegativePrompt, setNewLocNegativePrompt] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isAutoFilling, setIsAutoFilling] = useState(false);
+    const [isGeneratingPresets, setIsGeneratingPresets] = useState(false);
     const dragItem = useRef(null);
     const dragOverItem = useRef(null);
     const [dragOverIdx, setDragOverIdx] = useState(null);
@@ -81,10 +82,12 @@ const LocationsAndSandboxView = () => {
 
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
 
-    const handleSaveLocation = () => {
+    const handleSaveLocation = async () => {
         if (!newLocName.trim()) return;
         const finalEnvironment = isCustomEnv ? newLocEnvCustom.trim() : newLocEnvDrop;
         if (!finalEnvironment) return;
+
+        const isCreating = locFormMode === 'create';
 
         const locationData = {
             name: newLocName.trim(),
@@ -96,13 +99,38 @@ const LocationsAndSandboxView = () => {
             color_palette: newLocColorPalette.trim(),
             negative_prompt: newLocNegativePrompt.trim(),
         };
-        if (locFormMode !== 'create') locationData.id = locFormMode;
+        if (!isCreating) locationData.id = locFormMode;
 
         const updated = saveLocationData(modelId, accountId, locationData);
         if (updated) {
             setAllModelsDatabase(updated);
-            toast.success(locFormMode === 'create' ? `"${locationData.name}" créé` : `Lieu mis à jour`);
+            toast.success(isCreating ? `"${locationData.name}" créé` : `Lieu mis à jour`);
             resetForm();
+
+            // Generate AI presets on CREATION only
+            if (isCreating) {
+                const apiKey = getApiKey();
+                if (apiKey) {
+                    setIsGeneratingPresets(true);
+                    try {
+                        // Find the newly created location
+                        const savedModel = updated.find(m => m.id === modelId);
+                        const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
+                        const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
+                        if (savedLoc) {
+                            const presets = await generateLocationPresets(apiKey, savedLoc);
+                            // Save presets back to location
+                            const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: presets });
+                            if (updated2) setAllModelsDatabase(updated2);
+                            toast.success(`${presets.length} ambiances IA générées`);
+                        }
+                    } catch (err) {
+                        toast.error(`Presets IA: ${err.message}`);
+                    } finally {
+                        setIsGeneratingPresets(false);
+                    }
+                }
+            }
         }
     };
 
@@ -352,9 +380,22 @@ const LocationsAndSandboxView = () => {
                             </div>
                         </div>
 
+                        {/* AI PRESETS LOADER */}
+                        {isGeneratingPresets && (
+                            <div className="mb-6 p-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.03] animate-fade-in-up">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-violet-300">Génération des ambiances IA...</p>
+                                        <p className="text-[11px] text-zinc-500">8 presets adaptés à ce lieu seront créés automatiquement</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* SAVED LOCATIONS */}
                         <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">
-                            Lieux enregistres ({(currentAccount.locations || []).length})
+                            Lieux enregistrés ({(currentAccount.locations || []).length})
                         </h3>
 
                         {(currentAccount.locations || []).length === 0 ? (
@@ -436,6 +477,7 @@ const LocationsAndSandboxView = () => {
                                         </div>
                                         <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
                                             {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
+                                            {loc.ai_presets?.length > 0 && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">IA ✓ {loc.ai_presets.length} ambiances</span>}
                                             {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
                                             {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
                                             {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}

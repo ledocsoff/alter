@@ -433,11 +433,9 @@ LIGHTING (pick exactly one):
 
 VIBE (pick exactly one):
 - "candid Instagram photo"
-- "Polaroid picture"
-- "Tiktok screenshot"
+- "warm vintage tones, faded colors, casual candid"
+- "casual TikTok style photo, trendy angle"
 - "amateur selfie"
-- "professional photoshoot"
-- "35mm film photography"
 - "disposable camera shot"
 - "casual everyday snapshot"
 - "behind the scenes candid"
@@ -515,5 +513,106 @@ export const autoFillLocation = async (apiKey, locationName) => {
   } catch {
     logger.error('generation', 'JSON invalide pour auto-fill lieu', jsonStr.slice(0, 500));
     throw new Error('Gemini a retourné un format invalide.');
+  }
+};
+
+/* ─── LOCATION PRESETS GENERATION ─── */
+
+const LOCATION_PRESETS_PROMPT = `You are an expert at creating photo scene presets for a specific location.
+
+Given a location with its details, generate EXACTLY 8 scene presets that make sense FOR THIS SPECIFIC LOCATION.
+Each preset represents a different "vibe" or scenario that a model could do in this exact place.
+
+IMPORTANT RULES:
+- Each preset must be REALISTIC for the given location
+- DO NOT suggest scenes that don't match the location (e.g. no "poolside" for a bedroom)
+- camera_angle MUST be one of these EXACT values:
+  "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait",
+  "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
+- pose MUST be a short english description (5-10 words max)
+- expression MUST be one of these EXACT values:
+  "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare",
+  "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
+- label: emoji + short french name (max 3 words)
+- desc: short french description (max 6 words)
+- id: unique snake_case identifier
+
+Output a JSON array of exactly 8 objects:
+[
+  {
+    "id": "unique_id",
+    "label": "emoji Nom Court",
+    "desc": "courte description en français",
+    "scene": {
+      "camera_angle": "one of the EXACT values above",
+      "pose": "short english pose description",
+      "expression": "one of the EXACT values above"
+    }
+  }
+]
+
+RULES:
+1. Output ONLY the JSON array, no markdown, no explanation.
+2. All scene values in English, labels and desc in French.
+3. Make presets VARIED — different poses, angles, expressions.
+4. Think about what people ACTUALLY do in this specific location.`;
+
+/**
+ * Generate 8 location-specific scene presets via Gemini.
+ * Called once at location creation, results stored with the location.
+ * @param {string} apiKey
+ * @param {object} location - { name, environment, default_lighting, ... }
+ * @returns {Promise<Array>} Array of 8 preset objects
+ */
+export const generateLocationPresets = async (apiKey, location) => {
+  const locationContext = [
+    `Location: "${location.name}"`,
+    `Environment: ${location.environment || 'not specified'}`,
+    location.default_lighting ? `Lighting: ${location.default_lighting}` : null,
+    location.anchor_details ? `Key objects: ${location.anchor_details}` : null,
+    location.time_of_day ? `Time: ${location.time_of_day}` : null,
+  ].filter(Boolean).join('\n');
+
+  logger.info('generation', `Generating presets for "${location.name}"`, { model: GEMINI_TEXT_MODEL });
+
+  const body = {
+    contents: [{
+      role: 'user',
+      parts: [{ text: `${locationContext}\n\n${LOCATION_PRESETS_PROMPT}` }],
+    }],
+    generationConfig: {
+      responseModalities: ['TEXT'],
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+    },
+  };
+
+  const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const t0 = Date.now();
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error?.message || `HTTP ${res.status}`;
+    logger.error('generation', `Presets generation HTTP ${res.status} (${elapsed}s)`, msg);
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.filter(p => p.text).map(p => p.text).join('') || '';
+
+  let jsonStr = text.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) jsonStr = fenceMatch[1].trim();
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Not an array');
+    logger.success('generation', `${parsed.length} presets générés en ${elapsed}s pour "${location.name}"`);
+    return parsed.slice(0, 8);
+  } catch {
+    logger.error('generation', 'JSON invalide pour presets lieu', jsonStr.slice(0, 500));
+    throw new Error('Gemini a retourné un format invalide pour les presets.');
   }
 };

@@ -23,7 +23,7 @@ const Section = ({ id, label, children, isOpen, onToggle }) => (
 
 /* ─── Main Component ─── */
 
-const SceneEditor = ({ isSandbox = false }) => {
+const SceneEditor = ({ isSandbox = false, location = null }) => {
     const { scene, updateSceneEntry, setScene } = useStudio();
     const toast = useToast();
     const [showTemplates, setShowTemplates] = useState(false);
@@ -32,17 +32,22 @@ const SceneEditor = ({ isSandbox = false }) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [activePresetId, setActivePresetId] = useState(null);
 
+    // Use location-specific presets when available, fallback to generic
+    const presets = (!isSandbox && location?.ai_presets?.length > 0)
+        ? location.ai_presets
+        : SCENE_PRESETS;
+    const hasAiPresets = !isSandbox && location?.ai_presets?.length > 0;
+
     /* ─── Detect active preset ─── */
     const detectedPreset = useMemo(() => {
         if (activePresetId) return activePresetId;
-        const match = SCENE_PRESETS.find(p =>
+        const match = presets.find(p =>
             p.scene.camera_angle === scene.camera_angle &&
             p.scene.pose === scene.pose &&
-            p.scene.expression === scene.expression &&
-            p.scene.vibe === scene.vibe
+            p.scene.expression === scene.expression
         );
         return match?.id || null;
-    }, [activePresetId, scene.camera_angle, scene.pose, scene.expression, scene.vibe]);
+    }, [activePresetId, scene.camera_angle, scene.pose, scene.expression, presets]);
 
     /* ─── Apply a scene preset ─── */
     const applyPreset = (preset) => {
@@ -211,9 +216,16 @@ const SceneEditor = ({ isSandbox = false }) => {
 
                 {/* ═══ ZONE 1: AMBIANCE PRESETS ═══ */}
                 <div className="mb-4">
-                    <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 block">📸 Ambiance</span>
+                    <div className="flex items-center justify-between mb-2.5">
+                        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                            {hasAiPresets ? `🧠 Ambiances — ${location.name}` : '📸 Ambiance'}
+                        </span>
+                        {hasAiPresets && (
+                            <span className="text-[9px] text-emerald-400/60 font-medium px-1.5 py-0.5 rounded bg-emerald-500/5">IA</span>
+                        )}
+                    </div>
                     <div className="grid grid-cols-2 gap-1.5">
-                        {SCENE_PRESETS.map(preset => {
+                        {presets.map(preset => {
                             const isActive = detectedPreset === preset.id;
                             return (
                                 <button

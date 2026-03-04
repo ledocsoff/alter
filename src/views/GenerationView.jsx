@@ -271,7 +271,7 @@ const GenerationView = () => {
             {/* WORKSPACE */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
                 <div className="lg:col-span-4 h-full flex flex-col overflow-hidden">
-                    <SceneEditor isSandbox={isSandbox} />
+                    <SceneEditor isSandbox={isSandbox} location={currentLocation} />
                 </div>
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
