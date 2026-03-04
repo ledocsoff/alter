@@ -259,6 +259,7 @@ const App = () => (
           <Route path="/models/:modelId/accounts" element={<AppLayout><AccountsView /></AppLayout>} />
           <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><LocationsAndSandboxView /></AppLayout>} />
           <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><GenerationView /></AppLayout>} />
+          <Route path="*" element={<AppLayout><ModelsView /></AppLayout>} />
         </Routes>
       </Suspense>
     </HashRouter>

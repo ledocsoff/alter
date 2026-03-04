@@ -155,7 +155,19 @@ export const saveLastSession = (info) => {
 };
 
 export const getLastSession = () => {
-    try { return JSON.parse(localStorage.getItem(LAST_SESSION_KEY)) || null; } catch { return null; }
+    try {
+        const session = JSON.parse(localStorage.getItem(LAST_SESSION_KEY));
+        if (!session) return null;
+        // Migrate stale paths from before the routing fix
+        if (session.path && (session.path.includes('/studio') || session.path.endsWith('/sandbox'))) {
+            const { modelId, accountId, locationId } = session;
+            if (modelId && accountId) {
+                session.path = `/models/${modelId}/accounts/${accountId}/locations/${locationId || 'sandbox'}/generate`;
+                try { localStorage.setItem(LAST_SESSION_KEY, JSON.stringify(session)); } catch { }
+            }
+        }
+        return session;
+    } catch { return null; }
 };
 
 // ============================================
