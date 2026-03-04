@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore } from '../utils/storage';
+import { saveLocationData, deleteLocationData, duplicateLocation, getLocationLockScore, generateSeed, getApiKey } from '../utils/storage';
+import { autoFillLocation } from '../utils/googleAI';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 
 const TIME_OF_DAY_OPTIONS = [
@@ -26,8 +27,8 @@ const LockScore = ({ location }) => {
                     <div
                         key={i}
                         className={`w-1.5 h-3 rounded-sm transition-colors ${i < filled
-                                ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
-                                : 'bg-zinc-800'
+                            ? filled >= 5 ? 'bg-emerald-500' : filled >= 3 ? 'bg-amber-500' : 'bg-zinc-600'
+                            : 'bg-zinc-800'
                             }`}
                     />
                 ))}
@@ -54,7 +55,9 @@ const LocationsAndSandboxView = () => {
     const [newLocTimeOfDay, setNewLocTimeOfDay] = useState('');
     const [newLocAnchorDetails, setNewLocAnchorDetails] = useState('');
     const [newLocColorPalette, setNewLocColorPalette] = useState('');
+    const [newLocNegativePrompt, setNewLocNegativePrompt] = useState('');
     const [pendingDeleteId, setPendingDeleteId] = useState(null);
+    const [isAutoFilling, setIsAutoFilling] = useState(false);
 
     const currentModel = allModelsDatabase.find(m => m.id === modelId);
     const currentAccount = currentModel?.accounts?.find(a => a.id === accountId);
@@ -88,6 +91,7 @@ const LocationsAndSandboxView = () => {
             time_of_day: newLocTimeOfDay,
             anchor_details: newLocAnchorDetails.trim(),
             color_palette: newLocColorPalette.trim(),
+            negative_prompt: newLocNegativePrompt.trim(),
         };
         if (locFormMode !== 'create') locationData.id = locFormMode;
 
@@ -132,6 +136,7 @@ const LocationsAndSandboxView = () => {
         setNewLocTimeOfDay(loc.time_of_day || '');
         setNewLocAnchorDetails(loc.anchor_details || '');
         setNewLocColorPalette(loc.color_palette || '');
+        setNewLocNegativePrompt(loc.negative_prompt || '');
         if (!presetEnvironmentsEN.includes(loc.environment)) {
             setIsCustomEnv(true);
             setNewLocEnvCustom(loc.environment);
@@ -153,9 +158,32 @@ const LocationsAndSandboxView = () => {
         setNewLocTimeOfDay('');
         setNewLocAnchorDetails('');
         setNewLocColorPalette('');
+        setNewLocNegativePrompt('');
     };
 
     const isEditing = locFormMode !== 'create';
+
+    const handleAutoFill = async () => {
+        if (!newLocName.trim()) { toast.error('Entrez un nom de lieu d\'abord'); return; }
+        const apiKey = getApiKey();
+        if (!apiKey) { toast.error('Cle API requise'); return; }
+        setIsAutoFilling(true);
+        try {
+            const result = await autoFillLocation(apiKey, newLocName.trim());
+            if (result.environment) { setIsCustomEnv(true); setNewLocEnvCustom(result.environment); }
+            if (result.lighting) setNewLocLighting(result.lighting);
+            if (result.vibe) setNewLocVibe(result.vibe);
+            if (result.time_of_day) setNewLocTimeOfDay(result.time_of_day);
+            if (result.anchor_details) setNewLocAnchorDetails(result.anchor_details);
+            if (result.color_palette) setNewLocColorPalette(result.color_palette);
+            if (result.negative_prompt) setNewLocNegativePrompt(result.negative_prompt);
+            toast.success('Lieu auto-rempli par l\'IA ✨');
+        } catch (err) {
+            toast.error(`Auto-fill echoue: ${err.message}`);
+        } finally {
+            setIsAutoFilling(false);
+        }
+    };
 
     return (
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
@@ -186,11 +214,20 @@ const LocationsAndSandboxView = () => {
                                     <label className={labelClass}>Nom du lieu</label>
                                     <input
                                         type="text"
-                                        placeholder="Ex: Chambre, SDB Miroir..."
+                                        placeholder="Ex: Plage Bali, Café Paris..."
                                         className={inputClass}
                                         value={newLocName}
                                         onChange={(e) => setNewLocName(e.target.value)}
                                     />
+                                    {!isEditing && newLocName.trim() && (
+                                        <button
+                                            onClick={handleAutoFill}
+                                            disabled={isAutoFilling}
+                                            className={`mt-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${isAutoFilling ? 'text-zinc-500 bg-zinc-800/50 cursor-wait' : 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'}`}
+                                        >
+                                            {isAutoFilling ? '⏳ Analyse IA...' : '✨ Auto-fill IA'}
+                                        </button>
+                                    )}
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">
@@ -273,13 +310,25 @@ const LocationsAndSandboxView = () => {
                                 </div>
                             </div>
 
+                            {/* NEGATIVE PROMPT */}
+                            <div>
+                                <label className={labelClass}>Negative prompt <span className="text-zinc-600 normal-case font-normal">elements a eviter</span></label>
+                                <textarea
+                                    placeholder="tattoo, piercing, neon lights, cluttered background..."
+                                    value={newLocNegativePrompt}
+                                    onChange={(e) => setNewLocNegativePrompt(e.target.value)}
+                                    rows={2}
+                                    className={inputClass + " resize-none font-mono text-[12px] leading-relaxed"}
+                                />
+                            </div>
+
                             <div className="flex justify-end pt-2">
                                 <button
                                     onClick={handleSaveLocation}
                                     disabled={!newLocName.trim() || (isCustomEnv && !newLocEnvCustom.trim())}
                                     className={`h-9 px-5 rounded-lg text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
-                                            ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
-                                            : 'bg-zinc-100 text-zinc-900 hover:bg-white'
+                                        ? 'bg-amber-500 text-zinc-900 hover:bg-amber-400'
+                                        : 'bg-zinc-100 text-zinc-900 hover:bg-white'
                                         }`}
                                 >
                                     {isEditing ? 'Mettre a jour' : 'Enregistrer'}
@@ -345,8 +394,8 @@ const LocationsAndSandboxView = () => {
                                             <button
                                                 onClick={(e) => handleDeleteLocation(e, loc.id)}
                                                 className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all ${pendingDeleteId === loc.id
-                                                        ? 'bg-red-500/20 text-red-400 opacity-100'
-                                                        : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
+                                                    ? 'bg-red-500/20 text-red-400 opacity-100'
+                                                    : 'text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/10'
                                                     }`}
                                             >
                                                 {pendingDeleteId === loc.id ? '?' : '\u00D7'}
@@ -359,6 +408,7 @@ const LocationsAndSandboxView = () => {
                                         {loc.time_of_day && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Horaire</span>}
                                         {loc.anchor_details && <span className="text-[10px] text-amber-500/70 bg-amber-500/8 px-2 py-0.5 rounded-md">Ancrage</span>}
                                         {loc.color_palette && <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded-md">Palette</span>}
+                                        {loc.negative_prompt && <span className="text-[10px] text-red-400/70 bg-red-500/8 px-2 py-0.5 rounded-md">Neg prompt</span>}
                                     </div>
                                 </div>
                             ))}

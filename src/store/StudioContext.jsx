@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { DEFAULT_MODEL } from "../constants/modelOptions";
 import { DEFAULT_SCENE } from "../constants/sceneOptions";
-import { generatePromptJSON } from "../utils/promptGenerators";
+import { generateAnchorMatrix } from "../utils/promptGenerators";
 import { getSavedModels } from "../utils/storage";
 
 // =============================================
@@ -44,18 +44,18 @@ export const PromptProvider = ({ children }) => {
 
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [scene, setScene] = useState(DEFAULT_SCENE);
+  const [referenceImages, setReferenceImages] = useState([]);
 
-  // Recalcul du prompt JSON (réactif)
-  const promptJSON = useMemo(() => {
-    let activeAccount = null;
-    if (activeWorkflow.modelId && activeWorkflow.accountId) {
-      const dbModel = allModelsDatabase.find(m => m.id === activeWorkflow.modelId);
-      activeAccount = dbModel?.accounts?.find(a => a.id === activeWorkflow.accountId);
-    }
-    return generatePromptJSON(model, scene, activeAccount);
-  }, [model, scene, activeWorkflow, allModelsDatabase]);
+  // Resolve active account
+  const activeAccount = useMemo(() => {
+    if (!activeWorkflow.modelId || !activeWorkflow.accountId) return null;
+    const dbModel = allModelsDatabase.find(m => m.id === activeWorkflow.modelId);
+    return dbModel?.accounts?.find(a => a.id === activeWorkflow.accountId) || null;
+  }, [activeWorkflow, allModelsDatabase]);
 
-  const generatedPrompt = useMemo(() => JSON.stringify(promptJSON, null, 2), [promptJSON]);
+  // Matrice d'ancrage = prompt principal
+  const anchorMatrix = useMemo(() => generateAnchorMatrix(model, scene, activeAccount), [model, scene, activeAccount]);
+  const generatedPrompt = useMemo(() => JSON.stringify(anchorMatrix, null, 2), [anchorMatrix]);
 
   const updateModelField = useCallback((key, value) => {
     setModel(prev => ({ ...prev, [key]: value }));
@@ -73,9 +73,9 @@ export const PromptProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(() => ({
-    model, scene, generatedPrompt, promptJSON,
-    setModel, setScene, updateModelField, updateModelCategory, updateSceneEntry,
-  }), [model, scene, generatedPrompt, promptJSON, updateModelField, updateModelCategory, updateSceneEntry]);
+    model, scene, generatedPrompt, anchorMatrix, referenceImages,
+    setModel, setScene, setReferenceImages, updateModelField, updateModelCategory, updateSceneEntry,
+  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, updateModelField, updateModelCategory, updateSceneEntry]);
 
   return (
     <PromptContext.Provider value={value}>

@@ -36,4 +36,4 @@ yarn-error.log*
 .claude/
 
 # User data (sauvegarde locale)
-sauvegarde/*.json
+sauvegarde/

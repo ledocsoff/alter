@@ -1,32 +1,58 @@
 const STORAGE_KEY = 'nanabanana_studio_v4';
 const HISTORY_KEY = 'nanabanana_history';
 const TEMPLATES_KEY = 'nanabanana_templates';
+const GALLERY_KEY = 'nanabanana_gallery';
 const API_KEY_KEY = 'nanabanana_api_key';
+const API_PROVIDER_KEY = 'nanabanana_api_provider'; // 'ai_studio' | 'vertex_ai'
 
 // ============================================
 // FILE SYNC — Sauvegarde automatique vers le serveur
 // ============================================
 let syncTimeout = null;
+let hasPendingSync = false;
+
+const buildSyncPayload = () => ({
+    dataVersion: 1,
+    models: getSavedModels(),
+    templates: getSceneTemplates(),
+    history: getPromptHistory(),
+});
 
 const syncToServer = () => {
     clearTimeout(syncTimeout);
+    hasPendingSync = true;
     syncTimeout = setTimeout(async () => {
         try {
-            const payload = {
-                models: getSavedModels(),
-                templates: getSceneTemplates(),
-                history: getPromptHistory(),
-            };
             await fetch('/api/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(buildSyncPayload()),
             });
+            hasPendingSync = false;
         } catch (err) {
             console.warn('[NanaBanana] Sync serveur echoue:', err.message);
         }
     }, 300);
 };
+
+// Force sync immédiat (pour beforeunload ou appel explicite)
+export const syncNow = () => {
+    if (!hasPendingSync) return;
+    clearTimeout(syncTimeout);
+    try {
+        // sendBeacon fonctionne même pendant la fermeture de l'onglet
+        const payload = JSON.stringify(buildSyncPayload());
+        const sent = navigator.sendBeacon('/api/save', new Blob([payload], { type: 'application/json' }));
+        if (sent) hasPendingSync = false;
+    } catch (err) {
+        console.warn('[NanaBanana] Sync beacon echoue:', err.message);
+    }
+};
+
+// Garantir la sauvegarde même si l'utilisateur ferme l'onglet
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', syncNow);
+}
 
 /**
  * Charge les données depuis le serveur (sauvegarde/) dans localStorage.
@@ -60,17 +86,42 @@ export const loadFromServer = async () => {
 
 // ============================================
 // API KEY (localStorage only — jamais dans les fichiers)
+// Une clé par provider : ai_studio et vertex_ai
 // ============================================
-export const getApiKey = () => {
-    try { return localStorage.getItem(API_KEY_KEY) || ''; } catch { return ''; }
+const _apiKeyFor = (provider) => `${API_KEY_KEY}_${provider}`;
+
+// Migration: si l'ancienne clé unique existe, la déplacer vers ai_studio
+(() => {
+    try {
+        const old = localStorage.getItem(API_KEY_KEY);
+        if (old) {
+            localStorage.setItem(_apiKeyFor('ai_studio'), old);
+            localStorage.removeItem(API_KEY_KEY);
+        }
+    } catch { }
+})();
+
+export const getApiKey = (provider) => {
+    const p = provider || getApiProvider();
+    try { return localStorage.getItem(_apiKeyFor(p)) || ''; } catch { return ''; }
 };
 
-export const saveApiKey = (key) => {
-    localStorage.setItem(API_KEY_KEY, key);
+export const saveApiKey = (key, provider) => {
+    const p = provider || getApiProvider();
+    localStorage.setItem(_apiKeyFor(p), key);
 };
 
-export const removeApiKey = () => {
-    localStorage.removeItem(API_KEY_KEY);
+export const removeApiKey = (provider) => {
+    const p = provider || getApiProvider();
+    localStorage.removeItem(_apiKeyFor(p));
+};
+
+export const getApiProvider = () => {
+    try { return localStorage.getItem(API_PROVIDER_KEY) || 'ai_studio'; } catch { return 'ai_studio'; }
+};
+
+export const saveApiProvider = (provider) => {
+    localStorage.setItem(API_PROVIDER_KEY, provider);
 };
 
 // ============================================
@@ -284,10 +335,34 @@ export const exportAllData = () => {
 };
 
 export const importAllData = (jsonString) => {
-    const data = JSON.parse(jsonString);
-    if (!data.version || !data.models) {
-        throw new Error('Format invalide');
+    let data;
+    try {
+        data = JSON.parse(jsonString);
+    } catch {
+        throw new Error('JSON invalide — le fichier est corrompu ou mal formé');
     }
+
+    // Validate top-level structure
+    if (!data || typeof data !== 'object') throw new Error('Format invalide: objet attendu');
+    if (!data.version) throw new Error('Format invalide: champ "version" manquant (pas un export NanaBanana ?)');
+    if (!Array.isArray(data.models)) throw new Error('Format invalide: "models" doit être un tableau');
+
+    // Validate each model has minimum required fields
+    for (let i = 0; i < data.models.length; i++) {
+        const m = data.models[i];
+        if (!m || typeof m !== 'object') throw new Error(`Modèle #${i + 1}: objet invalide`);
+        if (!m.id || typeof m.id !== 'string') throw new Error(`Modèle #${i + 1}: id manquant ou invalide`);
+        if (!m.name || typeof m.name !== 'string') throw new Error(`Modèle #${i + 1}: nom manquant ou invalide`);
+    }
+
+    // Validate optional arrays
+    if (data.templates !== undefined && !Array.isArray(data.templates)) {
+        throw new Error('Format invalide: "templates" doit être un tableau');
+    }
+    if (data.history !== undefined && !Array.isArray(data.history)) {
+        throw new Error('Format invalide: "history" doit être un tableau');
+    }
+
     _saveAll(data.models);
     if (data.templates) {
         localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates));
@@ -334,4 +409,72 @@ export const getLocationLockScore = (location) => {
     ];
     const filled = fields.filter(f => location[f] && location[f].trim()).length;
     return { filled, total: fields.length };
+};
+
+// ============================================
+// GALERIE D'IMAGES
+// ============================================
+const MAX_GALLERY = 50;
+
+export const getGallery = () => {
+    try {
+        const data = localStorage.getItem(GALLERY_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch { return []; }
+};
+
+export const saveToGallery = (imageData, meta = {}) => {
+    const gallery = getGallery();
+    const entry = {
+        id: `gal_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        base64: imageData.base64,
+        mimeType: imageData.mimeType || 'image/png',
+        prompt: meta.prompt || '',
+        scene: meta.scene || {},
+        modelName: meta.modelName || '',
+        locationName: meta.locationName || 'Sandbox',
+        accountHandle: meta.accountHandle || '',
+        seed: meta.seed || null,
+        timestamp: Date.now(),
+        starred: false,
+    };
+    gallery.unshift(entry);
+    if (gallery.length > MAX_GALLERY) gallery.length = MAX_GALLERY;
+    try {
+        localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
+        syncToServer();
+    } catch (e) {
+        // localStorage quota exceeded — remove oldest entries
+        while (gallery.length > 5) {
+            gallery.pop();
+            try {
+                localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
+                syncToServer();
+                break;
+            } catch { /* continue shrinking */ }
+        }
+    }
+    return gallery;
+};
+
+export const toggleGalleryStar = (imageId) => {
+    const gallery = getGallery();
+    const item = gallery.find(g => g.id === imageId);
+    if (item) item.starred = !item.starred;
+    localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
+    syncToServer();
+    return gallery;
+};
+
+export const deleteFromGallery = (imageId) => {
+    const gallery = getGallery().filter(g => g.id !== imageId);
+    localStorage.setItem(GALLERY_KEY, JSON.stringify(gallery));
+    syncToServer();
+    return gallery;
+};
+
+export const clearGallery = () => {
+    localStorage.removeItem(GALLERY_KEY);
+    syncToServer();
+    return [];
 };

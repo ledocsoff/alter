@@ -1,22 +1,32 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
+import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS, OUTFIT_PRESETS } from '../constants/sceneOptions';
-import { saveLocationData, generateSeed } from '../utils/storage';
+import { saveLocationData, generateSeed, getApiKey } from '../utils/storage';
+import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
-import OutputPanel from '../features/OutputPanel/OutputPanel';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
+import ReferenceUpload from '../features/ReferenceUpload/ReferenceUpload';
+import EditableMatrix from '../features/EditableMatrix/EditableMatrix';
+import GalleryPanel from '../features/GalleryPanel/GalleryPanel';
+import PromptHistoryPanel from '../features/PromptHistoryPanel/PromptHistoryPanel';
 import ApiKeyModal from '../features/ApiKeyModal/ApiKeyModal';
 
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt } = useStudio();
+    const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
     const [showRecap, setShowRecap] = useState(false);
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-    const [rightPanel, setRightPanel] = useState('image'); // 'json' | 'image'
+    const [rightPanel, setRightPanel] = useState('image'); // 'image' | 'matrice' | 'galerie'
+    const [enrichedMatrix, setEnrichedMatrix] = useState(null);
+    const [isEnriching, setIsEnriching] = useState(false);
+    const [galleryKey, setGalleryKey] = useState(0);
+    const [historyKey, setHistoryKey] = useState(0);
     const imagePreviewRef = useRef(null);
     const hasInitialized = useRef(false);
 
@@ -62,6 +72,9 @@ const GenerationView = () => {
                     color_palette: loc.color_palette || '',
                 });
             }
+            if (loc?.negative_prompt) {
+                updateSceneEntry('custom_negative_prompt', loc.negative_prompt);
+            }
         }
 
         setIsLoaded(true);
@@ -73,17 +86,26 @@ const GenerationView = () => {
     const handleRandomize = useCallback(() => {
         setScene(prev => ({
             outfit: pickRandom(OUTFIT_PRESETS),
-            vibe: pickRandom(SCENE_OPTIONS.vibe).promptEN,
+            vibe: isSandbox ? pickRandom(SCENE_OPTIONS.vibe).promptEN : prev.vibe,
             camera_angle: pickRandom(SCENE_OPTIONS.camera_angle).promptEN,
             pose: pickRandom(SCENE_OPTIONS.pose).promptEN,
-            lighting: pickRandom(SCENE_OPTIONS.lighting).promptEN,
+            lighting: isSandbox ? pickRandom(SCENE_OPTIONS.lighting).promptEN : prev.lighting,
             expression: pickRandom(SCENE_OPTIONS.expression).promptEN,
-            aspect_ratio: scene.aspect_ratio,
-            environment: scene.environment,
-            location_meta: scene.location_meta,
-            seed: scene.seed, // Garder la même seed
+            aspect_ratio: prev.aspect_ratio,
+            environment: prev.environment,
+            location_meta: prev.location_meta,
+            seed: prev.seed,
+            custom_negative_prompt: prev.custom_negative_prompt,
         }));
-    }, [scene, setScene]);
+    }, [isSandbox, setScene]);
+
+    const galleryMeta = {
+        modelName: currentModel?.name || '',
+        locationName: isSandbox ? 'Sandbox' : currentLocation?.name || '',
+        accountHandle: currentAccount?.handle || '',
+        scene: scene,
+        seed: scene.seed,
+    };
 
     const handleGenerateImage = useCallback(() => {
         if (imagePreviewRef.current?.handleGenerate) {
@@ -145,6 +167,8 @@ const GenerationView = () => {
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* REFERENCE IMAGES */}
+                    <ReferenceUpload />
                     {/* SEED BADGE */}
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/30">
                         <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
@@ -208,42 +232,157 @@ const GenerationView = () => {
                     {/* PANEL TABS */}
                     <div className="flex items-center shrink-0">
                         <div className="flex items-center bg-zinc-900/80 border border-zinc-800/50 rounded-lg p-0.5">
-                            <button
-                                onClick={() => setRightPanel('image')}
-                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${rightPanel === 'image'
-                                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                        : 'text-zinc-500 hover:text-zinc-300'
-                                    }`}
-                            >
-                                Image
-                            </button>
-                            <button
-                                onClick={() => setRightPanel('json')}
-                                className={`text-[11px] font-semibold px-3.5 py-1.5 rounded-md transition-all ${rightPanel === 'json'
-                                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                        : 'text-zinc-500 hover:text-zinc-300'
-                                    }`}
-                            >
-                                JSON
-                            </button>
+                            {[
+                                { id: 'image', icon: '🖼️', tip: 'Image' },
+                                { id: 'galerie', icon: '📷', tip: 'Galerie' },
+                                { id: 'historique', icon: '📝', tip: 'Prompts' },
+                                { id: 'matrice', icon: '⚙️', tip: 'Matrice' },
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setRightPanel(tab.id)}
+                                    title={tab.tip}
+                                    className={`text-[13px] px-2.5 py-1.5 rounded-md transition-all ${rightPanel === tab.id
+                                        ? 'bg-zinc-800 shadow-sm scale-110'
+                                        : 'opacity-40 hover:opacity-80'
+                                        }`}
+                                >
+                                    {tab.icon}
+                                </button>
+                            ))}
                         </div>
                         <div className="ml-auto flex items-center gap-3">
                             {rightPanel === 'image' && (
-                                <span className="text-[10px] text-zinc-700 font-mono">Cmd+G generer</span>
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            const pickR = (arr) => arr[Math.floor(Math.random() * arr.length)];
+                                            const getVariant = (i) => {
+                                                try {
+                                                    const matrix = JSON.parse(generatedPrompt);
+                                                    if (i > 0) {
+                                                        matrix.pose.body_position = pickR(SCENE_OPTIONS.pose).promptEN;
+                                                        matrix.camera.perspective = pickR(SCENE_OPTIONS.camera_angle).promptEN;
+                                                        matrix.mood_and_expression.facial_expression = pickR(SCENE_OPTIONS.expression).promptEN;
+                                                    }
+                                                    return JSON.stringify(matrix, null, 2);
+                                                } catch { return generatedPrompt; }
+                                            };
+                                            imagePreviewRef.current?.handleBatchGenerate(3, getVariant);
+                                        }}
+                                        className="text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded-md transition-colors"
+                                    >
+                                        ⚡ Batch x3
+                                    </button>
+                                    <span className="text-[10px] text-zinc-700 font-mono">Cmd+G generer</span>
+                                </>
                             )}
-                            {rightPanel === 'json' && (
-                                <span className="text-[10px] text-zinc-700 font-mono">Cmd+C copier</span>
+                            {rightPanel === 'matrice' && (
+                                <span className="text-[10px] text-zinc-700 font-mono">Prompt ultra-precis</span>
                             )}
                         </div>
                     </div>
                     {/* ACTIVE PANEL */}
                     <div className="flex-1 min-h-0">
-                        {rightPanel === 'json' ? (
-                            <OutputPanel meta={meta} />
+                        {rightPanel === 'matrice' ? (
+                            <div className="h-full flex flex-col bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
+                                <div className="shrink-0 px-4 py-2.5 border-b border-zinc-800/50 flex items-center justify-between">
+                                    <span className="text-[12px] font-semibold text-zinc-300">Matrice d'Ancrage</span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={async () => {
+                                                const key = getApiKey();
+                                                if (!key) { setShowApiKeyModal(true); return; }
+                                                setIsEnriching(true);
+                                                try {
+                                                    const result = await generateAnchorMatrixViaGemini(key, anchorMatrix);
+                                                    setEnrichedMatrix(result);
+                                                    toast.success('Matrice enrichie par Gemini');
+                                                } catch (e) {
+                                                    toast.error(e.message);
+                                                } finally {
+                                                    setIsEnriching(false);
+                                                }
+                                            }}
+                                            disabled={isEnriching}
+                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+                                        >
+                                            {isEnriching ? 'Enrichissement...' : '✨ Enrichir'}
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                const key = getApiKey();
+                                                if (!key) { setShowApiKeyModal(true); return; }
+                                                setIsEnriching(true);
+                                                try {
+                                                    const result = await generateAnchorMatrixViaGemini(key, anchorMatrix);
+                                                    setEnrichedMatrix(result);
+                                                    toast.success('Matrice enrichie — generation en cours...');
+                                                    const enrichedPrompt = JSON.stringify(result, null, 2);
+                                                    setRightPanel('image');
+                                                    setTimeout(() => {
+                                                        imagePreviewRef.current?.handleGenerateWithPrompt(enrichedPrompt);
+                                                    }, 100);
+                                                } catch (e) {
+                                                    toast.error(e.message);
+                                                } finally {
+                                                    setIsEnriching(false);
+                                                }
+                                            }}
+                                            disabled={isEnriching}
+                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 hover:from-amber-500/30 hover:to-orange-500/30 transition-colors disabled:opacity-50"
+                                        >
+                                            {isEnriching ? '...' : '⚡ Enrichir & Generer'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const data = enrichedMatrix ? JSON.stringify(enrichedMatrix, null, 2) : generatedPrompt;
+                                                navigator.clipboard.writeText(data);
+                                                toast.success('Matrice copiee');
+                                            }}
+                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
+                                        >
+                                            Copier
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                                    <EditableMatrix
+                                        matrix={enrichedMatrix || anchorMatrix}
+                                        onChange={(path, value) => {
+                                            // Deep set value at path in a copy of the matrix
+                                            const base = enrichedMatrix ? { ...enrichedMatrix } : { ...anchorMatrix };
+                                            const keys = path.replace('$.', '').split('.');
+                                            let obj = base;
+                                            for (let i = 0; i < keys.length - 1; i++) {
+                                                if (obj[keys[i]] && typeof obj[keys[i]] === 'object') {
+                                                    obj[keys[i]] = Array.isArray(obj[keys[i]]) ? [...obj[keys[i]]] : { ...obj[keys[i]] };
+                                                    obj = obj[keys[i]];
+                                                }
+                                            }
+                                            obj[keys[keys.length - 1]] = value;
+                                            setEnrichedMatrix(base);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : rightPanel === 'galerie' ? (
+                            <div className="h-full bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
+                                <GalleryPanel key={galleryKey} />
+                            </div>
+                        ) : rightPanel === 'historique' ? (
+                            <div className="h-full bg-zinc-950 border border-zinc-800/50 rounded-xl overflow-hidden">
+                                <PromptHistoryPanel
+                                    key={historyKey}
+                                    onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
+                                />
+                            </div>
                         ) : (
                             <ImagePreview
                                 ref={imagePreviewRef}
                                 onRequestApiKey={() => setShowApiKeyModal(true)}
+                                galleryMeta={galleryMeta}
+                                onGalleryUpdate={() => { setGalleryKey(k => k + 1); setHistoryKey(k => k + 1); }}
                             />
                         )}
                     </div>

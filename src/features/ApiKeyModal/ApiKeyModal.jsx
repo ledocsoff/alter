@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { getApiKey, saveApiKey, removeApiKey } from '../../utils/storage';
+import { getApiKey, saveApiKey, removeApiKey, getApiProvider, saveApiProvider } from '../../utils/storage';
 import { validateApiKey } from '../../utils/googleAI';
+
+const PROVIDERS = [
+  { id: 'ai_studio', label: 'Google AI Studio', desc: 'aistudio.google.com' },
+  { id: 'vertex_ai', label: 'Google Cloud (GCP)', desc: 'console.cloud.google.com' },
+];
 
 const ApiKeyModal = ({ isOpen, onClose }) => {
   const [key, setKey] = useState('');
+  const [provider, setProvider] = useState('ai_studio');
   const [showKey, setShowKey] = useState(false);
   const [status, setStatus] = useState('idle'); // idle | validating | valid | invalid
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setKey(getApiKey());
-      setStatus(getApiKey() ? 'valid' : 'idle');
+      const p = getApiProvider();
+      setProvider(p);
+      const k = getApiKey(p);
+      setKey(k);
+      setStatus(k ? 'valid' : 'idle');
       setError('');
     }
   }, [isOpen]);
+
+  // Quand on switch de provider, charger la clé correspondante
+  const handleProviderChange = (p) => {
+    setProvider(p);
+    const k = getApiKey(p);
+    setKey(k);
+    setStatus(k ? 'valid' : 'idle');
+    setError('');
+  };
 
   const handleSave = async () => {
     if (!key.trim()) return;
@@ -23,7 +41,8 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
 
     const result = await validateApiKey(key.trim());
     if (result.valid) {
-      saveApiKey(key.trim());
+      saveApiKey(key.trim(), provider);
+      saveApiProvider(provider);
       setStatus('valid');
       setTimeout(() => onClose(true), 600);
     } else {
@@ -33,7 +52,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
   };
 
   const handleRemove = () => {
-    removeApiKey();
+    removeApiKey(provider);
     setKey('');
     setStatus('idle');
     setError('');
@@ -46,15 +65,42 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => onClose(false)} />
       <div className="relative bg-zinc-900 border border-zinc-800/80 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-zinc-100">Google AI Studio</h3>
+          <h3 className="text-base font-bold text-zinc-100">Configuration API</h3>
           <button onClick={() => onClose(false)} className="text-zinc-600 hover:text-zinc-300 text-lg transition-colors">&times;</button>
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">
-          Collez votre cle API Google AI Studio pour generer des images directement dans l'app.
-          Obtenez-la sur <span className="text-amber-500/70">aistudio.google.com</span>.
+          Deux cles API = deux quotas separes. Si l'une est saturee (503),
+          basculez sur l'autre pour continuer a generer.
         </p>
 
+        {/* PROVIDER SELECTOR */}
+        <div className="mb-4">
+          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2 block">Provider</label>
+          <div className="grid grid-cols-2 gap-2">
+            {PROVIDERS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleProviderChange(p.id)}
+                className={`relative text-left px-3 py-2.5 rounded-lg border transition-all duration-150 ${provider === p.id
+                  ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20'
+                  : 'border-zinc-800/60 bg-zinc-950 hover:border-zinc-700'
+                  }`}
+              >
+                <span className={`text-[12px] font-semibold block ${provider === p.id ? 'text-amber-400' : 'text-zinc-300'}`}>
+                  {p.label}
+                </span>
+                <span className="text-[10px] text-zinc-600 block mt-0.5">{p.desc}</span>
+                {provider === p.id && (
+                  <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* API KEY INPUT */}
         <div className="mb-4">
           <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Cle API</label>
           <div className="relative">

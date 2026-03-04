@@ -1,9 +1,12 @@
-import React, { Suspense, lazy, useState, useRef } from 'react';
+import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import { useDatabase } from './store/StudioContext';
 import { useToast } from './store/ToastContext';
 import { exportAllData, importAllData, getApiKey } from './utils/storage';
+import logger from './utils/logger';
 import ApiKeyModal from './features/ApiKeyModal/ApiKeyModal';
+import DebugPanel from './features/DebugPanel/DebugPanel';
+import ErrorBoundary from './features/ErrorBoundary/ErrorBoundary';
 import ModelsView from './views/ModelsView';
 
 const ModelEditorShell = lazy(() => import('./views/ModelEditorShell'));
@@ -76,7 +79,23 @@ const AppLayout = ({ children }) => {
   const { setAllModelsDatabase } = useDatabase();
   const fileInputRef = useRef(null);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [hasKey, setHasKey] = useState(() => !!getApiKey());
+  const [errorCount, setErrorCount] = useState(0);
+  const [serverOnline, setServerOnline] = useState(true);
+
+  // Health check — ping server every 30s
+  useEffect(() => {
+    const check = () => fetch('/api/health').then(() => setServerOnline(true)).catch(() => setServerOnline(false));
+    check();
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const update = (logs) => setErrorCount(logs.filter(l => l.level === 'error').length);
+    return logger.subscribe(update);
+  }, []);
 
   const handleExport = () => {
     const json = exportAllData();
@@ -99,8 +118,8 @@ const AppLayout = ({ children }) => {
         const models = importAllData(ev.target.result);
         setAllModelsDatabase(models);
         toast.success(`${models.length} modele(s) importe(s)`);
-      } catch {
-        toast.error('Fichier invalide');
+      } catch (err) {
+        toast.error(err.message || 'Fichier invalide');
       }
     };
     reader.readAsText(file);
@@ -123,6 +142,14 @@ const AppLayout = ({ children }) => {
           <Breadcrumb />
         </div>
         <div className="ml-auto flex items-center gap-1">
+          <div
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md"
+            title={serverOnline ? 'Serveur de sauvegarde connecté' : 'Serveur déconnecté — les données ne sont PAS sauvegardées sur le disque'}
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${serverOnline ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div>
+            <span className={`text-[10px] font-medium ${serverOnline ? 'text-zinc-600' : 'text-red-400'}`}>{serverOnline ? 'Sync' : 'Hors ligne'}</span>
+          </div>
+          <div className="h-3 w-px bg-zinc-800/60"></div>
           <button
             onClick={() => setShowApiKeyModal(true)}
             className="flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md transition-colors hover:bg-zinc-800/50"
@@ -146,6 +173,19 @@ const AppLayout = ({ children }) => {
           >
             Import
           </button>
+          <div className="h-3 w-px bg-zinc-800/60"></div>
+          <button
+            onClick={() => setShowDebugPanel(true)}
+            className="relative flex items-center gap-1 text-[11px] font-medium text-zinc-600 hover:text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors"
+            title="Logs de debug"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            {errorCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-500 text-[8px] font-bold text-white flex items-center justify-center">{errorCount > 9 ? '!' : errorCount}</span>
+            )}
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -167,23 +207,29 @@ const AppLayout = ({ children }) => {
           if (saved) setHasKey(true);
         }}
       />
+      <DebugPanel
+        isOpen={showDebugPanel}
+        onClose={() => setShowDebugPanel(false)}
+      />
     </div>
   );
 };
 
 const App = () => (
-  <BrowserRouter>
-    <Suspense fallback={<AppLayout><LoadingFallback /></AppLayout>}>
-      <Routes>
-        <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
-        <Route path="/models/new" element={<AppLayout><ModelEditorShell mode="create" /></AppLayout>} />
-        <Route path="/models/:modelId/edit" element={<AppLayout><ModelEditorShell mode="edit" /></AppLayout>} />
-        <Route path="/models/:modelId/accounts" element={<AppLayout><AccountsView /></AppLayout>} />
-        <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><LocationsAndSandboxView /></AppLayout>} />
-        <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><GenerationView /></AppLayout>} />
-      </Routes>
-    </Suspense>
-  </BrowserRouter>
+  <ErrorBoundary>
+    <BrowserRouter>
+      <Suspense fallback={<AppLayout><LoadingFallback /></AppLayout>}>
+        <Routes>
+          <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
+          <Route path="/models/new" element={<AppLayout><ModelEditorShell mode="create" /></AppLayout>} />
+          <Route path="/models/:modelId/edit" element={<AppLayout><ModelEditorShell mode="edit" /></AppLayout>} />
+          <Route path="/models/:modelId/accounts" element={<AppLayout><AccountsView /></AppLayout>} />
+          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><LocationsAndSandboxView /></AppLayout>} />
+          <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><GenerationView /></AppLayout>} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  </ErrorBoundary>
 );
 
 export default App;

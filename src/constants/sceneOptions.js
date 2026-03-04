@@ -98,6 +98,50 @@ export const SCENE_OPTIONS = {
   ]
 };
 
+// Presets de scènes complètes — appliquent environment + lighting + camera + pose + expression + vibe d'un coup
+export const SCENE_PRESETS = [
+  {
+    id: 'shower_selfie', label: '🚿 Douche Selfie', icon: '🚿',
+    scene: { environment: 'steamy shower, glass door, water droplets on skin', lighting: 'warm bathroom lighting', camera_angle: 'high angle selfie', pose: 'holding phone for selfie', expression: 'playful lip bite', vibe: 'amateur selfie' },
+  },
+  {
+    id: 'bedroom_cozy', label: '🛏️ Chambre Cozy', icon: '🛏️',
+    scene: { environment: 'cozy messy bedroom with clothes on bed', lighting: 'warm bedroom lamplight', camera_angle: 'medium shot from waist up', pose: 'sitting on bed, legs crossed', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
+  },
+  {
+    id: 'pool_tropical', label: '🏊 Pool Tropicale', icon: '🏊',
+    scene: { environment: 'tropical villa private pool', lighting: 'golden hour sunlight', camera_angle: 'eye-level portrait', pose: 'sitting on edge of pool', expression: 'laughing candidly', vibe: 'professional photoshoot' },
+  },
+  {
+    id: 'beach_sunset', label: '🏖️ Plage Sunset', icon: '🏖️',
+    scene: { environment: 'tropical beach, turquoise waves, white sand', lighting: 'golden hour sunlight', camera_angle: 'low angle shot', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: '35mm film photography' },
+  },
+  {
+    id: 'mirror_bathroom', label: '🪞 Miroir SdB', icon: '🪞',
+    scene: { environment: 'standard apartment bathroom mirror', lighting: 'flash photography', camera_angle: 'mirror selfie, phone visible', pose: 'holding phone for selfie', expression: 'seductive smirk', vibe: 'amateur selfie' },
+  },
+  {
+    id: 'gym_locker', label: '💪 Vestiaire Gym', icon: '💪',
+    scene: { environment: 'local gym locker room mirror', lighting: 'harsh direct sunlight', camera_angle: 'mirror selfie, phone visible', pose: 'casual standing, hand on hip', expression: 'serious model stare', vibe: 'casual everyday snapshot' },
+  },
+  {
+    id: 'bed_laying', label: '😴 Allongée Lit', icon: '😴',
+    scene: { environment: 'simple white bedroom walls, unmade bed', lighting: 'warm bedroom lamplight', camera_angle: 'high angle selfie', pose: 'laying on stomach on bed', expression: 'mouth slightly open, relaxed', vibe: 'behind the scenes candid' },
+  },
+  {
+    id: 'car_seat', label: '🚗 Voiture', icon: '🚗',
+    scene: { environment: 'passenger seat of a regular car', lighting: 'soft overcast daylight', camera_angle: 'high angle selfie', pose: 'holding phone for selfie', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
+  },
+  {
+    id: 'yacht_luxury', label: '🛥️ Yacht Luxe', icon: '🛥️',
+    scene: { environment: 'luxury yacht deck', lighting: 'golden hour sunlight', camera_angle: 'full body shot', pose: 'leaning against wall', expression: 'seductive smirk', vibe: 'professional photoshoot' },
+  },
+  {
+    id: 'balcony_city', label: '🌆 Balcon Ville', icon: '🌆',
+    scene: { environment: 'city apartment balcony with plants', lighting: 'moody low light', camera_angle: 'eye-level portrait', pose: 'looking over shoulder', expression: 'serious model stare', vibe: 'Polaroid picture' },
+  },
+];
+
 export const DEFAULT_SCENE = {
   outfit: OUTFIT_PRESETS[0],
   vibe: SCENE_OPTIONS.vibe[0].promptEN, // On stocke le EN en valeur primaire pour l'IA
@@ -108,4 +152,5 @@ export const DEFAULT_SCENE = {
   expression: SCENE_OPTIONS.expression[0].promptEN,
   aspect_ratio: "--ar 9:16",
   seed: null,
+  custom_negative_prompt: '', // Custom additions to negative prompt
 };
