@@ -15,13 +15,13 @@ function setupAutoUpdate() {
         });
 
         autoUpdater.on('update-downloaded', (info) => {
-            console.log(`[Update] v${info.version} telechargee, prete a installer`);
+            console.log(`[Update] v${info.version} téléchargée, prête à installer`);
             dialog.showMessageBox(mainWindow, {
                 type: 'info',
-                title: 'Mise a jour disponible',
-                message: `Velvet Studio v${info.version} est prete.`,
-                detail: 'Redemarrer maintenant pour appliquer la mise a jour ?',
-                buttons: ['Redemarrer', 'Plus tard'],
+                title: 'Mise à jour disponible',
+                message: `Velvet Studio v${info.version} est prête.`,
+                detail: 'Redémarrer maintenant pour appliquer la mise à jour ?',
+                buttons: ['Redémarrer', 'Plus tard'],
                 defaultId: 0,
             }).then(({ response }) => {
                 if (response === 0) autoUpdater.quitAndInstall();
@@ -35,7 +35,7 @@ function setupAutoUpdate() {
         // Check for updates 3s after launch
         setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 3000);
     } catch (err) {
-        console.log('[Update] electron-updater non disponible, auto-update desactive.');
+        console.log('[Update] electron-updater non disponible, auto-update désactivé.');
     }
 }
 
