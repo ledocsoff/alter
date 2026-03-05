@@ -29,6 +29,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Keyboard Focus ────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--velvet-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* ── Scrollbar ──────────────────────── */
 
 ::-webkit-scrollbar {

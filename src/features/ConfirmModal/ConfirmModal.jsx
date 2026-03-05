@@ -25,7 +25,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmLabel = 'Supprimer', canc
     const isDanger = variant === 'danger';
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onCancel}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onCancel} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" />
             <div
                 className="relative bg-[#141416] border border-white/[0.06] rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-scale"
@@ -37,7 +37,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmLabel = 'Supprimer', canc
                         : <AlertIcon size={22} className="text-teal-400" />
                     }
                 </div>
-                <h3 className="text-base font-bold text-zinc-100 text-center mb-1">{title}</h3>
+                <h3 id="confirm-dialog-title" className="text-base font-bold text-zinc-100 text-center mb-1">{title}</h3>
                 <p className="text-sm text-zinc-500 text-center mb-6 leading-relaxed">{message}</p>
                 <div className="flex gap-2">
                     <button

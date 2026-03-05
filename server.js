@@ -688,7 +688,10 @@ const readRefsIndex = (modelId) => {
 const writeRefsIndex = (modelId, entries) => {
     const dir = getModelRefsDir(modelId);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
+    const indexPath = path.join(dir, 'index.json');
+    const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
+    fs.writeFileSync(tmpFile, JSON.stringify(entries, null, 2), 'utf-8');
+    fs.renameSync(tmpFile, indexPath);
 };
 
 // Upload reference photo(s) for a model (autorise 50MB)
@@ -830,7 +833,10 @@ const readLocRefsIndex = (locationId) => {
 const writeLocRefsIndex = (locationId, entries) => {
     const dir = getLocationRefsDir(locationId);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
+    const indexPath = path.join(dir, 'index.json');
+    const tmpFile = path.join(dir, `.tmp.${crypto.randomBytes(4).toString('hex')}.json`);
+    fs.writeFileSync(tmpFile, JSON.stringify(entries, null, 2), 'utf-8');
+    fs.renameSync(tmpFile, indexPath);
 };
 
 // Upload reference photo(s) for a location (autorise 50MB)
@@ -1030,12 +1036,7 @@ process.on('uncaughtException', (err) => {
     // Don't exit — try to keep serving
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('[Server] ⚠ PROMESSE REJETÉE:', reason);
-    // Don't exit
-});
-
-
 process.on('unhandledRejection', (reason) => {
-    console.error('[Server] ⚠ PROMISE NON GÉRÉE:', reason);
+    console.error('[Server] ⚠ PROMESSE REJETÉE:', reason);
 });
+

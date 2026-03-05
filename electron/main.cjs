@@ -36,7 +36,10 @@ function setupAutoUpdate(window) {
 ipcMain.handle('check-for-updates', async (event) => {
     try {
         const result = await autoUpdater.checkForUpdates();
-        return { success: true, isUpdateAvailable: result?.updateInfo != null };
+        const remoteVersion = result?.updateInfo?.version;
+        const currentVersion = app.getVersion();
+        const isUpdateAvailable = remoteVersion && remoteVersion !== currentVersion;
+        return { success: true, isUpdateAvailable };
     } catch (error) {
         return { success: false, error: error.message };
     }

@@ -2,7 +2,6 @@ import logger from './logger';
 
 const STORAGE_KEY = 'velvet_studio_v4';
 const HISTORY_KEY = 'velvet_history';
-const TEMPLATES_KEY = 'velvet_templates';
 
 const API_KEY_KEY = 'velvet_api_key';
 
