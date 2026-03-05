@@ -23,7 +23,7 @@ const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
 
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages, generationStatus } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -271,7 +271,7 @@ const GenerationView = () => {
                         onGenerate={(prompt) => {
                             setRightPanel('image');
                             setTimeout(() => {
-                                imagePreviewRef.current?.handleGenerateWithPrompt(prompt);
+                                handleGenerateImage(prompt, null, toast);
                             }, 100);
                         }}
                         onShowApiKeyModal={() => setShowApiKeyModal(true)}
@@ -293,6 +293,9 @@ const GenerationView = () => {
                                 >
                                     <tab.Icon size={13} />
                                     <span className="hidden md:inline">{tab.label}</span>
+                                    {tab.id === 'image' && generationStatus === 'generating' && (
+                                        <div className="w-2.5 h-2.5 ml-1 border-2 border-teal-400/40 border-t-teal-400 rounded-full animate-spin shrink-0" />
+                                    )}
                                 </button>
                             ))}
                         </div>

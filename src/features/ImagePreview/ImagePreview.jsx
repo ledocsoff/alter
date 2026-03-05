@@ -12,198 +12,77 @@ Keep the same outfit unless specified otherwise.
 The result should feel like a different shot from the same photoshoot.`;
 
 const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryUpdate }, ref) => {
-  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene } = useStudio();
+  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene, generationStatus, currentImage, generationElapsed, generationError, handleGenerateImage } = useStudio();
   const toast = useToast();
 
-  const [status, setStatus] = useState('idle');
-  const [currentImage, setCurrentImage] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
   const [sessionImages, setSessionImages] = useState([]);
   const [genCount, setGenCount] = useState(0);
-  const [lastGenTime, setLastGenTime] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [batchProgress, setBatchProgress] = useState(null); // { current, total }
-  const timerRef = useRef(null);
   const galleryMetaRef = useRef(galleryMeta);
   galleryMetaRef.current = galleryMeta;
 
   // Historique de conversation multi-turn pour cohérence visuelle
-  // Chaque entrée = { role: 'user'|'model', parts: [...] }
   const [conversationHistory, setConversationHistory] = useState([]);
-
-  useEffect(() => {
-    if (status === 'generating') {
-      const start = Date.now();
-      timerRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [status]);
 
   useImperativeHandle(ref, () => ({ handleGenerate, handleGenerateWithPrompt, handleBatchGenerate, handleVariation }));
 
-  const handleGenerateWithPrompt = useCallback(async (customPrompt) => {
-    const apiKey = getApiKey();
-    if (!apiKey) { onRequestApiKey?.(); return; }
-
-    const now = Date.now();
-    if (status === 'generating') { toast.info('Génération déjà en cours, patientez...'); return; }
-    if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
-
-    setStatus('generating');
-    setErrorMsg('');
-    setElapsed(0);
-    setLastGenTime(now);
-
-    const promptToSend = customPrompt || generatedPrompt;
-
-    // ─── ANCHOR ARCHITECTURE ───
-    // Identity MUST be the primary anchor. Location is secondary.
-    // Each anchor type gets its own conversation turn for maximum attention.
-    // A synthetic model "acknowledgment" turn reinforces the identity lock
-    // before introducing location context.
-    let anchorHistory = [];
-
-    // TURN 1: Model identity (always first if available)
-    if (referenceImages.length > 0) {
-      anchorHistory.push({
-        role: 'user',
-        parts: [
-          {
-            text: `IDENTITY LOCK — ABSOLUTE PRIORITY:
-The following photos show the EXACT person you must reproduce in EVERY image.
-This is NON-NEGOTIABLE. Match precisely:
-- This exact FACE (eyes, nose, mouth, jawline, facial structure)
-- This exact BODY (proportions, silhouette, skin tone)
-- This exact HAIR (color, length, texture, style)
-The person must be IMMEDIATELY recognizable as the same individual.
-Identity fidelity is MORE important than any other instruction.` },
-          ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-        ],
-      });
-
-      // Synthetic model acknowledgment — reinforces the lock
-      anchorHistory.push({
-        role: 'model',
-        parts: [{ text: 'Identity locked. I have memorized this exact person\'s face, body, skin tone, hair, and proportions. Every image I generate will reproduce this exact individual. Identity fidelity is my top priority.' }],
-      });
-    }
-
-    // TURN 2: Location context (separate turn, explicitly subordinate)
-    // If we have real reference photos → use them visually (strongest)
-    // If we only have a text description → use a rich text anchor (no wasted API call)
-    if (locationRefImages.length > 0) {
-      anchorHistory.push({
-        role: 'user',
-        parts: [
-          {
-            text: `ENVIRONMENT CONTEXT (secondary to identity):
-The following photos show the environment/location for this scene.
-Reproduce the background, décor, lighting, and atmosphere from these reference photos.
-IMPORTANT: The person's identity from the previous reference MUST NOT change.
-The environment adapts around the person, not the other way around.` },
-          ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-        ],
-      });
-    } else {
-      // Build a text anchor from the scene location metadata
-      const locMeta = scene?.location_meta || {};
-      const locParts = [
-        scene?.environment ? `Environment: ${scene.environment}` : null,
-        locMeta.anchor_details ? `Specific details/props: ${locMeta.anchor_details}` : null,
-        scene?.lighting ? `Lighting: ${scene.lighting}` : null,
-        locMeta.time_of_day ? `Time of day: ${locMeta.time_of_day}` : null,
-        locMeta.color_palette ? `Color palette: ${locMeta.color_palette}` : null,
-        scene?.vibe ? `Atmosphere/vibe: ${scene.vibe}` : null,
-      ].filter(Boolean);
-
-      if (locParts.length > 0) {
-        anchorHistory.push({
-          role: 'user',
-          parts: [{
-            text: `ENVIRONMENT CONTEXT (secondary to identity):\nReproduce this specific setting in the background. Do NOT add any environment details beyond what is described.\n\n${locParts.join('\n')}\n\nIMPORTANT: The person's identity from the previous reference MUST NOT change. The environment surrounds the person.`,
-          }],
-        });
-        anchorHistory.push({
-          role: 'model',
-          parts: [{ text: 'Environment noted. I will place the subject in this exact setting while maintaining their identity from the reference photos.' }],
-        });
-      }
-    }
-
+  const syncGalleryAndHistory = async (finalImage, promptToSend) => {
+    // Auto-save to gallery (now async — server filesystem)
+    let galleryResult = null;
     try {
-      const aspectRatio = scene?.aspect_ratio?.includes('1:1') ? '1:1' : '9:16';
-      const fullHistory = [...anchorHistory, ...conversationHistory];
-      const seed = galleryMetaRef.current?.seed || null;
-      const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory, { seed });
+      galleryResult = await saveToGallery(
+        { base64: finalImage.imageBase64, mimeType: finalImage.mimeType },
+        { ...galleryMetaRef.current, prompt: promptToSend }
+      );
+      window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
+    } catch { /* silent */ }
 
-      const img = { ...result, id: `img_${Date.now()}`, timestamp: Date.now(), prompt: promptToSend };
-      setCurrentImage(img);
-      setSessionImages(prev => [img, ...prev].slice(0, 20));
+    // Auto-save prompt to history
+    try {
+      const turnCount = Math.floor(conversationHistory.length / 2);
+      savePromptToHistory(promptToSend, {
+        ...galleryMetaRef.current,
+        refCount: referenceImages.length,
+        turnCount,
+        galleryImageId: galleryResult?.id || null,
+      });
+    } catch { /* silent */ }
+
+    // Notify parent for gallery refresh
+    onGalleryUpdate?.();
+  };
+
+  const handleGenerateWithPrompt = useCallback(async (customPrompt) => {
+    const promptToSend = customPrompt || generatedPrompt;
+    const finalImage = await handleGenerateImage(promptToSend, null, toast);
+
+    if (finalImage) {
+      setSessionImages(prev => [finalImage, ...prev].slice(0, 20));
       setGenCount(prev => prev + 1);
-      setStatus('done');
 
-      // Auto-save to gallery (now async — server filesystem)
-      let galleryResult = null;
-      try {
-        galleryResult = await saveToGallery(
-          { base64: result.imageBase64, mimeType: result.mimeType },
-          { ...galleryMetaRef.current, prompt: promptToSend }
-        );
-        window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
-      } catch { /* silent — gallery save is best-effort */ }
-
-      // Auto-save prompt to history (enriched with context + gallery link)
-      try {
-        const turnCount = Math.floor(conversationHistory.length / 2);
-        savePromptToHistory(promptToSend, {
-          ...galleryMetaRef.current,
-          refCount: referenceImages.length,
-          turnCount,
-          galleryImageId: galleryResult?.id || null,
-        });
-      } catch { /* silent */ }
-
-      // Notify parent for gallery refresh
-      onGalleryUpdate?.();
+      await syncGalleryAndHistory(finalImage, promptToSend);
 
       setConversationHistory(prev => {
-        // Strip base64 image data from model parts to prevent memory bloat
-        const cleanModelParts = (result.modelParts || []).map(part => {
-          if (part.inlineData) return { text: '[image generated]' };
-          return part;
-        });
         const updated = [
           ...prev,
           { role: 'user', parts: [{ text: promptToSend }] },
-          { role: 'model', parts: cleanModelParts },
+          { role: 'model', parts: [{ text: '[image generated]' }] },
         ];
         if (updated.length > MAX_HISTORY_TURNS * 2) {
           return updated.slice(-MAX_HISTORY_TURNS * 2);
         }
         return updated;
       });
-      return img;
-    } catch (err) {
-      setErrorMsg(err.message);
-      setStatus('error');
-      toast.error(err.message);
-      // Save failed prompt to history
-      try {
-        savePromptToHistory(promptToSend, {
-          ...galleryMetaRef.current,
-          refCount: referenceImages.length,
-          turnCount: Math.floor(conversationHistory.length / 2),
-          success: false,
-          errorMessage: err.message,
-        });
-      } catch { /* silent */ }
-      return null;
+      return finalImage;
+    } else if (generationError) {
+      toast.error(generationError);
     }
-  }, [anchorMatrix, generatedPrompt, lastGenTime, onRequestApiKey, toast, conversationHistory, referenceImages, locationRefImages, scene]);
+    return null;
+  }, [generatedPrompt, handleGenerateImage, toast, conversationHistory, referenceImages.length, onGalleryUpdate, generationError]);
+
+
 
   const handleGenerate = useCallback(async () => {
     return handleGenerateWithPrompt(generatedPrompt);
@@ -211,8 +90,6 @@ The environment adapts around the person, not the other way around.` },
 
   const handleBatchGenerate = useCallback(async (count = 3, getVariantPrompt) => {
     setBatchProgress({ current: 0, total: count });
-    const savedLastGen = lastGenTime;
-    setLastGenTime(0); // Bypass cooldown during batch
     for (let i = 0; i < count; i++) {
       setBatchProgress({ current: i + 1, total: count });
       const prompt = getVariantPrompt ? getVariantPrompt(i) : generatedPrompt;
@@ -221,9 +98,8 @@ The environment adapts around the person, not the other way around.` },
       if (i < count - 1) await new Promise(r => setTimeout(r, 2000)); // respect API rate limit
     }
     setBatchProgress(null);
-    setLastGenTime(Date.now()); // Restore cooldown after batch
     toast.success(`Batch terminé — ${count} image(s) générée(s)`);
-  }, [handleGenerateWithPrompt, generatedPrompt, toast, lastGenTime]);
+  }, [handleGenerateWithPrompt, generatedPrompt, toast]);
 
   const handleDownload = useCallback(() => {
     if (!currentImage) return;
@@ -248,97 +124,37 @@ The environment adapts around the person, not the other way around.` },
   const handleNewSession = () => {
     setConversationHistory([]);
     setSessionImages([]);
-    setCurrentImage(null);
-    setStatus('idle');
-    setGenCount(0);
     toast.info('Nouvelle session — cohérence réinitialisée');
   };
 
   // ─── VARIATION MODE (C4) ───
   // Send the current image as a reference + ask for a variation
   const handleVariation = useCallback(async () => {
-    if (!currentImage?.imageBase64) { toast.info('Génère une image d\'abord'); return; }
-    const apiKey = getApiKey();
-    if (!apiKey) { onRequestApiKey?.(); return; }
+    if (!currentImage?.imageBase64 && !currentImage?.base64) { toast.info('Génère une image d\'abord'); return; }
 
-    const now = Date.now();
-    if (status === 'generating') { toast.info('Génération déjà en cours, patientez...'); return; }
-    if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
+    const finalImage = await handleGenerateImage(VARIATION_INSTRUCTION, currentImage, toast);
 
-    setStatus('generating');
-    setErrorMsg('');
-    setElapsed(0);
-    setLastGenTime(now);
-
-    // Build anchors (identity + location) as usual
-    let anchorHistory = [];
-
-    if (referenceImages.length > 0) {
-      anchorHistory.push({
-        role: 'user',
-        parts: [
-          { text: `IDENTITY LOCK — ABSOLUTE PRIORITY:\nThe following photos show the EXACT person you must reproduce.\nMatch precisely: face, body, skin tone, hair. Identity fidelity is the TOP priority.` },
-          ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-        ],
-      });
-      anchorHistory.push({
-        role: 'model',
-        parts: [{ text: 'Identity locked. I will reproduce this exact person in every image.' }],
-      });
-    }
-
-    if (locationRefImages.length > 0) {
-      anchorHistory.push({
-        role: 'user',
-        parts: [
-          { text: `ENVIRONMENT CONTEXT (secondary to identity):\nReproduce this background/location. The person's identity MUST NOT change.` },
-          ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
-        ],
-      });
-    }
-
-    // Inject the current image as a "previous result" reference
-    anchorHistory.push({
-      role: 'user',
-      parts: [
-        { text: `REFERENCE IMAGE — This is the image I want you to create a variation of:` },
-        { inlineData: { mimeType: currentImage.mimeType || 'image/png', data: currentImage.imageBase64 } },
-      ],
-    });
-    anchorHistory.push({
-      role: 'model',
-      parts: [{ text: 'I see the reference image. I will create a variation with the same person and environment but a different pose, angle, and expression.' }],
-    });
-
-    try {
-      const aspectRatio = scene?.aspect_ratio?.includes('1:1') ? '1:1' : '9:16';
-      const seed = galleryMetaRef.current?.seed || null;
-      const result = await generateImage(apiKey, VARIATION_INSTRUCTION, aspectRatio, anchorHistory, { seed });
-
-      const img = { ...result, id: `img_${Date.now()}`, timestamp: Date.now(), prompt: '[variation]' };
-      setCurrentImage(img);
-      setSessionImages(prev => [img, ...prev].slice(0, 20));
+    if (finalImage) {
+      setSessionImages(prev => [finalImage, ...prev].slice(0, 20));
       setGenCount(prev => prev + 1);
-      setStatus('done');
 
-      try {
-        await saveToGallery(
-          { base64: result.imageBase64, mimeType: result.mimeType },
-          { ...galleryMetaRef.current, prompt: '[variation]', isVariation: true }
-        );
-        window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
-      } catch { /* silent */ }
+      await syncGalleryAndHistory(finalImage, VARIATION_INSTRUCTION);
 
-      onGalleryUpdate?.();
-      toast.success('Variation générée');
-      return img;
-    } catch (err) {
-      setErrorMsg(err.message);
-      setStatus('error');
-      toast.error(err.message);
-      return null;
+      setConversationHistory(prev => {
+        const updated = [
+          ...prev,
+          { role: 'user', parts: [{ text: VARIATION_INSTRUCTION }] },
+          { role: 'model', parts: [{ text: '[image generated]' }] },
+        ];
+        if (updated.length > MAX_HISTORY_TURNS * 2) {
+          return updated.slice(-MAX_HISTORY_TURNS * 2);
+        }
+        return updated;
+      });
+    } else if (generationError) {
+      toast.error(generationError);
     }
-  }, [currentImage, referenceImages, locationRefImages, scene, lastGenTime, onRequestApiKey, toast, onGalleryUpdate]);
+  }, [currentImage, handleGenerateImage, toast, conversationHistory, referenceImages.length, onGalleryUpdate, generationError]);
 
   const hasApiKey = !!getApiKey();
   const turnCount = Math.floor(conversationHistory.length / 2);
@@ -369,7 +185,7 @@ The environment adapts around the person, not the other way around.` },
       <div className="flex-1 relative rounded-xl overflow-hidden bg-[#0a0a0c] border border-zinc-800/40 min-h-0 max-h-[60vh] group">
 
         {/* EMPTY STATE */}
-        {status === 'idle' && !currentImage && (
+        {generationStatus === 'idle' && !currentImage && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800/60 flex items-center justify-center mx-auto mb-3">
@@ -405,7 +221,7 @@ The environment adapts around the person, not the other way around.` },
         )}
 
         {/* GENERATING */}
-        {status === 'generating' && (
+        {generationStatus === 'generating' && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
             <div className="text-center">
               {batchProgress && (
@@ -419,17 +235,17 @@ The environment adapts around the person, not the other way around.` },
                 <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-emerald-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
               <p className="text-zinc-400 text-[13px] font-medium mb-0.5">Generation...</p>
-              <span className="text-teal-400/60 text-[12px] font-mono tabular-nums">{elapsed}s</span>
+              <span className="text-teal-400/60 text-[12px] font-mono tabular-nums">{generationElapsed}s</span>
             </div>
           </div>
         )}
 
         {/* ERROR */}
-        {status === 'error' && !currentImage && (
+        {generationStatus === 'error' && !currentImage && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center max-w-xs px-4">
               <p className="text-red-400/80 text-[13px] font-medium mb-1">Erreur</p>
-              <p className="text-zinc-500 text-[11px] mb-3 leading-relaxed">{errorMsg}</p>
+              <p className="text-zinc-500 text-[11px] mb-3 leading-relaxed">{generationError}</p>
               <button onClick={handleGenerate} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">Reessayer</button>
             </div>
           </div>
