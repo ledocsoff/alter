@@ -569,24 +569,29 @@ export const autoFillLocation = async (apiKey, locationName) => {
 
 /* ─── LOCATION PRESETS GENERATION ─── */
 
-const LOCATION_PRESETS_PROMPT = `You are an expert at creating photo scene presets for a specific location.
+const LOCATION_PRESETS_PROMPT = `You are a social media content strategist for Instagram/TikTok influencer models. Your goal is to create scene presets that MAXIMIZE engagement (likes, saves, shares).
 
-Given a location with its details, generate:
-1. EXACTLY 8 scene presets (ambiances) that make sense FOR THIS SPECIFIC LOCATION
-2. EXACTLY 8 outfit suggestions that are REALISTIC for this location
-3. EXACTLY 8 pose suggestions that make sense FOR THIS SPECIFIC LOCATION
+Given a location, generate:
+1. EXACTLY 8 scene presets (ambiances) — each one a photo concept designed to go viral
+2. EXACTLY 8 outfit suggestions — body-flattering, figure-hugging, designed to highlight the model's physique
+3. EXACTLY 8 pose suggestions — naturally seductive, confident, casually alluring
 
-IMPORTANT RULES:
-- Each preset must be REALISTIC for the given location
-- DO NOT suggest scenes that don't match the location
+CONTENT STRATEGY RULES:
+- Think like a top-performing Instagram model: every shot must be visually striking and engagement-optimized
+- OUTFITS must be form-fitting, body-conscious, and flattering. They should highlight the model's silhouette, curves, and figure. Think: tight, revealing but tasteful, trending on social media. Avoid baggy or shapeless clothing.
+- POSES must feel naturally seductive — not stiff or posed. Think: hip pop, back arch, over-the-shoulder glance, candid-looking-but-strategic angles. The model should look confident and alluring.
+- EXPRESSIONS should range from sultry to playful — the kind that stop scrollers mid-feed.
+- Each preset must feel REALISTIC for the given location but optimized for maximum visual impact.
+
+TECHNICAL RULES:
 - camera_angle MUST be one of these EXACT values:
   "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait",
   "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
-- pose MUST be a short english description (5-10 words max)
+- pose MUST be a short english description (5-10 words max) — naturally seductive, body-flattering angle
 - expression MUST be one of these EXACT values:
   "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare",
   "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
-- outfit in each preset: short english outfit description matching the scene AND location
+- outfit: short english description, ALWAYS form-fitting and figure-flattering for the location context
 
 CRITICAL: ALL "label" fields MUST be in FRENCH. Never use English for labels.
 
@@ -598,36 +603,37 @@ Output a JSON object with this EXACT structure:
       "label": "emoji Nom Court EN FRANCAIS",
       "desc": "courte description en francais",
       "scene": {
-        "camera_angle": "one of the EXACT values above",
-        "pose": "short english pose description",
-        "expression": "one of the EXACT values above",
-        "outfit": "short english outfit for this specific scene"
+        "camera_angle": "one of the EXACT camera values above",
+        "pose": "short english pose: naturally seductive, flattering",
+        "expression": "one of the EXACT expression values above",
+        "outfit": "short english outfit: form-fitting, body-highlighting"
       }
     }
   ],
   "outfits": [
     {
       "id": "unique_outfit_id",
-      "label": "Nom EN FRANCAIS (ex: Pyjama Satin, Robe Legere)",
-      "value": "detailed english outfit description for image generation",
+      "label": "Nom EN FRANCAIS (ex: Bikini String, Robe Moulante)",
+      "value": "detailed english outfit description: tight, form-fitting, body-flattering, highlighting figure",
       "icon": "single emoji"
     }
   ],
   "poses": [
     {
       "id": "unique_pose_id",
-      "labelFR": "Nom court en francais (ex: Allongee sur le lit)",
-      "promptEN": "english pose description for image generation (5-10 words)"
+      "labelFR": "Nom court en francais (ex: Cambrée dos tourné)",
+      "promptEN": "english pose: seductive but natural, body-flattering angle (5-10 words)"
     }
   ]
 }
 
 RULES:
 1. Output ONLY the JSON object, no markdown, no explanation.
-2. All "value" and "promptEN" fields in English (for image generation). ALL "label" and "labelFR" fields in FRENCH.
-3. Make everything VARIED and REALISTIC for this specific location.
-4. Outfits must match the location context.
-5. Poses must be actions someone would ACTUALLY do in this location.`;
+2. All "value" and "promptEN" fields in English. ALL "label" and "labelFR" fields in FRENCH.
+3. Make everything VARIED — different vibes, angles, outfits for each preset.
+4. Outfits must be TIGHT, FORM-FITTING, and adapted to the location while highlighting the body.
+5. Poses must look NATURAL yet STRATEGIC — the kind top Instagram models use to maximize engagement.
+6. Think about what content performs best on Instagram/TikTok: confidence, allure, body positivity, visual impact.`;
 
 
 
