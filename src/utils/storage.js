@@ -381,6 +381,8 @@ export const savePromptToHistory = (promptJSON, meta = {}) => {
         locationName: meta.locationName || 'Lieu inconnu',
         accountHandle: meta.accountHandle || '',
         galleryImageId: meta.galleryImageId || null,
+        success: meta.success !== false, // default true
+        errorMessage: meta.errorMessage || null,
         timestamp: Date.now(),
     };
     history.unshift(entry);

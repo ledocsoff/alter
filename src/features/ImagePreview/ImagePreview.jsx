@@ -164,6 +164,16 @@ The environment adapts around the person, not the other way around.` },
       setErrorMsg(err.message);
       setStatus('error');
       toast.error(err.message);
+      // Save failed prompt to history
+      try {
+        savePromptToHistory(promptToSend, {
+          ...galleryMetaRef.current,
+          refCount: referenceImages.length,
+          turnCount: Math.floor(conversationHistory.length / 2),
+          success: false,
+          errorMessage: err.message,
+        });
+      } catch { /* silent */ }
       return null;
     }
   }, [anchorMatrix, generatedPrompt, lastGenTime, onRequestApiKey, toast, conversationHistory]);
