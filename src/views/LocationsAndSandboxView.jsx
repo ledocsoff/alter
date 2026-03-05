@@ -430,37 +430,35 @@ const LocationsAndSandboxView = () => {
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Nom du lieu</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Ex: Chambre Étudiante..."
-                                                className="velvet-input w-full"
-                                                value={newLocName}
-                                                onChange={(e) => setNewLocName(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Environnement</label>
-                                            <textarea
-                                                placeholder="Description détaillée en anglais..."
-                                                value={newLocEnvCustom}
-                                                onChange={(e) => setNewLocEnvCustom(e.target.value)}
-                                                rows={2}
-                                                className="velvet-input w-full resize-none"
-                                            />
-                                        </div>
+                                    <div>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Nom du lieu</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Ex: Chambre Étudiante..."
+                                            className="velvet-input w-full"
+                                            value={newLocName}
+                                            onChange={(e) => setNewLocName(e.target.value)}
+                                        />
                                     </div>
 
-                                    {/* Collapsed advanced details */}
+                                    {/* All details collapsed */}
                                     <details className="group">
                                         <summary className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider cursor-pointer hover:text-zinc-400 transition-colors flex items-center gap-1.5 select-none">
                                             <span className="text-[9px] group-open:rotate-90 transition-transform">▶</span>
-                                            Détails avancés
+                                            Détails du lieu
                                             <span className="text-[9px] text-zinc-700 normal-case font-normal ml-1">remplis auto par l'IA</span>
                                         </summary>
                                         <div className="mt-3 space-y-3 animate-fade-in">
+                                            <div>
+                                                <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Environnement</label>
+                                                <textarea
+                                                    placeholder="Description détaillée en anglais..."
+                                                    value={newLocEnvCustom}
+                                                    onChange={(e) => setNewLocEnvCustom(e.target.value)}
+                                                    rows={2}
+                                                    className="velvet-input w-full resize-none"
+                                                />
+                                            </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                 <div>
                                                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</label>
