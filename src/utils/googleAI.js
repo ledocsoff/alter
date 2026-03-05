@@ -254,84 +254,8 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
 // ============================================
 const GEMINI_TEXT_MODEL = 'gemini-2.5-flash';
 
-export const generateAnchorMatrixViaGemini = async (apiKey, anchorMatrix) => {
-  logger.info('generation', 'Lancement generation Matrice JSON via Gemini', {
-    model: GEMINI_TEXT_MODEL,
-    matrixKeys: Object.keys(anchorMatrix),
-  });
 
-  const systemPrompt = `You are a professional AI image generation prompt engineer specialized in ComfyUI workflows with ControlNet (DWPose + ZoeDepth).
 
-Your task: take the provided JSON anchor matrix and ENRICH it. Fill in any null values with realistic, coherent defaults. Improve descriptions to be more detailed and specific for ControlNet processing. Return ONLY the enriched JSON, maintaining the exact same schema structure.
-
-Rules:
-- Keep all existing non-null values exactly as-is
-- Fill null fields with contextually appropriate values
-- All text values must be in English
-- The negative_prompt block must remain unchanged
-- The controlnet block must remain unchanged
-- Be extremely specific in pose, camera, and lighting descriptions`;
-
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [
-      { role: 'user', parts: [{ text: JSON.stringify(anchorMatrix, null, 2) }] },
-    ],
-    generationConfig: {
-      responseModalities: ['TEXT'],
-      response_mime_type: 'application/json',
-      temperature: 0.4,
-    },
-  };
-
-  const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  logger.debug('api', `POST ${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent`, { bodySize: JSON.stringify(body).length });
-
-  const t0 = Date.now();
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `Erreur ${res.status}`;
-    logger.error('api', `HTTP ${res.status} apres ${elapsed}s (Matrice)`, { status: res.status, message: msg });
-
-    if (res.status === 503) throw new Error('Serveurs satures (503). Essayez votre autre cle API.');
-    if (res.status === 429) throw new Error('Quota depasse. Essayez votre autre cle API.');
-    throw new Error(msg);
-  }
-
-  logger.success('api', `Reponse Matrice OK en ${elapsed}s`);
-
-  const data = await res.json();
-  const candidates = data.candidates || [];
-  if (candidates.length === 0) {
-    logger.warn('generation', 'Aucun candidat Matrice', data);
-    throw new Error('Aucun resultat genere par Gemini.');
-  }
-
-  const textContent = candidates[0]?.content?.parts?.[0]?.text;
-  if (!textContent) {
-    logger.error('generation', 'Pas de texte dans la reponse Matrice', candidates[0]);
-    throw new Error('Reponse Gemini vide.');
-  }
-
-  try {
-    const enrichedMatrix = JSON.parse(textContent);
-    logger.success('generation', `Matrice enrichie: ${Object.keys(enrichedMatrix).length} sections`, {
-      sections: Object.keys(enrichedMatrix),
-    });
-    return enrichedMatrix;
-  } catch (e) {
-    logger.error('generation', 'Impossible de parser le JSON retourne par Gemini', textContent.slice(0, 500));
-    throw new Error('Le JSON retourne par Gemini est invalide.');
-  }
-};
 
 // ============================================
 // EXTRACTION MODÈLE DEPUIS PHOTOS

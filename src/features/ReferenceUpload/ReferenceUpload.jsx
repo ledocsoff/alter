@@ -47,20 +47,21 @@ const ReferenceUpload = () => {
     };
 
     return (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-violet-500/[0.06] border border-violet-500/15">
+            <span className="text-[9px] text-violet-400/70 font-medium">👤</span>
             {/* Thumbnails */}
             {referenceImages.map((img, i) => (
                 <div key={i} className="relative group">
                     <img
                         src={img.dataUrl}
                         alt={`Ref ${i + 1}`}
-                        className="w-7 h-7 rounded-md object-cover border border-violet-500/30 ring-1 ring-violet-500/10"
+                        className="w-6 h-6 rounded object-cover border border-violet-500/20"
                     />
                     <button
                         onClick={() => handleRemove(i)}
-                        className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity leading-none"
+                        className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 text-white text-[7px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity leading-none shadow"
                     >
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        ×
                     </button>
                 </div>
             ))}
@@ -71,11 +72,10 @@ const ReferenceUpload = () => {
                     onClick={() => inputRef.current?.click()}
                     onDrop={handleDrop}
                     onDragOver={(e) => e.preventDefault()}
-                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors border border-violet-500/20 hover:border-violet-500/30"
-                    title="Uploader une image de référence pour la cohérence du visage"
+                    className="w-6 h-6 rounded flex items-center justify-center border border-dashed border-violet-500/20 hover:border-violet-500/40 bg-violet-500/[0.04] hover:bg-violet-500/[0.08] transition-colors"
+                    title="Ajouter une ref modèle"
                 >
-                    <CameraIcon size={12} />
-                    <span>Ref{referenceImages.length > 0 ? ` (${referenceImages.length}/${MAX_REFS})` : ''}</span>
+                    <CameraIcon size={10} className="text-violet-400/50" />
                 </button>
             )}
 

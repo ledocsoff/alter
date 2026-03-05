@@ -2,34 +2,28 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { DEFAULT_SCENE, SCENE_OPTIONS } from '../constants/sceneOptions';
+import { DEFAULT_SCENE } from '../constants/sceneOptions';
 import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64, getLocationRefs, loadLocationRefBase64 } from '../utils/storage';
-import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
-import { pickRandom } from '../utils/helpers';
 import AIChatPanel from '../features/AIChatPanel/AIChatPanel';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
 import ReferenceUpload from '../features/ReferenceUpload/ReferenceUpload';
-import EditableMatrix from '../features/EditableMatrix/EditableMatrix';
 import GalleryPanel from '../features/GalleryPanel/GalleryPanel';
 import PromptHistoryPanel from '../features/PromptHistoryPanel/PromptHistoryPanel';
 import ApiKeyModal from '../features/ApiKeyModal/ApiKeyModal';
-import { SparklesIcon, ImageIcon, CameraIcon, FileTextIcon, SettingsIcon, ZapIcon } from '../components/Icons';
+import { ImageIcon, CameraIcon, FileTextIcon } from '../components/Icons';
 
-// Ref tab icon (inline SVG)
-const EyeIcon = ({ size = 13 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
 
 const TABS = [
     { id: 'image', Icon: ImageIcon, label: 'Image' },
     { id: 'galerie', Icon: CameraIcon, label: 'Galerie' },
     { id: 'historique', Icon: FileTextIcon, label: 'Prompts' },
-    { id: 'matrice', Icon: SettingsIcon, label: 'Matrice' },
 ];
 
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
-    const [showPromptPreview, setShowPromptPreview] = useState(false);
+
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -38,8 +32,6 @@ const GenerationView = () => {
     const [rightPanel, setRightPanel] = useState(() => {
         try { return sessionStorage.getItem('velvet_last_tab') || 'image'; } catch { return 'image'; }
     });
-    const [enrichedMatrix, setEnrichedMatrix] = useState(null);
-    const [isEnriching, setIsEnriching] = useState(false);
     const [galleryKey, setGalleryKey] = useState(0);
     const [historyKey, setHistoryKey] = useState(0);
     const imagePreviewRef = useRef(null);
@@ -304,150 +296,14 @@ const GenerationView = () => {
                         </div>
                         <div className="ml-auto flex items-center gap-3">
                             {rightPanel === 'image' && (
-                                <>
-                                    <button
-                                        onClick={() => {
-
-                                            const getVariant = (i) => {
-                                                try {
-                                                    const matrix = JSON.parse(generatedPrompt);
-                                                    if (i > 0) {
-                                                        matrix.pose.body_position = pickRandom(SCENE_OPTIONS.pose).promptEN;
-                                                        matrix.camera.angle = pickRandom(SCENE_OPTIONS.camera_angle).promptEN;
-                                                        matrix.pose.expression = pickRandom(SCENE_OPTIONS.expression).promptEN;
-                                                    }
-                                                    return JSON.stringify(matrix, null, 2);
-                                                } catch { return generatedPrompt; }
-                                            };
-                                            imagePreviewRef.current?.handleBatchGenerate(3, getVariant);
-                                        }}
-                                        className="text-[10px] font-semibold text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
-                                    >
-                                        <SparklesIcon size={11} />
-                                        Batch x3
-                                    </button>
-                                    <span className="text-[10px] text-zinc-700 font-mono">⌘G générer</span>
-                                </>
+                                <span className="text-[10px] text-zinc-700 font-mono">⌘G générer</span>
                             )}
-                            {rightPanel === 'matrice' && (
-                                <span className="text-[10px] text-zinc-700 font-mono">Prompt ultra-précis</span>
-                            )}
-                            {/* Prompt Preview Toggle */}
-                            <button
-                                onClick={() => setShowPromptPreview(!showPromptPreview)}
-                                className={`text-[10px] font-medium px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${showPromptPreview ? 'bg-amber-500/15 text-amber-400' : 'text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50'}`}
-                                title="Voir le prompt JSON avant génération"
-                            >
-                                👁️ Prompt
-                            </button>
                         </div>
                     </div>
 
-                    {/* PROMPT PREVIEW (collapsible) */}
-                    {showPromptPreview && (
-                        <div className="shrink-0 max-h-[30vh] bg-[#08080a] border border-amber-500/20 rounded-xl overflow-hidden flex flex-col">
-                            <div className="shrink-0 px-3 py-1.5 border-b border-amber-500/10 flex items-center justify-between">
-                                <span className="text-[11px] font-semibold text-amber-400">Prompt JSON envoyé à Gemini</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] text-zinc-600 font-mono">{generatedPrompt.length} chars</span>
-                                    <button
-                                        onClick={() => { navigator.clipboard.writeText(generatedPrompt); toast.success('Prompt copié'); }}
-                                        className="text-[9px] text-zinc-500 hover:text-zinc-300 px-1.5 py-0.5 rounded hover:bg-zinc-800/50 transition-colors"
-                                    >
-                                        📋 Copier
-                                    </button>
-                                </div>
-                            </div>
-                            <pre className="flex-1 overflow-auto custom-scrollbar px-3 py-2 text-[10px] text-zinc-400 font-mono leading-relaxed whitespace-pre-wrap break-all">
-                                {generatedPrompt}
-                            </pre>
-                        </div>
-                    )}
-
                     {/* ACTIVE PANEL */}
                     <div className="flex-1 min-h-0">
-                        {rightPanel === 'matrice' ? (
-                            <div className="h-full flex flex-col bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
-                                <div className="shrink-0 px-4 py-2.5 border-b border-white/[0.04] flex items-center justify-between">
-                                    <span className="text-[12px] font-semibold text-zinc-300">Matrice d'Ancrage</span>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={async () => {
-                                                const key = getApiKey();
-                                                if (!key) { setShowApiKeyModal(true); return; }
-                                                setIsEnriching(true);
-                                                try {
-                                                    const result = await generateAnchorMatrixViaGemini(key, anchorMatrix);
-                                                    setEnrichedMatrix(result);
-                                                    toast.success('Matrice enrichie par Gemini');
-                                                } catch (e) {
-                                                    toast.error(e.message);
-                                                } finally {
-                                                    setIsEnriching(false);
-                                                }
-                                            }}
-                                            disabled={isEnriching}
-                                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors disabled:opacity-50"
-                                        >
-                                            {isEnriching ? 'Enrichissement...' : '✨ Enrichir'}
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                const key = getApiKey();
-                                                if (!key) { setShowApiKeyModal(true); return; }
-                                                setIsEnriching(true);
-                                                try {
-                                                    const result = await generateAnchorMatrixViaGemini(key, anchorMatrix);
-                                                    setEnrichedMatrix(result);
-                                                    toast.success('Matrice enrichie — génération en cours...');
-                                                    const enrichedPrompt = JSON.stringify(result, null, 2);
-                                                    setRightPanel('image');
-                                                    setTimeout(() => {
-                                                        imagePreviewRef.current?.handleGenerateWithPrompt(enrichedPrompt);
-                                                    }, 100);
-                                                } catch (e) {
-                                                    toast.error(e.message);
-                                                } finally {
-                                                    setIsEnriching(false);
-                                                }
-                                            }}
-                                            disabled={isEnriching}
-                                            className="velvet-btn-primary text-[10px] font-semibold px-2.5 py-1 disabled:opacity-50"
-                                        >
-                                            {isEnriching ? '...' : <><ZapIcon size={10} className="inline -mt-px" /> Enrichir &amp; Générer</>}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                const data = enrichedMatrix ? JSON.stringify(enrichedMatrix, null, 2) : generatedPrompt;
-                                                navigator.clipboard.writeText(data);
-                                                toast.success('Matrice copiée');
-                                            }}
-                                            className="velvet-btn-ghost text-[10px] font-semibold px-2.5 py-1"
-                                        >
-                                            Copier
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="flex-1 overflow-auto p-4 custom-scrollbar">
-                                    <EditableMatrix
-                                        matrix={enrichedMatrix || anchorMatrix}
-                                        onChange={(path, value) => {
-                                            const base = enrichedMatrix ? { ...enrichedMatrix } : { ...anchorMatrix };
-                                            const keys = path.replace('$.', '').split('.');
-                                            let obj = base;
-                                            for (let i = 0; i < keys.length - 1; i++) {
-                                                if (obj[keys[i]] && typeof obj[keys[i]] === 'object') {
-                                                    obj[keys[i]] = Array.isArray(obj[keys[i]]) ? [...obj[keys[i]]] : { ...obj[keys[i]] };
-                                                    obj = obj[keys[i]];
-                                                }
-                                            }
-                                            obj[keys[keys.length - 1]] = value;
-                                            setEnrichedMatrix(base);
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        ) : rightPanel === 'galerie' ? (
+                        {rightPanel === 'galerie' ? (
                             <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
                                 <GalleryPanel key={galleryKey} />
                             </div>
