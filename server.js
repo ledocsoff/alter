@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 // Support both ESM (local dev) and CJS (bundled for Electron production)
 const currentDir = typeof __dirname !== 'undefined'
     ? __dirname
-    : path.dirname(fileURLToPath(import.meta.url));
+    : (typeof import.meta !== 'undefined' && import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd());
 
 const SAVE_DIR = path.join(currentDir, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');

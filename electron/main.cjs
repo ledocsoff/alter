@@ -74,7 +74,7 @@ function startServer() {
             console.log('[Electron] Dev mode: using external API server from concurrently');
             // Do not spawn the server, just proceed to polling
         } else {
-            const serverPath = path.join(process.resourcesPath, 'server.js');
+            const serverPath = path.join(process.resourcesPath, 'server.cjs');
             const { spawn } = require('child_process');
             serverProcess = spawn(process.execPath, [serverPath], {
                 env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', ELECTRON: 'true' },

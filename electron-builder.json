@@ -18,8 +18,8 @@
     },
     "extraResources": [
         {
-            "from": "server.js",
-            "to": "server.js"
+            "from": "dist/server.cjs",
+            "to": "server.cjs"
         },
         {
             "from": "sauvegarde",
