@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import { useStudio } from './store/StudioContext';
 import { useToast } from './store/ToastContext';
@@ -9,11 +9,10 @@ import DebugPanel from './features/DebugPanel/DebugPanel';
 import ErrorBoundary from './features/ErrorBoundary/ErrorBoundary';
 import ShortcutsModal from './features/ShortcutsModal/ShortcutsModal';
 import ModelsView from './views/ModelsView';
-
-const ModelEditorShell = lazy(() => import('./views/ModelEditorShell'));
-const AccountsView = lazy(() => import('./views/AccountsView'));
-const LocationsView = lazy(() => import('./views/LocationsAndSandboxView'));
-const GenerationView = lazy(() => import('./views/GenerationView'));
+import ModelEditorShell from './views/ModelEditorShell';
+import AccountsView from './views/AccountsView';
+import LocationsView from './views/LocationsAndSandboxView';
+import GenerationView from './views/GenerationView';
 
 const LoadingFallback = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -289,19 +288,17 @@ const AppLayout = ({ children }) => {
 const App = () => (
   <ErrorBoundary>
     <HashRouter>
-      <Suspense fallback={<AppLayout><LoadingFallback /></AppLayout>}>
-        <Routes>
-          <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
-          <Route path="/models/new" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="create" /></ErrorBoundary></AppLayout>} />
-          <Route path="/models/:modelId/edit" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="edit" /></ErrorBoundary></AppLayout>} />
-          <Route path="/models/:modelId/accounts" element={<AppLayout><ErrorBoundary><AccountsView /></ErrorBoundary></AppLayout>} />
-          <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><ErrorBoundary><LocationsView /></ErrorBoundary></AppLayout>} />
-          <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><ErrorBoundary><GenerationView /></ErrorBoundary></AppLayout>} />
-          <Route path="*" element={<AppLayout><ModelsView /></AppLayout>} />
-        </Routes>
-      </Suspense>
+      <Routes>
+        <Route path="/" element={<AppLayout><ModelsView /></AppLayout>} />
+        <Route path="/models/new" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="create" /></ErrorBoundary></AppLayout>} />
+        <Route path="/models/:modelId/edit" element={<AppLayout><ErrorBoundary><ModelEditorShell mode="edit" /></ErrorBoundary></AppLayout>} />
+        <Route path="/models/:modelId/accounts" element={<AppLayout><ErrorBoundary><AccountsView /></ErrorBoundary></AppLayout>} />
+        <Route path="/models/:modelId/accounts/:accountId/locations" element={<AppLayout><ErrorBoundary><LocationsView /></ErrorBoundary></AppLayout>} />
+        <Route path="/models/:modelId/accounts/:accountId/locations/:locationId/generate" element={<AppLayout><ErrorBoundary><GenerationView /></ErrorBoundary></AppLayout>} />
+        <Route path="*" element={<AppLayout><ModelsView /></AppLayout>} />
+      </Routes>
     </HashRouter>
-  </ErrorBoundary>
+  </ErrorBoundary >
 );
 
 export default App;
