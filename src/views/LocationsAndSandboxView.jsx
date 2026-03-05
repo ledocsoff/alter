@@ -598,6 +598,11 @@ const LocationsAndSandboxView = () => {
                                                         }
                                                         <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
                                                         {!isBusy && <LockScore location={loc} />}
+                                                        {!isBusy && loc.ai_presets?.length > 0 && (
+                                                            <span className="text-[10px] text-emerald-400/70 font-medium">
+                                                                IA ✓ {loc.ai_presets.length}+{loc.ai_outfits?.length || 0}+{loc.ai_poses?.length || 0}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     {isGenerating ? (
                                                         <div className="pl-[22px] mt-1">
@@ -654,21 +659,6 @@ const LocationsAndSandboxView = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            {!isBusy && (
-                                                <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
-                                                    {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
-                                                    {loc.ai_presets?.length > 0 && (
-                                                        <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">
-                                                            IA ✓ {loc.ai_presets.length} ambiances{loc.ai_outfits?.length > 0 ? ` · ${loc.ai_outfits.length} tenues` : ''}{loc.ai_poses?.length > 0 ? ` · ${loc.ai_poses.length} poses` : ''}
-                                                        </span>
-                                                    )}
-                                                    {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
-                                                    {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
-                                                    {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}
-                                                    {loc.color_palette && <span className="velvet-tag">Palette</span>}
-                                                    {loc.negative_prompt && <span className="velvet-tag !text-red-400/70 !bg-red-500/8 !border-red-500/10">Neg prompt</span>}
-                                                </div>
-                                            )}
                                         </div>
                                     );
                                 })}

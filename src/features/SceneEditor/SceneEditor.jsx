@@ -123,7 +123,7 @@ const SceneEditor = ({ location = null }) => {
 
 
     return (
-        <div className="bg-[#0e0e10] border border-white/[0.05] rounded-xl p-4 flex flex-col h-full overflow-hidden animate-fade-in">
+        <div className="bg-[#0e0e10] border border-white/[0.05] rounded-xl p-4 flex flex-col flex-1 min-h-0 overflow-hidden animate-fade-in">
             {/* HEADER */}
             <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-sm font-semibold text-zinc-200">Scène</h3>
