@@ -817,6 +817,23 @@ app.get('/api/location-refs/:locationId', (req, res) => {
     })));
 });
 
+// Serve the FIRST location reference photo (thumbnail for cards)
+app.get('/api/location-refs/:locationId/first-image', (req, res) => {
+    const { locationId } = req.params;
+    if (!isValidLocationId(locationId)) return res.status(400).end();
+    const entries = readLocRefsIndex(locationId);
+    if (entries.length === 0) return res.status(404).end();
+
+    const entry = entries[0];
+    const imgPath = path.join(getLocationRefsDir(locationId), path.basename(entry.filename));
+    if (!fs.existsSync(imgPath)) return res.status(404).end();
+
+    res.setHeader('Content-Type', entry.mimeType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Content-Length', fs.statSync(imgPath).size);
+    fs.createReadStream(imgPath).pipe(res);
+});
+
 // Serve a location reference photo as binary
 app.get('/api/location-refs/:locationId/:refId/image', (req, res) => {
     const { locationId, refId } = req.params;

@@ -481,6 +481,7 @@ const LocationsAndSandboxView = () => {
                             <div className="space-y-2.5 stagger-children">
                                 {currentAccount.locations.map((loc, idx) => {
                                     const isGenerating = generatingLocationId === loc.id;
+                                    const thumbUrl = loc.id ? `http://localhost:3001/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
                                     return (
                                         <div
                                             key={loc.id}
@@ -489,75 +490,95 @@ const LocationsAndSandboxView = () => {
                                             onDragEnter={() => handleDragEnter(idx)}
                                             onDragEnd={handleDragEnd}
                                             onDragOver={(e) => e.preventDefault()}
-                                            className={`velvet-card group p-4 transition-all ${isGenerating ? '!border-violet-500/30 !bg-violet-500/[0.03]' : ''} ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
+                                            className={`velvet-card group transition-all overflow-hidden ${isGenerating ? '!border-violet-500/30 !bg-violet-500/[0.03]' : ''} ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                {/* Drag handle */}
-                                                {!isGenerating && (
-                                                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
-                                                        <GripVerticalIcon size={14} />
-                                                    </div>
-                                                )}
-                                                {/* Left: clickable area */}
+                                            <div className="flex items-center gap-0">
+                                                {/* Thumbnail */}
                                                 <div
-                                                    className={`flex-1 min-w-0 transition-opacity ${isGenerating ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+                                                    className={`shrink-0 w-16 h-16 bg-zinc-900 flex items-center justify-center ${isGenerating ? 'cursor-default' : 'cursor-pointer'}`}
                                                     onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
                                                 >
-                                                    <div className="flex items-center gap-2.5 mb-0.5">
-                                                        {isGenerating
-                                                            ? <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin shrink-0" />
-                                                            : <MapPinIcon size={14} className="text-violet-400 shrink-0" />
-                                                        }
-                                                        <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
-                                                        {!isGenerating && <LockScore location={loc} />}
+                                                    <img
+                                                        src={thumbUrl}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                                                    />
+                                                    <div className="w-full h-full items-center justify-center bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10" style={{ display: 'none' }}>
+                                                        <MapPinIcon size={20} className="text-violet-400/40" />
                                                     </div>
-                                                    {isGenerating ? (
-                                                        <p className="text-[12px] text-violet-300 mt-0.5 pl-[22px]">🖼️ Génération de l'image...</p>
-                                                    ) : (
-                                                        <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
-                                                    )}
                                                 </div>
 
-                                                {/* Right: action buttons — hidden while busy */}
-                                                {!isGenerating && (
-                                                    <div className="flex items-center gap-1.5 shrink-0">
-                                                        <button
-                                                            onClick={() => enterEditMode(loc)}
-                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
-                                                            title="Modifier"
-                                                        >
-                                                            <EditIcon size={15} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                const updated = duplicateLocationLocal(modelId, accountId, loc.id);
-                                                                if (updated) {
-                                                                    setAllModelsDatabase(updated);
-                                                                    toast.success('Lieu dupliqué');
-                                                                }
-                                                            }}
-                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
-                                                            title="Dupliquer"
-                                                        >
-                                                            <CopyIcon size={15} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setConfirmDelete(loc)}
-                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                                                            title="Supprimer"
-                                                        >
-                                                            <TrashIcon size={15} />
-                                                        </button>
-                                                        <div className="w-px h-5 bg-zinc-800 mx-1" />
-                                                        <button
-                                                            onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                                            className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[12px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
-                                                        >
-                                                            Studio
-                                                            <ChevronRightIcon size={14} />
-                                                        </button>
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3">
+                                                    {/* Drag handle */}
+                                                    {!isGenerating && (
+                                                        <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
+                                                            <GripVerticalIcon size={14} />
+                                                        </div>
+                                                    )}
+
+                                                    {/* Info */}
+                                                    <div
+                                                        className={`flex-1 min-w-0 transition-opacity ${isGenerating ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+                                                        onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                                    >
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            {isGenerating
+                                                                ? <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                                                                : <MapPinIcon size={13} className="text-violet-400 shrink-0" />
+                                                            }
+                                                            <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
+                                                            {!isGenerating && <LockScore location={loc} />}
+                                                        </div>
+                                                        {isGenerating ? (
+                                                            <p className="text-[11px] text-violet-300 mt-0.5 pl-[21px]">🖼️ Génération de l'image...</p>
+                                                        ) : (
+                                                            <p className="text-[11px] text-zinc-500 mt-0.5 truncate pl-[21px]">{loc.environment}</p>
+                                                        )}
                                                     </div>
-                                                )}
+
+                                                    {/* Actions */}
+                                                    {!isGenerating && (
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <button
+                                                                onClick={() => enterEditMode(loc)}
+                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                                title="Modifier"
+                                                            >
+                                                                <EditIcon size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const updated = duplicateLocationLocal(modelId, accountId, loc.id);
+                                                                    if (updated) {
+                                                                        setAllModelsDatabase(updated);
+                                                                        toast.success('Lieu dupliqué');
+                                                                    }
+                                                                }}
+                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                                title="Dupliquer"
+                                                            >
+                                                                <CopyIcon size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmDelete(loc)}
+                                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                                                title="Supprimer"
+                                                            >
+                                                                <TrashIcon size={14} />
+                                                            </button>
+                                                            <div className="w-px h-4 bg-zinc-800 mx-0.5" />
+                                                            <button
+                                                                onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                                                className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[11px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
+                                                            >
+                                                                Studio
+                                                                <ChevronRightIcon size={12} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );
