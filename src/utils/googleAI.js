@@ -918,6 +918,127 @@ LIEU (environnement — recopier tel quel):
   }, 'smart-prompt');
 };
 
+/* ─── CHAT DIRECTOR (conversational multi-turn) ─── */
+
+const CHAT_DIRECTOR_INSTRUCTION = `Tu es un directeur photo amateur/Instagram qui aide à construire le prompt parfait pour générer une photo. Tu parles en français de façon décontractée et fun.
+
+FLOW DE CONVERSATION:
+Étape 1: Salue l'utilisateur avec le contexte du lieu. Demande-lui de décrire ce qu'il veut OU propose de le guider.
+Étape 2: Si guidé → pose des questions UNE PAR UNE dans cet ordre:
+  - 🎨 Ambiance/mood (décontracté, sexy, sportive, mystérieuse, cozy...)
+  - 👗 Tenue/look (débardeur, maillot, robe, etc.)
+  - 🤳 Type de photo (selfie, par quelqu'un d'autre, miroir)
+  - 💃 Pose/position (assise, debout, allongée... + expression)
+  - ✨ Détails supplémentaires optionnels (accessoires, angle spécial, etc.)
+Si l'utilisateur décrit tout d'un coup → passe directement au récap.
+
+Étape 3: RÉCAP. Quand tu as assez d'infos, fais un résumé court stylé puis demande confirmation.
+
+Étape 4: QUAND L'UTILISATEUR CONFIRME (oui, go, ok, génère, etc.), réponds UNIQUEMENT avec le bloc JSON entre \`\`\`json et \`\`\`. Ce JSON est le prompt final.
+
+FORMAT JSON FINAL (quand confirmé):
+\`\`\`json
+{
+  "photo_type": "selfie taken by the model herself, phone in hand" | "photo taken by another person, natural framing" | "mirror selfie, full body reflection",
+  "subject": {
+    "demographics": "(recopié du modèle)",
+    "hair": "(recopié du modèle)",
+    "face": "(recopié du modèle)",
+    "apparel": "description détaillée tenue EN ANGLAIS",
+    "anatomy": "(recopié du modèle)",
+    "skin_details": "(recopié du modèle)"
+  },
+  "pose": {
+    "body_position": "description pose EN ANGLAIS",
+    "expression": "expression visage EN ANGLAIS"
+  },
+  "environment": {
+    "setting": "(recopié du lieu)",
+    "background_elements": "(recopié du lieu)",
+    "time_of_day": "(recopié du lieu)"
+  },
+  "camera": { "angle": "angle caméra EN ANGLAIS" },
+  "lighting": { "source": "(recopié/adapté du lieu)" },
+  "vibe": "ambiance EN ANGLAIS",
+  "style": "Casual amateur photo for Instagram/TikTok. Smartphone camera.",
+  "negative_prompt": "low quality, blurry, deformed, extra fingers, AI generated, plastic skin, bokeh, DSLR, studio lighting"
+}
+\`\`\`
+
+RÈGLES STRICTES:
+- Ne pose qu'UNE question à la fois
+- Sois concis et fun (max 2-3 phrases par message)
+- Utilise des emojis
+- Le JSON final doit être en ANGLAIS
+- Les données du modèle/lieu doivent être recopiées EXACTEMENT
+- N'envoie le JSON QUE quand l'utilisateur confirme`;
+
+/**
+ * Multi-turn chat with the AI director.
+ * @param {string} apiKey
+ * @param {Array<{role: string, text: string}>} history - Chat history [{role: 'user'|'model', text: '...'}]
+ * @param {object} modelData - Model traits
+ * @param {object} locationData - Location data
+ * @returns {Promise<string>} - AI response text
+ */
+export const chatWithDirector = async (apiKey, history, modelData, locationData) => {
+  const modelContext = `
+MODÈLE (données physiques):
+- Ethnie: ${modelData.ethnicity || 'non spécifié'}
+- Âge: ${modelData.age || 'jeune adulte'}
+- Corps: ${modelData.body?.type || 'non spécifié'}, ${modelData.body?.height || ''}
+- Cheveux: ${modelData.hair?.color || ''} ${modelData.hair?.length || ''} ${modelData.hair?.texture || ''}
+- Visage: ${modelData.face?.shape || ''}, yeux ${modelData.eyes?.color || ''}
+- Peau: ${modelData.skin?.tone || ''} ${modelData.skin?.texture || ''}
+- Anatomie: ${modelData.body?.bust || ''}, hanches ${modelData.body?.hips || ''}, taille ${modelData.body?.waist || ''}
+${modelData.anatomical_fidelity ? `- Directives: ${modelData.anatomical_fidelity}` : ''}`;
+
+  const locationContext = locationData ? `
+LIEU:
+- Nom: ${locationData.name || ''}
+- Environnement: ${locationData.environment || ''}
+- Éclairage: ${locationData.default_lighting || 'naturel'}
+- Ambiance: ${locationData.default_vibe || ''}
+- Décor: ${locationData.anchor_details || ''}
+- Moment: ${locationData.time_of_day || ''}
+- Palette: ${locationData.color_palette || ''}` : '';
+
+  const systemText = `${CHAT_DIRECTOR_INSTRUCTION}\n\n--- CONTEXTE (READ-ONLY) ---\n${modelContext}\n${locationContext}`;
+
+  // Build Gemini multi-turn contents
+  const contents = history.map(msg => ({
+    role: msg.role,
+    parts: [{ text: msg.text }],
+  }));
+
+  const body = {
+    system_instruction: { parts: [{ text: systemText }] },
+    contents,
+    generationConfig: { temperature: 0.8 },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  };
+
+  const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Erreur ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+};
+
 /* ─── LOCATION IMAGE GENERATION ─── */
 
 /**

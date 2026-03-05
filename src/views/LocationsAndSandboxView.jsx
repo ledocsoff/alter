@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations, uploadLocationRefs } from '../utils/storage';
-import { autoFillLocation, generateLocationPresets, generateLocationImage } from '../utils/googleAI';
+import { autoFillLocation, generateLocationImage } from '../utils/googleAI';
 import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon, CameraIcon } from '../components/Icons';
 import { SCENE_OPTIONS } from '../constants/sceneOptions';
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
@@ -60,10 +60,6 @@ const LocationsAndSandboxView = () => {
     const [isAutoFilling, setIsAutoFilling] = useState(false);
     const [pendingLocPhotos, setPendingLocPhotos] = useState([]);
     const [generatingLocationId, setGeneratingLocationId] = useState(null);
-    const [generationStep, setGenerationStep] = useState('');
-    const [queuedLocationIds, setQueuedLocationIds] = useState([]);
-    const genQueue = useRef([]);
-    const isProcessing = useRef(false);
     const pendingPhotosInputRef = useRef(null);
     const dragItem = useRef(null);
     const dragOverItem = useRef(null);
@@ -86,56 +82,7 @@ const LocationsAndSandboxView = () => {
         return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Compte introuvable. <button onClick={() => navigate('/')} className="text-violet-400 ml-1.5 hover:underline font-medium">Retour</button></div>;
     }
 
-    /* ─── Generation Queue ─── */
-    const enqueueGeneration = (task) => {
-        genQueue.current.push(task);
-        setQueuedLocationIds(prev => [...prev, task.locId]);
-        if (!isProcessing.current) processQueue();
-    };
 
-    const processQueue = async () => {
-        if (isProcessing.current || genQueue.current.length === 0) return;
-        isProcessing.current = true;
-
-        while (genQueue.current.length > 0) {
-            const task = genQueue.current[0];
-            const { locId, locData, apiKey, hadPhotos } = task;
-
-            // Remove from queued → move to active
-            setQueuedLocationIds(prev => prev.filter(id => id !== locId));
-            setGeneratingLocationId(locId);
-
-            // Step 1: Generate presets
-            setGenerationStep('Génération des ambiances...');
-            try {
-                const result = await generateLocationPresets(apiKey, locData);
-                const updated2 = saveLocationData(modelId, accountId, { ...locData, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
-                if (updated2) setAllModelsDatabase(updated2);
-                toast.success(`${locData.name}: ${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses`);
-            } catch (err) {
-                toast.error(`${locData.name} presets: ${err.message}`);
-            }
-
-            // Step 2: Generate location image (if no manual photos)
-            if (!hadPhotos) {
-                setGenerationStep('Génération de l\'image...');
-                try {
-                    const locImg = await generateLocationImage(apiKey, locData);
-                    await uploadLocationRefs(locId, [{ base64: locImg.imageBase64, mimeType: locImg.mimeType }]);
-                    toast.success(`${locData.name}: 🖼️ image générée`);
-                } catch (err) {
-                    toast.error(`${locData.name} image: ${err.message}`);
-                }
-            }
-
-            // Done with this task
-            genQueue.current.shift();
-        }
-
-        setGeneratingLocationId(null);
-        setGenerationStep('');
-        isProcessing.current = false;
-    };
 
 
     const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
@@ -169,7 +116,7 @@ const LocationsAndSandboxView = () => {
                 toast.success(isCreating ? `"${locationData.name}" créé` : `Lieu mis à jour`);
                 resetForm();
 
-                // Generate AI presets + location image on CREATION only
+                // Upload photos + generate location image on CREATION only
                 if (isCreating) {
                     const apiKey = getApiKey();
                     const savedModel = updated.find(m => m.id === modelId);
@@ -186,9 +133,18 @@ const LocationsAndSandboxView = () => {
                         setPendingLocPhotos([]);
                     }
 
-                    // Enqueue AI generation (sequential processing)
-                    if (apiKey && savedLoc) {
-                        enqueueGeneration({ locId: savedLoc.id, locData: savedLoc, apiKey, hadPhotos });
+                    // Generate location image only (no presets)
+                    if (apiKey && savedLoc && !hadPhotos) {
+                        setGeneratingLocationId(savedLoc.id);
+                        try {
+                            const locImg = await generateLocationImage(apiKey, savedLoc);
+                            await uploadLocationRefs(savedLoc.id, [{ base64: locImg.imageBase64, mimeType: locImg.mimeType }]);
+                            toast.success(`${savedLoc.name}: 🖼️ image générée`);
+                        } catch (err) {
+                            toast.error(`Image: ${err.message}`);
+                        } finally {
+                            setGeneratingLocationId(null);
+                        }
                     }
                 }
             } else {
@@ -572,55 +528,38 @@ const LocationsAndSandboxView = () => {
                             <div className="space-y-2.5 stagger-children">
                                 {currentAccount.locations.map((loc, idx) => {
                                     const isGenerating = generatingLocationId === loc.id;
-                                    const isQueued = queuedLocationIds.includes(loc.id);
-                                    const isBusy = isGenerating || isQueued;
-                                    const queuePos = isQueued ? queuedLocationIds.indexOf(loc.id) + 1 : 0;
                                     return (
                                         <div
                                             key={loc.id}
-                                            draggable={!isBusy}
+                                            draggable={!isGenerating}
                                             onDragStart={() => handleDragStart(idx)}
                                             onDragEnter={() => handleDragEnter(idx)}
                                             onDragEnd={handleDragEnd}
                                             onDragOver={(e) => e.preventDefault()}
-                                            className={`velvet-card group p-4 transition-all ${isGenerating ? '!border-violet-500/30 !bg-violet-500/[0.03]' : ''} ${isQueued ? '!border-amber-500/20 !bg-amber-500/[0.02]' : ''} ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
+                                            className={`velvet-card group p-4 transition-all ${isGenerating ? '!border-violet-500/30 !bg-violet-500/[0.03]' : ''} ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 {/* Drag handle */}
-                                                {!isBusy && (
+                                                {!isGenerating && (
                                                     <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
                                                         <GripVerticalIcon size={14} />
                                                     </div>
                                                 )}
-                                                {/* Left: clickable area — disabled while busy */}
+                                                {/* Left: clickable area */}
                                                 <div
-                                                    className={`flex-1 min-w-0 transition-opacity ${isBusy ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
-                                                    onClick={() => !isBusy && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                                    className={`flex-1 min-w-0 transition-opacity ${isGenerating ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+                                                    onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
                                                 >
                                                     <div className="flex items-center gap-2.5 mb-0.5">
                                                         {isGenerating
                                                             ? <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin shrink-0" />
-                                                            : isQueued
-                                                                ? <div className="w-4 h-4 rounded-full border-2 border-amber-400/60 flex items-center justify-center shrink-0"><span className="text-[8px] text-amber-400 font-bold">{queuePos}</span></div>
-                                                                : <MapPinIcon size={14} className="text-violet-400 shrink-0" />
+                                                            : <MapPinIcon size={14} className="text-violet-400 shrink-0" />
                                                         }
                                                         <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
-                                                        {!isBusy && <LockScore location={loc} />}
-                                                        {!isBusy && loc.ai_presets?.length > 0 && (
-                                                            <span className="text-[10px] text-emerald-400/70 font-medium">
-                                                                IA ✓ {loc.ai_presets.length}+{loc.ai_outfits?.length || 0}+{loc.ai_poses?.length || 0}
-                                                            </span>
-                                                        )}
+                                                        {!isGenerating && <LockScore location={loc} />}
                                                     </div>
                                                     {isGenerating ? (
-                                                        <div className="pl-[22px] mt-1">
-                                                            <p className="text-[12px] text-violet-300 font-medium">{generationStep}</p>
-                                                            <div className="mt-1.5 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                                                                <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full animate-pulse" style={{ width: generationStep.includes('image') ? '80%' : '40%' }} />
-                                                            </div>
-                                                        </div>
-                                                    ) : isQueued ? (
-                                                        <p className="text-[12px] text-amber-400/70 mt-0.5 pl-[22px]">⏳ En attente... (#{queuePos} dans la file)</p>
+                                                        <p className="text-[12px] text-violet-300 mt-0.5 pl-[22px]">🖼️ Génération de l'image...</p>
                                                     ) : (
                                                         <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
                                                     )}

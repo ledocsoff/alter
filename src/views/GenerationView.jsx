@@ -4,9 +4,9 @@ import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS } from '../constants/sceneOptions';
 import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64, getLocationRefs, loadLocationRefBase64 } from '../utils/storage';
-import { generateAnchorMatrixViaGemini, generateSmartPrompt } from '../utils/googleAI';
+import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
 import { pickRandom } from '../utils/helpers';
-import SceneEditor from '../features/SceneEditor/SceneEditor';
+import AIChatPanel from '../features/AIChatPanel/AIChatPanel';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
 import ReferenceUpload from '../features/ReferenceUpload/ReferenceUpload';
 import EditableMatrix from '../features/EditableMatrix/EditableMatrix';
@@ -29,8 +29,6 @@ const TABS = [
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
     const [showPromptPreview, setShowPromptPreview] = useState(false);
-    const [smartText, setSmartText] = useState('');
-    const [isSmartLoading, setIsSmartLoading] = useState(false);
     const navigate = useNavigate();
     const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages } = useStudio();
     const toast = useToast();
@@ -253,77 +251,18 @@ const GenerationView = () => {
 
             {/* WORKSPACE */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
-                <div className="lg:col-span-4 h-full flex flex-col overflow-hidden gap-2">
-                    <SceneEditor location={currentLocation} />
-
-                    {/* ─── SMART PROMPT ─── */}
-                    <div className="shrink-0 bg-[#0e0e10] border border-white/[0.05] rounded-xl p-3 animate-fade-in">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-semibold text-zinc-400">✍️ Décrire la scène</span>
-                            <span className="text-[9px] text-zinc-700">Français → JSON optimisé</span>
-                        </div>
-                        <textarea
-                            value={smartText}
-                            onChange={(e) => setSmartText(e.target.value)}
-                            placeholder="Ex: elle est assise sur le lit en train de scroller son tel, en débardeur et short, lumière de fin de journée..."
-                            className="w-full h-16 bg-[#0a0a0c] border border-white/[0.06] rounded-lg px-3 py-2 text-[12px] text-zinc-300 placeholder-zinc-700 resize-none focus:outline-none focus:border-violet-500/40 transition-colors"
-                        />
-                        <div className="flex items-center gap-2 mt-2">
-                            <button
-                                onClick={async () => {
-                                    if (!smartText.trim()) { toast.info('Décris la scène d\'abord'); return; }
-                                    const key = getApiKey();
-                                    if (!key) { setShowApiKeyModal(true); return; }
-                                    setIsSmartLoading(true);
-                                    try {
-                                        const matrix = await generateSmartPrompt(key, smartText, model, currentLocation);
-                                        const prompt = JSON.stringify(matrix, null, 2);
-                                        toast.success('Prompt optimisé — génération...');
-                                        setRightPanel('image');
-                                        setTimeout(() => {
-                                            imagePreviewRef.current?.handleGenerateWithPrompt(prompt);
-                                        }, 100);
-                                    } catch (e) {
-                                        toast.error(e.message);
-                                    } finally {
-                                        setIsSmartLoading(false);
-                                    }
-                                }}
-                                disabled={isSmartLoading || !smartText.trim()}
-                                className="flex-1 velvet-btn-primary text-[11px] font-semibold py-1.5 disabled:opacity-30 flex items-center justify-center gap-1.5"
-                            >
-                                {isSmartLoading ? (
-                                    <><div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> Optimisation...</>
-                                ) : (
-                                    <><SparklesIcon size={12} /> Décrire & Générer</>
-                                )}
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    if (!smartText.trim()) return;
-                                    const key = getApiKey();
-                                    if (!key) { setShowApiKeyModal(true); return; }
-                                    setIsSmartLoading(true);
-                                    try {
-                                        const matrix = await generateSmartPrompt(key, smartText, model, currentLocation);
-                                        const prompt = JSON.stringify(matrix, null, 2);
-                                        navigator.clipboard.writeText(prompt);
-                                        toast.success('Prompt optimisé copié !');
-                                        setShowPromptPreview(true);
-                                    } catch (e) {
-                                        toast.error(e.message);
-                                    } finally {
-                                        setIsSmartLoading(false);
-                                    }
-                                }}
-                                disabled={isSmartLoading || !smartText.trim()}
-                                className="text-[10px] font-medium text-zinc-600 hover:text-zinc-300 px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-30"
-                                title="Optimiser et copier le prompt sans générer"
-                            >
-                                📋
-                            </button>
-                        </div>
-                    </div>
+                <div className="lg:col-span-4 h-full overflow-hidden">
+                    <AIChatPanel
+                        model={model}
+                        location={currentLocation}
+                        onGenerate={(prompt) => {
+                            setRightPanel('image');
+                            setTimeout(() => {
+                                imagePreviewRef.current?.handleGenerateWithPrompt(prompt);
+                            }, 100);
+                        }}
+                        onShowApiKeyModal={() => setShowApiKeyModal(true)}
+                    />
                 </div>
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
