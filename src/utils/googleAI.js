@@ -577,14 +577,22 @@ Given a location, generate:
 3. EXACTLY 8 pose suggestions — confident, photogenic, engagement-optimized
 
 CONTENT RULES:
-- OUTFITS must be fashionable and silhouette-enhancing. Think trending Instagram fashion: fitted, stylish, well-coordinated. They should complement the model's figure and match the location.
-- POSES must feel natural and confident — not stiff. Think: editorial candid, relaxed glamour, the angles that top influencers use. Dynamic and photogenic.
+- OUTFITS must be fashionable and silhouette-enhancing. Think trending Instagram fashion: fitted, stylish, well-coordinated.
+- POSES must feel natural and confident — not stiff. Think: editorial candid, relaxed glamour, dynamic and photogenic.
 - EXPRESSIONS should convey confidence and charisma.
 - Each preset must fit the location while being visually striking for social media.
 
+PHOTO TYPE RULES:
+- photo_type defines WHO takes the photo. MUST be one of these EXACT values:
+  "selfie" = the model takes her own photo (phone in hand, arm visible)
+  "third_person" = someone else takes the photo (natural framing, no phone visible) 
+  "mirror" = mirror selfie (phone visible in reflection, full body in mirror)
+- IMPORTANT: "mirror" is ONLY allowed if the location has a mirror (bathroom, gym, locker room, bedroom with mirror). NEVER use "mirror" for outdoor locations (beach, pool, street, park, etc.)
+- Vary the photo_type across presets for diversity. Use mostly "third_person" and "selfie", use "mirror" only 1-2 times if the location allows it.
+
 TECHNICAL RULES:
 - camera_angle MUST be one of these EXACT values:
-  "mirror selfie, phone visible", "high angle selfie", "low angle shot", "eye-level portrait",
+  "high angle shot, looking down", "low angle shot, looking up", "eye-level shot",
   "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
 - pose MUST be a short english description (5-10 words max) — confident, photogenic
 - expression MUST be one of these EXACT values:
@@ -602,6 +610,7 @@ Output a JSON object with this EXACT structure:
       "label": "emoji Nom Court EN FRANCAIS",
       "desc": "courte description en francais",
       "scene": {
+        "photo_type": "selfie OR third_person OR mirror",
         "camera_angle": "one of the EXACT camera values above",
         "pose": "short english pose: confident, photogenic",
         "expression": "one of the EXACT expression values above",
@@ -629,7 +638,7 @@ Output a JSON object with this EXACT structure:
 RULES:
 1. Output ONLY the JSON object, no markdown, no explanation.
 2. All "value" and "promptEN" fields in English. ALL "label" and "labelFR" fields in FRENCH.
-3. Make everything VARIED — different vibes, angles, outfits for each preset.
+3. Make everything VARIED — different vibes, angles, photo_types, outfits for each preset.
 4. Outfits must be FITTED, STYLISH, and adapted to the location.
 5. Poses must look NATURAL yet INTENTIONAL — the angles top influencers use for best engagement.
 6. Think about trending Instagram/TikTok content: confidence, style, visual impact.`;

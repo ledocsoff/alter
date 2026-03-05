@@ -60,15 +60,19 @@ export const SCENE_OPTIONS = {
     { labelFR: "Piscine privée en Villa tropicale", promptEN: "tropical villa private pool" },
     { labelFR: "Ponton de yacht luxueux", promptEN: "luxury yacht deck" }
   ],
+  photo_type: [
+    { labelFR: "📱 Selfie (la modèle se prend en photo)", promptEN: "selfie taken by the model herself, phone in hand, arm extended or close" },
+    { labelFR: "📸 Prise par quelqu'un (photo naturelle)", promptEN: "photo taken by another person, natural framing, no phone visible" },
+    { labelFR: "🪞 Selfie Miroir (téléphone visible)", promptEN: "mirror selfie, full body reflection, phone visible in hand" },
+  ],
   camera_angle: [
-    { labelFR: "Selfie Miroir (Téléphone visible)", promptEN: "mirror selfie, phone visible" },
-    { labelFR: "Selfie plongée (Pris de haut)", promptEN: "high angle selfie" },
-    { labelFR: "Contre-plongée (Pris d'en bas)", promptEN: "low angle shot" },
-    { labelFR: "Portrait niveau des yeux", promptEN: "eye-level portrait" },
+    { labelFR: "Plongée (Pris de haut)", promptEN: "high angle shot, looking down" },
+    { labelFR: "Contre-plongée (Pris d'en bas)", promptEN: "low angle shot, looking up" },
+    { labelFR: "Niveau des yeux", promptEN: "eye-level shot" },
     { labelFR: "Vue par-dessus l'épaule", promptEN: "over-the-shoulder view" },
     { labelFR: "Plein pied (Corps entier)", promptEN: "full body shot" },
     { labelFR: "Gros plan visage", promptEN: "close-up portrait" },
-    { labelFR: "Plan moyen (À partir de la taille)", promptEN: "medium shot from waist up" }
+    { labelFR: "Plan moyen (À partir de la taille)", promptEN: "medium shot from waist up" },
   ],
   pose: [
     { labelFR: "Debout détendue, main sur la hanche", promptEN: "casual standing, hand on hip" },
@@ -158,13 +162,14 @@ export const SCENE_PRESETS = [
 
 export const DEFAULT_SCENE = {
   outfit: OUTFIT_PRESETS[0],
-  vibe: SCENE_OPTIONS.vibe[0].promptEN, // On stocke le EN en valeur primaire pour l'IA
-  camera_angle: SCENE_OPTIONS.camera_angle[7].promptEN,
+  photo_type: SCENE_OPTIONS.photo_type[1].promptEN, // Default: prise par quelqu'un
+  vibe: SCENE_OPTIONS.vibe[0].promptEN,
+  camera_angle: SCENE_OPTIONS.camera_angle[3].promptEN,
   pose: SCENE_OPTIONS.pose[0].promptEN,
   environment: SCENE_OPTIONS.environment[0].promptEN,
   lighting: SCENE_OPTIONS.lighting[0].promptEN,
   expression: SCENE_OPTIONS.expression[0].promptEN,
   aspect_ratio: "--ar 9:16",
   seed: null,
-  custom_negative_prompt: '', // Custom additions to negative prompt
+  custom_negative_prompt: '',
 };

@@ -34,8 +34,13 @@ const SceneEditor = ({ location = null }) => {
     }, [activePresetId, scene.camera_angle, scene.pose, scene.expression, presets]);
 
     /* ─── Apply a scene preset ─── */
+    const PHOTO_TYPE_MAP = {
+        selfie: 'selfie taken by the model herself, phone in hand, arm extended or close',
+        third_person: 'photo taken by another person, natural framing, no phone visible',
+        mirror: 'mirror selfie, full body reflection, phone visible in hand',
+    };
     const applyPreset = (preset) => {
-        const { outfit: presetOutfit, ...sceneWithoutOutfit } = preset.scene || {};
+        const { outfit: presetOutfit, photo_type: presetPhotoType, ...sceneWithoutOutfit } = preset.scene || {};
         setScene(prev => ({
             ...prev,
             ...sceneWithoutOutfit,
@@ -44,6 +49,8 @@ const SceneEditor = ({ location = null }) => {
             location_meta: prev.location_meta,
             vibe: prev.vibe,
             lighting: prev.lighting,
+            // Map photo_type from preset shorthand to full prompt string
+            photo_type: presetPhotoType ? (PHOTO_TYPE_MAP[presetPhotoType] || presetPhotoType) : prev.photo_type,
             // Apply outfit from AI preset if present, otherwise keep current
             outfit: presetOutfit
                 ? { id: `ai_${preset.id}`, label: preset.label, value: presetOutfit, icon: '' }
@@ -392,10 +399,36 @@ const SceneEditor = ({ location = null }) => {
                     </button>
                     {showAdvanced && (
                         <div className="pb-3 space-y-3 animate-fade-in">
+                            {/* PHOTO TYPE */}
+                            <div>
+                                <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Qui prend la photo ?</span>
+                                <div className="flex gap-1">
+                                    {SCENE_OPTIONS.photo_type?.map(pt => {
+                                        // Hide mirror option if location doesn't have a mirror
+                                        const isMirrorOption = pt.promptEN.includes('mirror');
+                                        const envLower = (scene.environment || '').toLowerCase();
+                                        const hasMirror = envLower.includes('mirror') || envLower.includes('bathroom') || envLower.includes('vestiaire') || envLower.includes('locker') || envLower.includes('gym') || envLower.includes('salle de bain');
+                                        if (isMirrorOption && !hasMirror) return null;
+                                        const isActive = scene.photo_type === pt.promptEN;
+                                        return (
+                                            <button
+                                                key={pt.promptEN}
+                                                onClick={() => updateSceneEntry('photo_type', pt.promptEN)}
+                                                className={`flex-1 text-[11px] font-medium py-2 px-2 rounded-lg transition-all ${isActive
+                                                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/40'
+                                                    : 'text-zinc-500 border border-zinc-800/60 hover:text-zinc-300 hover:border-zinc-700'
+                                                    }`}
+                                            >
+                                                {pt.labelFR}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                             {/* CAMERA + EXPRESSION */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Caméra</span>
+                                    <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider mb-1.5 block">Angle</span>
                                     <select className="velvet-input w-full text-sm" value={scene.camera_angle || ""} onChange={(e) => updateSceneEntry('camera_angle', e.target.value)}>
                                         <option value="">Auto</option>
                                         {SCENE_OPTIONS.camera_angle?.map(shot => (

@@ -147,6 +147,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     camera: {
+      photo_type: scene.photo_type || "photo taken by another person, natural framing, no phone visible",
       perspective: camPerspective,
       shot_type: camShot,
       focal_length: camFocal,
