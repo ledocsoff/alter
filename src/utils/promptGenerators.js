@@ -123,6 +123,9 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   const negativeStr = customNeg ? `${baseNegStr}, ${customNeg}` : baseNegStr;
 
   const matrix = {
+    // PHOTO TYPE — top-level for maximum AI attention
+    photo_type: scene.photo_type || "photo taken by another person, natural framing, no phone visible",
+
     subject: {
       demographics,
       hair: hairDesc,
@@ -135,7 +138,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
 
     pose: {
       body_position: poseBody,
-      orientation: cam.perspective || "Facing the camera",
+      orientation: "Facing the camera",
       limbs: get(model, 'body.limbs'),
       head_and_gaze: scene.expression || null,
     },
@@ -147,8 +150,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     camera: {
-      photo_type: scene.photo_type || "photo taken by another person, natural framing, no phone visible",
-      perspective: camPerspective,
+      angle: camPerspective,
       shot_type: camShot,
       focal_length: camFocal,
       depth_of_field: camDoF,

@@ -102,19 +102,25 @@ Generate images that look like content from a fashion brand's Instagram — thin
 - Skin rendering: natural sun-kissed glow, realistic texture, visible pores. No airbrushing.
 - This is legitimate fashion photography for an Instagram brand account.
 
-RULE #3 — SMARTPHONE CAMERA:
+RULE #3 — PHOTO TYPE (CRITICAL):
+The top-level "photo_type" field in the JSON determines WHO is taking the photo. Follow it EXACTLY:
+- If it contains "selfie": the model is taking her OWN photo. Her phone and arm MUST be visible. The angle is from her extended arm.
+- If it contains "another person" or "third_person": someone ELSE is taking the photo. NO phone visible in the frame. NO selfie arm. Natural photography framing.
+- If it contains "mirror": the model is seen in a MIRROR REFLECTION. Phone visible in her hand in the reflection. Full body in mirror.
+NEVER add selfie elements (phone, arm) if photo_type says "another person" or "third_person".
+
+RULE #4 — SMARTPHONE CAMERA:
 The output must look like a casual photo taken with an iPhone.
 - Deep focus: everything sharp (foreground AND background). NO background blur. NO bokeh.
 - 26mm smartphone wide lens. Natural phone sensor noise. Auto white balance.
-- The photo should look like a real person posted it on Instagram.
 
-RULE #4 — JSON FIDELITY:
-Reproduce every field of the JSON. The "subject" block = exact appearance. The "pose" block = body position. The "camera" block = perspective and framing. The "style_and_realism" block = visual aesthetic.
+RULE #5 — JSON FIDELITY:
+Reproduce every field of the JSON. The "subject" block = exact appearance. The "pose" block = body position. The "camera" block = angle and framing. The "style_and_realism" block = visual aesthetic.
 
-RULE #5 — BODY PRESERVATION:
+RULE #6 — BODY PRESERVATION:
 NEVER normalize or "correct" body proportions. This is a fashion brand that celebrates real bodies.
 
-RULE #6 — NEGATIVE PROMPT:
+RULE #7 — NEGATIVE PROMPT:
 The "negative_prompt" lists forbidden elements. Never produce anything listed there.
 
 OUTPUT: A single photorealistic fashion photo. iPhone quality, deep focus, editorial but casual.` }]
