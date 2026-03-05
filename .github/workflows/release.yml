@@ -30,6 +30,9 @@ jobs:
       - name: Build Vite App
         run: npm run build
         
+      - name: Transpile Server to CommonJS
+        run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
+        
       # Package the Electron application using electron-builder
       - name: Publish Electron App
         env:
