@@ -2,6 +2,7 @@ import logger from './logger';
 
 const STORAGE_KEY = 'velvet_studio_v4';
 const HISTORY_KEY = 'velvet_history';
+const TEMPLATES_KEY = 'velvet_templates';
 
 const API_KEY_KEY = 'velvet_api_key';
 
@@ -669,7 +670,11 @@ export const getModelRefs = async (modelId) => {
     try {
         const res = await fetch(`${API_BASE}/api/refs/${encodeURIComponent(modelId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
+        const refs = await res.json();
+        return (refs || []).map(ref => ({
+            ...ref,
+            imageUrl: ref.imageUrl?.startsWith('/api/') ? `${API_BASE}${ref.imageUrl}` : ref.imageUrl
+        }));
     } catch (err) {
         logger.warn('storage', 'Erreur get refs', err.message);
         return [];
@@ -745,7 +750,11 @@ export const getLocationRefs = async (locationId) => {
     try {
         const res = await fetch(`${API_BASE}/api/location-refs/${encodeURIComponent(locationId)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
+        const refs = await res.json();
+        return (refs || []).map(ref => ({
+            ...ref,
+            imageUrl: ref.imageUrl?.startsWith('/api/') ? `${API_BASE}${ref.imageUrl}` : ref.imageUrl
+        }));
     } catch (err) {
         logger.warn('storage', 'Erreur get location refs', err.message);
         return [];

@@ -12,7 +12,8 @@ import LocationRefUpload from '../features/LocationRefUpload/LocationRefUpload';
 // Extracted to a proper component so useState can be used legally (Rules of Hooks)
 const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx, onDragStart, onDragEnter, onDragEnd, onEdit, onDuplicate, onDelete, navigate }) => {
     const [thumbFailed, setThumbFailed] = useState(false);
-    const thumbUrl = loc.id ? `/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
+    const apiBase = (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3001' : '';
+    const thumbUrl = loc.id ? `${apiBase}/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
 
     return (
         <div

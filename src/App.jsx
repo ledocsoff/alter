@@ -96,13 +96,30 @@ const AppLayout = ({ children }) => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(null);
+  const [isUpdateError, setIsUpdateError] = useState(false);
+  const [notInApplications, setNotInApplications] = useState(false);
 
   // Listen for native update events from electron-updater
   useEffect(() => {
     if (window.velvet) {
+      if (window.velvet.onUpdateAvailable) {
+        window.velvet.onUpdateAvailable((info) => {
+          setIsCheckingUpdate(false);
+          setIsUpdateError(false);
+          toast.success(`Mise à jour v${info.version} disponible !`);
+          setDownloadProgress({ percent: 0, bytesPerSecond: 0 });
+        });
+      }
+      if (window.velvet.onUpdateDownloadProgress) {
+        window.velvet.onUpdateDownloadProgress((progress) => {
+          setDownloadProgress(progress);
+        });
+      }
       if (window.velvet.onUpdateDownloaded) {
         window.velvet.onUpdateDownloaded((version) => {
           setHasUpdate(true);
+          setDownloadProgress(null);
           setIsCheckingUpdate(false);
           toast.success(`Mise à jour v${version} téléchargée et prête !`);
         });
@@ -113,12 +130,29 @@ const AppLayout = ({ children }) => {
           toast.success('Velvet Studio est à jour ✨');
         });
       }
+      if (window.velvet.onUpdateError) {
+        window.velvet.onUpdateError((err) => {
+          setIsCheckingUpdate(false);
+          setDownloadProgress(null);
+          setIsUpdateError(true);
+          toast.error(`Erreur de mise à jour: ${err}`);
+        });
+      }
+      if (window.velvet.onNotInApplications) {
+        window.velvet.onNotInApplications(() => setNotInApplications(true));
+      }
+      if (window.velvet.onBackendLog) {
+        window.velvet.onBackendLog((log) => {
+          logger[log.level]('electron', log.source, log.msg);
+        });
+      }
     }
   }, []);
 
   const handleCheckUpdate = async () => {
     if (!window.velvet?.checkForUpdates) return;
     setIsCheckingUpdate(true);
+    setIsUpdateError(false);
     toast.success('Recherche de mises à jour...', { duration: 2000 });
     try {
       const res = await window.velvet.checkForUpdates();
@@ -127,8 +161,7 @@ const AppLayout = ({ children }) => {
         toast.success('Velvet Studio est à jour ✨');
         setIsCheckingUpdate(false);
       } else if (res.isUpdateAvailable) {
-        toast.success('Version trouvée ! Téléchargement en cours...');
-        setIsCheckingUpdate(false); // background download takes over
+        // Le listener onUpdateAvailable prend le relais pour afficherr la barre
       }
     } catch (err) {
       setIsCheckingUpdate(false);
@@ -252,6 +285,21 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans antialiased">
+      {notInApplications && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2 flex items-center justify-between shadow-inner shrink-0 z-[60]">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-[12px] text-amber-500 font-medium">
+              <strong className="text-amber-400">Installation incorrecte détectée :</strong> Déplacez Velvet Studio dans le dossier <code className="bg-amber-500/20 px-1 py-0.5 rounded text-amber-300">Applications</code> de votre Mac pour que les mises à jour fonctionnent.
+            </p>
+          </div>
+          <button onClick={() => setNotInApplications(false)} className="text-amber-500 hover:text-amber-400 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
       <header className="px-6 h-12 bg-[#09090b]/80 border-b border-zinc-800/50 flex items-center gap-6 sticky top-0 z-50 backdrop-blur-xl">
         <Link to="/" className="hover:opacity-80 transition-opacity shrink-0 flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
@@ -263,17 +311,40 @@ const AppLayout = ({ children }) => {
         </Link>
         <button
           onClick={handleCheckUpdate}
-          disabled={isCheckingUpdate || hasUpdate}
-          className="group flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors font-mono -ml-4 hidden sm:flex px-2 py-1 rounded-md hover:bg-zinc-800/50"
-          title="Rechercher des mises à jour"
+          disabled={isCheckingUpdate || hasUpdate || downloadProgress !== null}
+          className={`group flex flex-col items-start gap-0.5 text-[10px] transition-colors font-mono -ml-4 hidden sm:flex px-2 py-1 rounded-md ${isUpdateError ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
+          title={isUpdateError ? "Echec du telechargement. Cliquer pour reessayer." : "Rechercher des mises à jour"}
         >
-          <span>v{__APP_VERSION__}</span>
-          {isCheckingUpdate ? (
-            <div className="w-2.5 h-2.5 border border-zinc-500 border-t-zinc-300 rounded-full animate-spin"></div>
-          ) : (
-            <svg className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
+          <div className="flex items-center gap-1.5">
+            <span>{isUpdateError ? "Erreur MAJ (Retry)" : `v${__APP_VERSION__}`}</span>
+            {isCheckingUpdate ? (
+              <div className="w-2.5 h-2.5 border border-zinc-500 border-t-zinc-300 rounded-full animate-spin"></div>
+            ) : (
+              !hasUpdate && downloadProgress === null && (
+                <svg className={`w-3 h-3 ${isUpdateError ? 'opacity-100 text-red-400' : 'opacity-0 group-hover:opacity-100'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  {isUpdateError ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  )}
+                </svg>
+              )
+            )}
+          </div>
+          {/* Download Progress Bar underneath version */}
+          {downloadProgress !== null && (
+            <div className="w-24 mt-0.5">
+              <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-teal-500 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.max(2, downloadProgress.percent || 0)}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center mt-1 text-[8px] text-zinc-500">
+                <span>{Math.round(downloadProgress.percent || 0)}%</span>
+                <span>{downloadProgress.bytesPerSecond ? `${(downloadProgress.bytesPerSecond / 1024 / 1024).toFixed(1)} Mo/s` : '...'}</span>
+              </div>
+            </div>
           )}
         </button>
         <div className="hidden md:block h-4 w-px bg-zinc-800"></div>
@@ -296,17 +367,17 @@ const AppLayout = ({ children }) => {
               <button
                 onClick={handleUpdate}
                 disabled={isUpdating}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-teal-400 bg-teal-500/10 px-2 py-1 rounded-md hover:bg-teal-500/20 transition-colors animate-pulse disabled:opacity-50 disabled:animate-none"
-                title="Installer la nouvelle version (Git pull + build)"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-white bg-teal-600 px-3 py-1 rounded-md hover:bg-teal-500 transition-colors shadow-[0_0_15px_rgba(20,184,166,0.3)] disabled:opacity-50"
+                title="Redémarrer et installer la nouvelle version"
               >
                 {isUpdating ? (
-                  <div className="w-3 h-3 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin shrink-0"></div>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>
                 ) : (
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
                 )}
-                <span>{isUpdating ? "MàJ en cours..." : "Mettre à jour"}</span>
+                <span>{isUpdating ? "Installation..." : "Redémarrer & Installer"}</span>
               </button>
               <div className="h-3 w-px bg-zinc-800/60"></div>
             </>

@@ -7,11 +7,21 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 ## Download
 
 | Platform | Download |
+| Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Velvet Studio-5.3.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
-| **Windows** (x64) | [Velvet Studio Setup 5.3.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **macOS** (Apple Silicon) | [Velvet Studio-5.3.10-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **Windows** (x64) | [Velvet Studio Setup 5.3.10.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
 
-> **Note**: The app is not code-signed. On macOS, right-click → Open on first launch. On Windows, click "More info" → "Run anyway".
+### 🍏 macOS Installation Guide (Important)
+Since Velvet Studio is downloaded from GitHub and is not signed by a paid Apple Developer certificate, macOS enforces strict security rules (Gatekeeper and App Translocation). To ensure the app can save your generation data and automatically update itself, please follow these exact steps:
+1. Open the downloaded `.dmg` file.
+2. **CRITICAL:** Drag and drop the `Velvet Studio` icon into the `Applications` folder shortcut right next to it. *Do not launch it directly from the DMG window or your Downloads folder.*
+3. Open your Mac's `Applications` folder.
+4. **Right-click** (or Control+Click) on the `Velvet Studio` app and select **Open**.
+5. A security prompt will appear. Click **Open** again to bypass Gatekeeper. 
+*(You only need to do this step once. Future launches can be done with a normal double-click).*
+
+> **Windows Users**: Click "More info" → "Run anyway" if Microsoft Defender SmartScreen appears on the first launch.
 
 ## Features
 

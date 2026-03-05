@@ -4,25 +4,55 @@ const { fork } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 // ─── Native Auto-Update (electron-updater) ─────────────────
-function setupAutoUpdate(window) {
+function setupAutoUpdate() {
     try {
+        // Reroute autoUpdater logs to the React frontend for transparent debugging
+        autoUpdater.logger = {
+            info(msg) { console.log(msg); const ws = BrowserWindow.getAllWindows(); if (ws.length > 0) ws[0].webContents.send('backend-log', { level: 'info', source: 'updater', msg }); },
+            warn(msg) { console.warn(msg); const ws = BrowserWindow.getAllWindows(); if (ws.length > 0) ws[0].webContents.send('backend-log', { level: 'warn', source: 'updater', msg }); },
+            error(msg) { console.error(msg); const ws = BrowserWindow.getAllWindows(); if (ws.length > 0) ws[0].webContents.send('backend-log', { level: 'error', source: 'updater', msg }); }
+        };
+
+        // Mac Security: Prevent updates if app is running in App Translocation (Quarantine)
+        if (process.platform === 'darwin' && !app.isInApplicationsFolder()) {
+            console.warn('[Update] Mac App is NOT in Applications folder. Translocation active. Updates disabled.');
+            setTimeout(() => {
+                const wins = BrowserWindow.getAllWindows();
+                if (wins.length > 0) wins[0].webContents.send('not-in-applications');
+            }, 5000);
+            return; // Abort auto-update setup to prevent silent failures
+        }
+
         autoUpdater.autoDownload = true;
         autoUpdater.autoInstallOnAppQuit = true;
 
         autoUpdater.on('update-available', (info) => {
             console.log(`[Update] Nouvelle version disponible: v${info.version}`);
+            const wins = BrowserWindow.getAllWindows();
+            if (wins.length > 0) wins[0].webContents.send('update-available', info);
+        });
+
+        let lastProgressTime = 0;
+        autoUpdater.on('download-progress', (progressObj) => {
+            const now = Date.now();
+            // Eviter le spam UI (React re-render) en limitant à ~5 envois/sec
+            if (now - lastProgressTime > 200 || progressObj.percent === 100) {
+                lastProgressTime = now;
+                const wins = BrowserWindow.getAllWindows();
+                if (wins.length > 0) wins[0].webContents.send('update-download-progress', progressObj);
+            }
         });
 
         autoUpdater.on('update-downloaded', (info) => {
             console.log(`[Update] v${info.version} téléchargée, prête à installer`);
-            // Prevenir l'UI React qu'une mise a jour est prete
-            if (window && !window.isDestroyed()) {
-                window.webContents.send('update-downloaded', info.version);
-            }
+            const wins = BrowserWindow.getAllWindows();
+            if (wins.length > 0) wins[0].webContents.send('update-downloaded', info.version);
         });
 
         autoUpdater.on('error', (err) => {
             console.warn('[Update] Erreur auto-update (non bloquante):', err.message);
+            const wins = BrowserWindow.getAllWindows();
+            if (wins.length > 0) wins[0].webContents.send('update-error', err.message);
         });
 
         // Check for updates 3s after launch
@@ -55,7 +85,7 @@ autoUpdater.on('update-not-available', () => {
 
 // React can call this to trigger the install and restart
 ipcMain.on('restart-app', () => {
-    autoUpdater.quitAndInstall();
+    autoUpdater.quitAndInstall(false, true); // (isSilent, isForceRunAfter)
 });
 
 
