@@ -66,6 +66,48 @@ if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', syncNow);
 }
 
+// ============================================
+// DATA VALIDATION — Auto-réparation au chargement
+// ============================================
+const _generateId = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const validateAndRepairModels = (models) => {
+    if (!Array.isArray(models)) return [];
+    let repairCount = 0;
+
+    const repaired = models.map((model, mi) => {
+        if (!model || typeof model !== 'object') {
+            repairCount++;
+            return null; // Remove completely broken entries
+        }
+        // Ensure required model fields
+        if (!model.id) { model.id = _generateId(); repairCount++; }
+        if (!model.name) { model.name = `Modèle ${mi + 1}`; repairCount++; }
+        if (!Array.isArray(model.accounts)) { model.accounts = []; repairCount++; }
+
+        // Validate accounts
+        model.accounts = model.accounts.filter(a => a && typeof a === 'object').map((account, ai) => {
+            if (!account.id) { account.id = _generateId(); repairCount++; }
+            if (!account.platform) { account.platform = 'Instagram'; repairCount++; }
+            if (!Array.isArray(account.locations)) { account.locations = []; repairCount++; }
+
+            // Validate locations
+            account.locations = account.locations.filter(l => l && typeof l === 'object').map((loc, li) => {
+                if (!loc.id) { loc.id = _generateId(); repairCount++; }
+                if (!loc.name) { loc.name = `Lieu ${li + 1}`; repairCount++; }
+                return loc;
+            });
+            return account;
+        });
+        return model;
+    }).filter(Boolean); // Remove nulls
+
+    if (repairCount > 0) {
+        console.warn(`[Velvet] ⚠ ${repairCount} champ(s) réparé(s) dans les données chargées`);
+    }
+    return repaired;
+};
+
 /**
  * Charge les données depuis le serveur (sauvegarde/) dans localStorage.
  * Appelé une seule fois au démarrage de l'app.
@@ -80,13 +122,16 @@ export const loadFromServer = async () => {
         // Validate server response
         if (!data || typeof data !== 'object') throw new Error('Réponse serveur invalide');
 
+        // Validate and auto-repair model data
+        const models = validateAndRepairModels(data.models || []);
+
         // Always overwrite localStorage from server (source of truth)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.models || []));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
         localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates || []));
         localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history || []));
 
-        console.log(`[Velvet] Chargé depuis sauvegarde/: ${data.models?.length || 0} modèle(s)`);
-        return data.models || [];
+        console.log(`[Velvet] Chargé depuis sauvegarde/: ${models.length} modèle(s)`);
+        return models;
     } catch (err) {
         console.warn('[Velvet] Serveur indisponible, fallback localStorage:', err.message);
         return getSavedModels();
@@ -135,6 +180,26 @@ export const saveApiKey = (key) => {
 
 export const removeApiKey = () => {
     localStorage.removeItem(_apiStorageKey);
+};
+
+// ============================================
+// SECONDARY API KEY — Fallback pour doubler les quotas
+// ============================================
+const _apiStorageKey2 = `${API_KEY_KEY}_secondary`;
+
+export const getApiKey2 = () => {
+    try {
+        const stored = localStorage.getItem(_apiStorageKey2) || '';
+        return stored ? _deobfuscate(stored) : '';
+    } catch { return ''; }
+};
+
+export const saveApiKey2 = (key) => {
+    localStorage.setItem(_apiStorageKey2, _obfuscate(key));
+};
+
+export const removeApiKey2 = () => {
+    localStorage.removeItem(_apiStorageKey2);
 };
 
 // ============================================

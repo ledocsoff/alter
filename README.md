@@ -8,8 +8,8 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Velvet Studio-5.1.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
-| **Windows** (x64) | [Velvet Studio Setup 5.1.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **macOS** (Apple Silicon) | [Velvet Studio-5.2.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **Windows** (x64) | [Velvet Studio Setup 5.2.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
 
 > **Note**: The app is not code-signed. On macOS, right-click → Open on first launch. On Windows, click "More info" → "Run anyway".
 
@@ -28,9 +28,12 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 - **Scene templates** — Save and load scene presets for quick setup
 - **Sandbox mode** — Free-form generation without location constraints
 - **Seed management** — Reproducible outputs with per-location seed tracking
+- **Dual API keys** — Two API key slots with automatic failover on quota exhaustion
+- **Unified logging** — Activity + Technical logs panel with export for diagnosis
 - **Auto-save & backups** — Atomic writes with 5-slot backup rotation and auto-recovery
+- **Data validation** — Automatic repair of corrupted data on load
 - **Auto-update** — In-app updates via GitHub Releases (Electron only)
-- **Security hardened** — Rate limiting, input validation, path traversal protection, API key obfuscation
+- **Security hardened** — Rate limiting, input validation, path traversal protection, XSS protection, API key obfuscation
 
 ## Quick Start (Development)
 
@@ -60,8 +63,8 @@ Releases are automated via GitHub Actions. To create a new release:
 
 ```bash
 # Tag and push to trigger the build pipeline
-git tag v5.0.1
-git push origin v5.0.1
+git tag v5.2.0
+git push origin v5.2.0
 ```
 
 The CI pipeline will:
@@ -77,7 +80,7 @@ The CI pipeline will:
 | Styling | Tailwind CSS 3 |
 | Backend | Express.js (Node 20+) |
 | Desktop | Electron 33 |
-| AI | Google Gemini API (imagen / gemini-2.0-flash) |
+| AI | Google Gemini API (gemini-3-pro-image-preview) |
 | Packaging | electron-builder 25 |
 | CI/CD | GitHub Actions |
 
@@ -91,7 +94,7 @@ velvet-studio/
 │   ├── components/         # Shared UI (Icons, etc.)
 │   ├── store/              # React Context (StudioContext, ToastContext)
 │   ├── utils/              # Storage, AI, helpers, prompt generators
-│   └── constants/          # Scene options, outfit presets, controlnet presets
+│   └── constants/          # Scene options, outfit presets
 ├── electron/               # Electron main + preload
 ├── server.js               # Express API server (persistence, gallery, backups)
 ├── sauvegarde/             # Persistent data (auto-created)
@@ -104,7 +107,14 @@ velvet-studio/
 
 ## API Configuration
 
-No `.env` file required — the API key is configured directly in the app via the **API** button in the header. Two provider slots (Google AI Studio + Google Cloud) allow dual-quota management. The key is stored with base64 obfuscation in localStorage.
+No `.env` file required — the API key is configured directly in the app via the **API** button in the header. Two key slots (primary + secondary) allow dual-quota management with automatic failover. Keys are stored with base64 obfuscation in localStorage.
+
+## Data Persistence
+
+All data is stored in the `sauvegarde/` folder at the project root:
+- **Backup**: Copy the `sauvegarde/` folder to preserve all data
+- **Restore**: Replace the `sauvegarde/` folder and restart
+- **Export/Import**: Use the built-in Export/Import buttons in the header
 
 ## License
 

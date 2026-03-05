@@ -3,6 +3,7 @@
 // Les deux utilisent le même endpoint Gemini (generativelanguage.googleapis.com)
 
 import logger from './logger';
+import { getApiKey2 } from './storage';
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODEL_ID = 'gemini-3-pro-image-preview';
@@ -189,8 +190,16 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
       logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
 
       if (RETRYABLE_CODES.includes(res.status)) {
+        // On 429 (quota), try fallback to secondary API key if available
+        if (res.status === 429 && !options._usedFallback) {
+          const key2 = getApiKey2();
+          if (key2 && key2 !== apiKey) {
+            logger.warn('api', 'Quota dépassé — basculement sur la clé secondaire');
+            return generateImage(key2, promptText, aspectRatio, conversationHistory, { ...options, _usedFallback: true });
+          }
+        }
         const e = new Error(res.status === 429
-          ? 'Quota dépassé. Essayez votre autre clé API, ou attendez quelques minutes.'
+          ? 'Quota dépassé sur toutes les clés API. Attendez quelques minutes.'
           : `Serveurs satures (${res.status}). Retry automatique en cours...`);
         e._retryable = true;
         throw e;
