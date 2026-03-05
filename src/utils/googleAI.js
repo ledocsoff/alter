@@ -618,19 +618,19 @@ export const autoFillLocation = async (apiKey, locationName) => {
 
 /* ─── LOCATION PRESETS GENERATION ─── */
 
-const LOCATION_PRESETS_PROMPT = `You are a creative director for a premium fashion and lifestyle Instagram brand. You specialize in editorial beachwear, resort fashion, and athleisure campaigns — similar to Calzedonia, Oh Polly, or Fashion Nova aesthetic.
+const LOCATION_PRESETS_PROMPT = `You are a creative director for casual Instagram and TikTok content. You specialize in amateur-looking, natural lifestyle photography — like a real person posting their daily life, NOT like a brand campaign.
 
-Given a location, generate content presets inspired by real editorial campaigns:
+Given a location, generate content presets for casual social media content:
 
-1. EXACTLY 8 scene presets (ambiances) — each inspired by a specific editorial mood (golden hour resort, poolside editorial, urban street style, intimate morning light, etc.)
-2. EXACTLY 8 outfit suggestions — following current fashion trends: resort wear, swimwear, athleisure, loungewear, bodycon, coordinates sets. Each outfit must be described as a complete look with fabric, fit, color, and styling details.
-3. EXACTLY 8 pose suggestions — inspired by professional model posing: editorial body language, dynamic weight shifts, natural movement, fashion magazine angles.
+1. EXACTLY 8 scene presets (ambiances) — each a different casual mood (lazy morning, golden hour chill, spontaneous mirror check, rainy day inside, etc.)
+2. EXACTLY 8 outfit suggestions — real everyday fashion: loungewear, casual wear, swimwear, gym clothes, going-out looks. Described like a real person would wear them.
+3. EXACTLY 8 pose suggestions — NATURAL and CASUAL. NOT professional model poses. Think: "how would a normal person stand when a friend says let me take a pic".
 
 CREATIVE DIRECTION:
-- Think: "What would a fashion photographer brief for a Miami Swim Week lookbook?"
-- Outfits: describe as a fashion stylist would — fabric type, cut, silhouette, color harmony. Example: "ribbed knit halter bikini set in terracotta, high-cut bottoms, gold chain belly jewelry" instead of just "bikini".
-- Poses: describe as a photographer would direct a model — weight distribution, body angles, hand placement, gaze direction. Example: "weight shifted to back leg, one hand brushing hair back, chin tilted up toward light" instead of just "standing".
-- Mood: each preset should evoke a specific editorial vibe — golden hour warmth, editorial minimal, urban edge, tropical lush, intimate morning, etc.
+- Think: "What would a real 22-year-old girl post on her Instagram story?"
+- Outfits: describe like a real person would — fabric, color, vibe. Example: "ribbed cream tank top tucked into high-waisted mom jeans, white Air Force 1s" instead of just "casual outfit".
+- Poses: describe naturally — NOT like a photographer directing a model. Example: "leaning against doorframe, one hand on hip, looking at phone casually" instead of "weight shifted to back leg, editorial posture".
+- Mood: each preset should feel like a real moment — morning coffee, getting ready, bored afternoon, post-workout, night out getting ready, etc.
 
 PHOTO TYPE RULES:
 - photo_type defines WHO takes the photo. MUST be one of these EXACT values:
@@ -638,13 +638,13 @@ PHOTO TYPE RULES:
   "third_person" = someone else takes the photo (natural framing, no phone visible) 
   "mirror" = mirror selfie (phone visible in reflection, full body in mirror)
 - "mirror" is ONLY allowed if the location has a mirror (bathroom, gym, locker room, bedroom with mirror). NEVER use "mirror" for outdoor locations.
-- Use mostly "third_person" (editorial feel), "selfie" for intimate/casual presets, "mirror" sparingly.
+- Mix it up: "selfie" for intimate moments, "third_person" for casual friend shots, "mirror" when location allows.
 
 TECHNICAL:
 - camera_angle MUST be one of: "high angle shot, looking down", "low angle shot, looking up", "eye-level shot", "over-the-shoulder view", "full body shot", "close-up portrait", "medium shot from waist up"
-- pose: 5-12 words, describe body position like a photographer directing a model
+- pose: 5-12 words, describe body position like a friend would see it (NOT model direction)
 - expression MUST be one of: "soft natural smile", "seductive smirk", "playful lip bite", "serious model stare", "laughing candidly", "surprised playful look", "mouth slightly open, relaxed"
-- outfit: DETAILED fashion description (10-20 words) — fabric, cut, color, accessories, styling
+- outfit: DETAILED description (10-20 words) — fabric, cut, color, accessories, but CASUAL not editorial
 
 ALL "label"/"labelFR" fields in FRENCH. All "value"/"promptEN" fields in English.
 
@@ -654,13 +654,13 @@ Output JSON:
     {
       "id": "unique_id",
       "label": "emoji Nom Court EN FRANCAIS",
-      "desc": "mood/vibe editorial en francais",
+      "desc": "mood/vibe casual en francais",
       "scene": {
         "photo_type": "selfie OR third_person OR mirror",
         "camera_angle": "EXACT camera value",
-        "pose": "detailed model direction in english",
+        "pose": "natural body position in english",
         "expression": "EXACT expression value",
-        "outfit": "detailed fashion description: fabric, cut, color, accessories"
+        "outfit": "detailed casual fashion description"
       }
     }
   ],
@@ -668,7 +668,7 @@ Output JSON:
     {
       "id": "unique_outfit_id",
       "label": "Nom EN FRANCAIS",
-      "value": "complete fashion description: fabric type, cut/silhouette, color, fit details, accessories or styling notes",
+      "value": "complete casual outfit description: fabric type, cut, color, fit details, shoes or accessories",
       "icon": "single emoji"
     }
   ],
@@ -676,16 +676,16 @@ Output JSON:
     {
       "id": "unique_pose_id",
       "labelFR": "Nom court en francais",
-      "promptEN": "photographer direction: body position, weight, hands, gaze (5-12 words)"
+      "promptEN": "natural body position, casual stance (5-12 words)"
     }
   ]
 }
 
 OUTPUT RULES:
 1. JSON ONLY, no markdown.
-2. Outfit descriptions must read like a fashion buying guide — specific fabrics (ribbed knit, mesh, satin, lycra), cuts (high-cut, bandeau, bodycon, cropped), colors (terracotta, sage, cream, obsidian).
-3. Pose descriptions must read like a photographer's direction — specific body mechanics, not vague adjectives.
-4. Every preset must feel like a distinct editorial concept with its own mood.
+2. Outfit descriptions must sound like what a real person wears — specific fabrics (ribbed knit, jersey, denim, cotton), cuts (high-waisted, cropped, oversized), colors (cream, sage, washed black).
+3. Pose descriptions must sound natural and unposed — NOT professional model direction.
+4. Every preset must feel like a real casual moment, not a photoshoot concept.
 5. Vary everything: moods, angles, outfits, poses, photo_types.`;
 
 

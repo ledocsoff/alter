@@ -5,6 +5,7 @@ import { useToast } from '../store/ToastContext';
 import { DEFAULT_SCENE, SCENE_OPTIONS } from '../constants/sceneOptions';
 import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64, getLocationRefs, loadLocationRefBase64 } from '../utils/storage';
 import { generateAnchorMatrixViaGemini, generateSmartPrompt } from '../utils/googleAI';
+import { pickRandom } from '../utils/helpers';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
 import ReferenceUpload from '../features/ReferenceUpload/ReferenceUpload';

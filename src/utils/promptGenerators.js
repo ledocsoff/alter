@@ -184,8 +184,8 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   if (activeAccount) {
     const p = activeAccount.platform;
     const compliance = {
-      Instagram: "Content suitable for Instagram. Tasteful fashion editorial.",
-      TikTok: "Content suitable for TikTok. Tasteful fashion editorial.",
+      Instagram: "Content suitable for Instagram. Casual amateur photo.",
+      TikTok: "Content suitable for TikTok. Casual amateur photo.",
       Tinder: "Dating profile photo. Approachable, attractive, natural.",
     };
     rawMatrix.platform = {
