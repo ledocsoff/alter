@@ -32,7 +32,8 @@
     "mac": {
         "category": "public.app-category.developer-tools",
         "target": [
-            "dmg"
+            "dmg",
+            "zip"
         ],
         "icon": "public/icons/icon.png"
     },
