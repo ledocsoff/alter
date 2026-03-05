@@ -10,10 +10,16 @@ export default defineConfig({
         __APP_VERSION__: JSON.stringify(pkg.version),
     },
     base: './',  // Relative paths for Electron production builds
+    resolve: {
+        dedupe: ['react', 'react-dom', 'react-router', 'react-router-dom'],
+    },
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'react-router', 'react-router-dom'],
+    },
     server: {
         port: 5173,
         strictPort: true,
-        open: true,
+        open: false,
         proxy: {
             '/api': 'http://localhost:3001'
         }
