@@ -295,7 +295,12 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Version info
-const PKG_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8')).version;
+let PKG_VERSION = 'unknown';
+try {
+    PKG_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8')).version;
+} catch (e) {
+    console.warn('[Server] Could not read package.json version:', e.message);
+}
 app.get('/api/version', (_req, res) => {
     res.json({
         version: PKG_VERSION,

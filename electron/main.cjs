@@ -55,9 +55,11 @@ function startServer() {
             ? path.join(__dirname, '..', 'server.js')
             : path.join(process.resourcesPath, 'server.js');
 
-        serverProcess = fork(serverPath, [], {
-            env: { ...process.env, ELECTRON: 'true' },
-            stdio: 'pipe',
+        // Using spawn instead of fork to avoid IPC issues with ES modules in ASAR
+        const { spawn } = require('child_process');
+        serverProcess = spawn(process.execPath, [serverPath], {
+            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', ELECTRON: 'true' },
+            stdio: ['ignore', 'pipe', 'pipe'],
         });
 
         serverProcess.stdout?.on('data', (data) => {
