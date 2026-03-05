@@ -3,7 +3,6 @@
 // Les deux utilisent le même endpoint Gemini (generativelanguage.googleapis.com)
 
 import logger from './logger';
-import { debugLogger } from './debugLogger';
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODEL_ID = 'gemini-3-pro-image-preview';
@@ -161,8 +160,8 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
     const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
     logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
 
-    // Debug: log full prompt sent
-    debugLogger.prompt('generateImage', {
+    // Verbose: log full prompt sent
+    logger.verbose('prompt', '📝 generateImage', {
       promptText: promptText.slice(0, 2000),
       aspectRatio,
       historyTurns,
@@ -207,7 +206,7 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
     }
 
     logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
-    debugLogger.apiResponse('generateImage', { elapsed: `${elapsed}s`, status: res.status });
+    logger.verbose('api-response', '✅ generateImage', { elapsed: `${elapsed}s`, status: res.status });
     const data = await res.json();
 
     const candidates = data.candidates || [];

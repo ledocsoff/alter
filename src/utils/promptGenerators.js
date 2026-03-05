@@ -3,7 +3,7 @@
 // Chaque champ = description narrative détaillée pour cohérence maximale
 // Refactoré: negative prompt simplifié, champs null supprimés, ControlNet retiré
 
-import { debugLogger } from './debugLogger';
+import logger from './logger';
 
 // Helper: accès safe aux propriétés imbriquées
 const get = (obj, path, fallback = null) => {
@@ -198,7 +198,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   // Remove all null/empty fields for a cleaner prompt
   const matrix = compact(rawMatrix);
 
-  debugLogger.prompt('buildPromptMatrix', {
+  logger.verbose('prompt', '📝 buildPromptMatrix', {
     photo_type: matrix.photo_type,
     subject_demographics: matrix.subject?.demographics,
     apparel: matrix.subject?.apparel,
