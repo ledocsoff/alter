@@ -5,6 +5,11 @@ import { getApiKey, saveToGallery, savePromptToHistory } from '../../utils/stora
 import { generateImage } from '../../utils/googleAI';
 
 const MAX_HISTORY_TURNS = 5; // Garder les 5 derniers échanges pour la cohérence
+const VARIATION_INSTRUCTION = `Generate a VARIATION of the image I just showed you.
+Same person (EXACT identity), same location and environment.
+But change: pose, camera angle, expression, minor styling detail.
+Keep the same outfit unless specified otherwise.
+The result should feel like a different shot from the same photoshoot.`;
 
 const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryUpdate }, ref) => {
   const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene } = useStudio();
@@ -38,7 +43,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     return () => clearInterval(timerRef.current);
   }, [status]);
 
-  useImperativeHandle(ref, () => ({ handleGenerate, handleGenerateWithPrompt, handleBatchGenerate }));
+  useImperativeHandle(ref, () => ({ handleGenerate, handleGenerateWithPrompt, handleBatchGenerate, handleVariation }));
 
   const handleGenerateWithPrompt = useCallback(async (customPrompt) => {
     const apiKey = getApiKey();
@@ -210,6 +215,91 @@ The environment adapts around the person, not the other way around.` },
     toast.info('Nouvelle session — cohérence réinitialisée');
   };
 
+  // ─── VARIATION MODE (C4) ───
+  // Send the current image as a reference + ask for a variation
+  const handleVariation = useCallback(async () => {
+    if (!currentImage?.imageBase64) { toast.info('Génère une image d\'abord'); return; }
+    const apiKey = getApiKey();
+    if (!apiKey) { onRequestApiKey?.(); return; }
+
+    const now = Date.now();
+    if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
+
+    setStatus('generating');
+    setErrorMsg('');
+    setElapsed(0);
+    setLastGenTime(now);
+
+    // Build anchors (identity + location) as usual
+    let anchorHistory = [];
+
+    if (referenceImages.length > 0) {
+      anchorHistory.push({
+        role: 'user',
+        parts: [
+          { text: `IDENTITY LOCK — ABSOLUTE PRIORITY:\nThe following photos show the EXACT person you must reproduce.\nMatch precisely: face, body, skin tone, hair. Identity fidelity is the TOP priority.` },
+          ...referenceImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+        ],
+      });
+      anchorHistory.push({
+        role: 'model',
+        parts: [{ text: 'Identity locked. I will reproduce this exact person in every image.' }],
+      });
+    }
+
+    if (locationRefImages.length > 0) {
+      anchorHistory.push({
+        role: 'user',
+        parts: [
+          { text: `ENVIRONMENT CONTEXT (secondary to identity):\nReproduce this background/location. The person's identity MUST NOT change.` },
+          ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
+        ],
+      });
+    }
+
+    // Inject the current image as a "previous result" reference
+    anchorHistory.push({
+      role: 'user',
+      parts: [
+        { text: `REFERENCE IMAGE — This is the image I want you to create a variation of:` },
+        { inlineData: { mimeType: currentImage.mimeType || 'image/png', data: currentImage.imageBase64 } },
+      ],
+    });
+    anchorHistory.push({
+      role: 'model',
+      parts: [{ text: 'I see the reference image. I will create a variation with the same person and environment but a different pose, angle, and expression.' }],
+    });
+
+    try {
+      const aspectRatio = scene?.aspect_ratio?.includes('1:1') ? '1:1' : '9:16';
+      const seed = galleryMetaRef.current?.seed || null;
+      const result = await generateImage(apiKey, VARIATION_INSTRUCTION, aspectRatio, anchorHistory, { seed });
+
+      const img = { ...result, id: `img_${Date.now()}`, timestamp: Date.now(), prompt: '[variation]' };
+      setCurrentImage(img);
+      setSessionImages(prev => [img, ...prev].slice(0, 20));
+      setGenCount(prev => prev + 1);
+      setStatus('done');
+
+      try {
+        await saveToGallery(
+          { base64: result.imageBase64, mimeType: result.mimeType },
+          { ...galleryMetaRef.current, prompt: '[variation]', isVariation: true }
+        );
+        window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
+      } catch { /* silent */ }
+
+      onGalleryUpdate?.();
+      toast.success('Variation générée');
+      return img;
+    } catch (err) {
+      setErrorMsg(err.message);
+      setStatus('error');
+      toast.error(err.message);
+      return null;
+    }
+  }, [currentImage, referenceImages, locationRefImages, scene, lastGenTime, onRequestApiKey, toast]);
+
   const hasApiKey = !!getApiKey();
   const turnCount = Math.floor(conversationHistory.length / 2);
 
@@ -322,6 +412,14 @@ The environment adapts around the person, not the other way around.` },
                 className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
               >
                 Régénérer
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleVariation(); }}
+                disabled={status === 'generating'}
+                className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
+                title="Générer une variation (même personne, pose différente)"
+              >
+                🔀 Varier
               </button>
               <div className="w-px h-3 bg-white/10"></div>
               {sessionImages.length >= 2 && (
