@@ -2,7 +2,7 @@
 // Moteur de génération Matrice d'Ancrage ultra-précise
 // Chaque champ = description narrative détaillée pour cohérence maximale
 
-import { NEGATIVE_PROMPT_OFM, CONTROLNET_PRESETS, DEFAULT_CONTROLNET } from '../constants/controlnetPresets';
+import { NEGATIVE_PROMPT_OFM, CONTROLNET_PRESETS } from '../constants/controlnetPresets';
 
 // Helper: accès safe aux propriétés imbriquées
 const get = (obj, path, fallback = null) => {
@@ -30,7 +30,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   const isVertical = aspectRatio.includes("9:16");
   const meta = scene.location_meta || {};
 
-  // Resolve ControlNet preset
+  // Resolve camera preset
   const presetId = scene.controlnet_preset || 'selfie_high_angle';
   const preset = CONTROLNET_PRESETS.find(p => p.id === presetId) || CONTROLNET_PRESETS[0];
   const cam = preset.camera_defaults || {};
@@ -104,11 +104,18 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     "extra fingers", "mutated hands", "blurry", "watermark",
     "text", "logo", "cgi", "3d render", "cartoon", "anime",
     "inconsistent background", "changing room layout",
+    // Anti-blur / anti-DSLR
     "bokeh", "depth of field", "shallow DOF", "DSLR", "studio lighting",
     "professional photography", "cinematic color grading", "film grain",
+    "blurred background", "portrait mode", "lens blur", "out of focus background",
+    "artificial bokeh", "background blur", "defocused background",
+    // Anti-phone-UI
     "phone UI", "status bar", "notification bar", "phone frame",
     "screenshot overlay", "app interface", "phone screen", "UI elements",
     "battery icon", "time display", "signal bars", "phone border",
+    // Anti-AI-look
+    "AI generated", "artificial skin", "plastic look", "over-processed",
+    "HDR", "hyper-realistic", "over-sharpened", "uncanny valley",
   ].join(', ');
 
   // Append custom negative prompt if user provided one
@@ -158,45 +165,21 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     style_and_realism: {
-      aesthetic: "Candid photo taken with a smartphone camera. Natural casual look, not a screenshot or screen capture. This is a PHOTOGRAPH, not a phone screen. No phone UI, no status bar, no app interface — just the raw photo image.",
-      fidelity: "Photorealistic, natural skin texture. No airbrushing or over-processing. Casual, unposed feel. Natural imperfections. The output MUST be a direct photograph, NOT a phone screen or screenshot.",
-    },
-
-    colors_and_tone: {
-      palette: meta.color_palette || "Natural, realistic color palette",
-      contrast: "Natural contrast, ambient tones — NOT cinematic or graded",
-      saturation: "Natural, slightly warm skin tones, not oversaturated",
-    },
-
-    quality_and_technical_details: {
-      resolution: "Sharp focus, clear details, phone camera quality",
-      texture_emphasis: "Natural skin texture, realistic hair, no artificial smoothing",
-    },
-
-    aspect_ratio_and_output: {
-      ratio: isVertical ? "3:4" : "1:1",
-      framing: isVertical ? "Vertical orientation." : "Square orientation.",
-    },
-
-    controlnet: {
-      pose_control: {
-        model_type: "DWPose",
-        purpose: "Strictly lock skeletal alignment, anatomical proportions, and prevent structural or volumetric alteration",
-        constraints: poseConstraints,
-        recommended_weight: preset.pose_control.recommended_weight,
-      },
-      depth_control: {
-        model_type: "ZoeDepth",
-        purpose: "Enforce exact volumetric projection, silhouette area equivalence, curvature depth integrity, and spatial layering",
-        constraints: preset.depth_control.constraints,
-        recommended_weight: preset.depth_control.recommended_weight,
-      },
+      aesthetic: "Casual photo taken with an iPhone smartphone camera. Raw, unprocessed look. NOT a professional photoshoot. NOT a DSLR photo. This is what a real person would post on Instagram from their phone.",
+      fidelity: "Photorealistic with natural imperfections: visible pores, slight skin unevenness, natural hair flyaways. No airbrushing, no beauty filters, no skin smoothing.",
+      camera: "Smartphone camera characteristics: deep focus (everything sharp), slight wide-angle distortion, natural phone sensor noise, auto white balance.",
+      colors: meta.color_palette || "Natural realistic colors, slightly warm skin tones, no cinematic grading, no oversaturation",
     },
 
     negative_prompt: negativeStr,
 
     custom_details: scene.custom_details?.trim() || null,
   };
+
+  // Pose constraints (kept as natural language, no ControlNet reference)
+  if (preset.pose_control?.constraints?.length > 0) {
+    matrix.pose.constraints = preset.pose_control.constraints;
+  }
 
   // Identity lock directives
   matrix.directives = {

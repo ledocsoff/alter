@@ -64,8 +64,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "High angle, 15-30° downward tilt",
             shot_type: "Close-up to medium shot",
-            focal_length: "24-28mm equivalent (phone wide lens)",
-            depth_of_field: "Shallow, bokeh on background",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -94,8 +94,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Eye level, frontal",
             shot_type: "Full body",
-            focal_length: "50-85mm portrait lens",
-            depth_of_field: "Medium, subject sharp, background soft",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -124,8 +124,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Slightly above eye level, 5-10° down",
             shot_type: "Medium shot, waist up or three-quarter",
-            focal_length: "35-50mm",
-            depth_of_field: "Shallow, focus on face and upper body",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -154,8 +154,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Low angle, near floor/bed level",
             shot_type: "Three-quarter body",
-            focal_length: "35-50mm",
-            depth_of_field: "Shallow, face sharp, legs soft",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -184,8 +184,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Frontal via mirror, phone as POV",
             shot_type: "Full body in mirror",
-            focal_length: "24-28mm phone lens",
-            depth_of_field: "Medium, both body and reflection sharp",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -214,8 +214,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Slightly below eye level",
             shot_type: "Medium shot, waist up from behind",
-            focal_length: "50-85mm",
-            depth_of_field: "Shallow, focus on face over shoulder",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -244,8 +244,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Eye level with squatting subject",
             shot_type: "Full body, low angle",
-            focal_length: "35-50mm",
-            depth_of_field: "Medium depth of field",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
     {
@@ -274,8 +274,8 @@ export const CONTROLNET_PRESETS = [
         camera_defaults: {
             perspective: "Eye level, frontal or slight three-quarter",
             shot_type: "Full body or three-quarter",
-            focal_length: "50mm",
-            depth_of_field: "Shallow, subject sharp against wall",
+            focal_length: "26mm smartphone wide lens",
+            depth_of_field: "Deep focus, everything sharp, no background blur",
         },
     },
 ];

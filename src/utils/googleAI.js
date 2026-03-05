@@ -87,32 +87,32 @@ export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', co
     const body = {
       system_instruction: {
         parts: [{
-          text: `You are a photorealistic image generator that receives JSON anchor matrices.
+          text: `You are a photorealistic image generator. You receive JSON describing a person and scene.
 
-ABSOLUTE RULES — ORDERED BY PRIORITY:
+RULES — ORDERED BY PRIORITY:
 
 RULE #1 — IDENTITY LOCK (HIGHEST PRIORITY):
-If reference images of a person were provided earlier in this conversation, the generated person MUST match that EXACT face, body, skin tone, hair, and proportions. The person must be IMMEDIATELY recognizable as the same individual. Identity fidelity overrides all other instructions. NEVER alter, blend, average, or "improve" the person's appearance.
+If reference photos of a person were provided, the generated person MUST match that EXACT face, body, skin tone, hair, and proportions. Identity fidelity overrides ALL other instructions. NEVER alter, blend, or "improve" the person's appearance.
 
-RULE #2 — JSON ANCHOR MATRIX:
-Reproduce EVERY field of the JSON literally. Each key describes a precise visual attribute.
+RULE #2 — SMARTPHONE AESTHETIC (CRITICAL):
+The output must look like a casual photo taken with an iPhone — NOT a professional photoshoot.
+- Deep focus: EVERYTHING must be sharp (foreground AND background). NO background blur. NO bokeh. NO shallow depth of field.
+- 26mm wide-angle smartphone lens characteristics: slight barrel distortion, deep focus plane.
+- Natural phone camera sensor: slight noise in low light, auto white balance, no cinematic color grading.
+- NO DSLR look, NO studio lighting, NO professional photography feel.
+- Natural imperfections: visible skin pores, slight unevenness, flyaway hairs, real-world lighting.
+- The photo should look like something a real person posted on Instagram from their phone.
 
-RULE #3 — BODY FIDELITY:
-NEVER normalize, average, reduce, or "correct" any body proportion, volume, or curvature. The "subject" block defines the person's EXACT appearance.
+RULE #3 — JSON FIDELITY:
+Reproduce every field of the JSON. The "subject" block = exact appearance. The "pose" block = body position. The "camera" block = perspective and framing.
 
-RULE #4 — POSE & CAMERA:
-The "pose" block defines EXACT body position. The "camera" block defines perspective and framing. Follow precisely.
+RULE #4 — BODY PRESERVATION:
+NEVER normalize or "correct" body proportions. Reproduce the subject exactly as described.
 
-RULE #5 — LIGHTING & ENVIRONMENT:
-The "lighting" block defines light sources. If location reference images were provided, reproduce that environment — but NEVER let the environment change the person's identity.
+RULE #5 — NEGATIVE PROMPT:
+The "negative_prompt" lists forbidden elements. Never produce anything listed there.
 
-RULE #6 — NEGATIVE PROMPT:
-The "negative_prompt" lists FORBIDDEN elements. Never produce any listed element.
-
-RULE #7 — CONTROLNET:
-Respect skeletal and depth constraints from the "controlnet" block.
-
-OUTPUT: Generate a single photorealistic image. Identity fidelity is the #1 priority.` }]
+OUTPUT: A single photorealistic iPhone-quality photo. Sharp everywhere, no blur, natural look.` }]
       },
       contents,
       generationConfig,
