@@ -3,6 +3,7 @@
 // Chaque champ = description narrative détaillée pour cohérence maximale
 
 import { NEGATIVE_PROMPT_OFM, CONTROLNET_PRESETS } from '../constants/controlnetPresets';
+import { debugLogger } from './debugLogger';
 
 // Helper: accès safe aux propriétés imbriquées
 const get = (obj, path, fallback = null) => {
@@ -215,6 +216,16 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
       compliance: compliance[p] || null,
     };
   }
+
+  debugLogger.prompt('buildPromptMatrix', {
+    photo_type: matrix.photo_type,
+    subject_demographics: matrix.subject?.demographics,
+    apparel: matrix.subject?.apparel,
+    pose: matrix.pose?.body_position,
+    environment: matrix.environment?.setting,
+    camera_angle: matrix.camera?.angle,
+    seed: matrix.directives?.seed || null,
+  });
 
   return matrix;
 };

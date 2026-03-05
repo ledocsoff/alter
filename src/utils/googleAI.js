@@ -3,6 +3,7 @@
 // Les deux utilisent le même endpoint Gemini (generativelanguage.googleapis.com)
 
 import logger from './logger';
+import { debugLogger } from './debugLogger';
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODEL_ID = 'gemini-3-pro-image-preview';
@@ -138,6 +139,15 @@ OUTPUT: A single photorealistic fashion photo. iPhone quality, deep focus, edito
     const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
     logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
 
+    // Debug: log full prompt sent
+    debugLogger.prompt('generateImage', {
+      promptText: promptText.slice(0, 2000),
+      aspectRatio,
+      historyTurns,
+      seed: options.seed || null,
+      systemInstruction: body.system_instruction?.parts?.[0]?.text?.slice(0, 300) + '...',
+    });
+
     const t0 = Date.now();
     const res = await fetch(url, {
       method: 'POST',
@@ -175,7 +185,7 @@ OUTPUT: A single photorealistic fashion photo. iPhone quality, deep focus, edito
     }
 
     logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
-
+    debugLogger.apiResponse('generateImage', { elapsed: `${elapsed}s`, status: res.status });
     const data = await res.json();
 
     const candidates = data.candidates || [];
@@ -696,6 +706,7 @@ export const generateLocationPresets = async (apiKey, location) => {
   };
 
   const url = `${API_BASE}/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  debugLogger.locationGen('Envoi prompt presets', location.name, { prompt: locationContext, model: GEMINI_TEXT_MODEL });
   const t0 = Date.now();
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
@@ -733,6 +744,7 @@ export const generateLocationPresets = async (apiKey, location) => {
     if (presets.length === 0) throw new Error('No valid presets generated');
 
     logger.success('generation', `${presets.length} presets + ${outfits.length} outfits + ${poses.length} poses en ${elapsed}s pour "${location.name}"`);
+    debugLogger.locationGen('Presets reçus', location.name, { presets: presets.length, outfits: outfits.length, poses: poses.length, elapsed: `${elapsed}s` });
     return { presets: presets.slice(0, 8), outfits: outfits.slice(0, 8), poses: poses.slice(0, 8) };
   } catch (e) {
     logger.error('generation', 'Presets invalides', `${e.message} — raw: ${text.slice(0, 300)}`);
