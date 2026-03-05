@@ -1,3 +1,5 @@
+import logger from './logger';
+
 const STORAGE_KEY = 'velvet_studio_v4';
 const HISTORY_KEY = 'velvet_history';
 const TEMPLATES_KEY = 'velvet_templates';
@@ -42,7 +44,7 @@ const syncToServer = () => {
                 window.dispatchEvent(new CustomEvent('velvet:synced'));
             }
         } catch (err) {
-            console.warn('[Velvet] Sync serveur échoué:', err.message);
+            logger.warn('storage', 'Sync serveur échoué', err.message);
         }
     }, 1500); // 1.5s debounce — reduces redundant writes during rapid edits
 };
@@ -57,7 +59,7 @@ export const syncNow = () => {
         const sent = navigator.sendBeacon(`${API_BASE}/api/save`, new Blob([payload], { type: 'application/json' }));
         if (sent) hasPendingSync = false;
     } catch (err) {
-        console.warn('[Velvet] Sync beacon échoué:', err.message);
+        logger.warn('storage', 'Sync beacon échoué', err.message);
     }
 };
 
@@ -103,7 +105,7 @@ const validateAndRepairModels = (models) => {
     }).filter(Boolean); // Remove nulls
 
     if (repairCount > 0) {
-        console.warn(`[Velvet] ⚠ ${repairCount} champ(s) réparé(s) dans les données chargées`);
+        logger.warn('storage', `${repairCount} champ(s) réparé(s) dans les données chargées`);
     }
     return repaired;
 };
@@ -133,7 +135,7 @@ export const loadFromServer = async () => {
         console.log(`[Velvet] Chargé depuis sauvegarde/: ${models.length} modèle(s)`);
         return models;
     } catch (err) {
-        console.warn('[Velvet] Serveur indisponible, fallback localStorage:', err.message);
+        logger.error('storage', 'Serveur indisponible — mode hors ligne', err.message);
         return getSavedModels();
     }
 };
@@ -548,7 +550,7 @@ export const getGallery = async (options = {}) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur chargement galerie:', err.message);
+        logger.warn('storage', 'Erreur chargement galerie', err.message);
         return { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
     }
 };
@@ -559,7 +561,7 @@ export const getGalleryImage = async (imageId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur chargement image:', err.message);
+        logger.warn('storage', 'Erreur chargement image', err.message);
         return null;
     }
 };
@@ -586,7 +588,7 @@ export const saveToGallery = async (imageData, meta = {}) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur sauvegarde galerie:', err.message);
+        logger.warn('storage', 'Erreur sauvegarde galerie', err.message);
         return null;
     }
 };
@@ -597,7 +599,7 @@ export const toggleGalleryStar = async (imageId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur star galerie:', err.message);
+        logger.warn('storage', 'Erreur star galerie', err.message);
         return null;
     }
 };
@@ -608,7 +610,7 @@ export const deleteFromGallery = async (imageId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur suppression galerie:', err.message);
+        logger.warn('storage', 'Erreur suppression galerie', err.message);
         return null;
     }
 };
@@ -619,7 +621,7 @@ export const clearGallery = async () => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur vidage galerie:', err.message);
+        logger.warn('storage', 'Erreur vidage galerie', err.message);
         return null;
     }
 };
@@ -644,7 +646,7 @@ export const uploadModelRefs = async (modelId, photos) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur upload refs:', err.message);
+        logger.warn('storage', 'Erreur upload refs', err.message);
         return null;
     }
 };
@@ -660,7 +662,7 @@ export const getModelRefs = async (modelId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur get refs:', err.message);
+        logger.warn('storage', 'Erreur get refs', err.message);
         return [];
     }
 };
@@ -690,7 +692,7 @@ export const loadModelRefBase64 = async (modelId, refId) => {
         _refCache.set(cacheKey, data);
         return data;
     } catch (err) {
-        console.warn('[Velvet] Erreur load ref base64:', err.message);
+        logger.warn('storage', 'Erreur load ref base64', err.message);
         return null;
     }
 };
@@ -708,7 +710,7 @@ export const deleteModelRef = async (modelId, refId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur delete ref:', err.message);
+        logger.warn('storage', 'Erreur delete ref', err.message);
         return null;
     }
 };
@@ -736,7 +738,7 @@ export const getLocationRefs = async (locationId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur get location refs:', err.message);
+        logger.warn('storage', 'Erreur get location refs', err.message);
         return [];
     }
 };
@@ -758,7 +760,7 @@ export const loadLocationRefBase64 = async (locationId, refId) => {
         _locRefCache.set(cacheKey, data);
         return data;
     } catch (err) {
-        console.warn('[Velvet] Erreur load location ref base64:', err.message);
+        logger.warn('storage', 'Erreur load location ref base64', err.message);
         return null;
     }
 };
@@ -778,7 +780,7 @@ export const uploadLocationRefs = async (locationId, photos) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur upload location refs:', err.message);
+        logger.warn('storage', 'Erreur upload location refs', err.message);
         return null;
     }
 };
@@ -794,7 +796,7 @@ export const deleteLocationRef = async (locationId, refId) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } catch (err) {
-        console.warn('[Velvet] Erreur delete location ref:', err.message);
+        logger.warn('storage', 'Erreur delete location ref', err.message);
         return null;
     }
 };
