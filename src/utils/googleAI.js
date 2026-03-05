@@ -774,6 +774,150 @@ export const generateLocationPresets = async (apiKey, location) => {
   }
 };
 
+/* ─── SMART PROMPT — Natural Language → JSON Matrix ─── */
+
+const SMART_PROMPT_INSTRUCTION = `Tu es un directeur de photographie amateur/Instagram. L'utilisateur décrit une scène en langage naturel. Tu dois générer une matrice JSON optimisée pour la génération d'image.
+
+CONTEXTE FOURNI (READ-ONLY — NE PAS MODIFIER):
+- Les données du modèle (physique, visage, corps) → recopie-les EXACTEMENT dans "subject"
+- Les données du lieu (environment, lighting) → recopie-les EXACTEMENT dans "environment"
+
+CE QUE TU PEUX VARIER (basé sur la description de l'utilisateur):
+- pose.body_position : la pose décrite
+- pose.expression : l'expression faciale
+- camera.angle : l'angle de caméra
+- photo_type : selfie / third_person / mirror (selon la description)
+- vibe : l'ambiance générale
+- subject.apparel : la tenue (si décrite, sinon "casual outfit")
+
+FORMAT DE SORTIE (JSON strict, rien d'autre):
+{
+  "photo_type": "selfie taken by the model herself, phone in hand, arm extended or close" | "photo taken by another person, natural framing, no phone visible" | "mirror selfie, full body reflection, phone visible in hand",
+  "subject": {
+    "demographics": "...(recopié du modèle)",
+    "hair": "...(recopié du modèle)",
+    "face": "...(recopié du modèle)",
+    "apparel": "description détaillée de la tenue en anglais",
+    "anatomy": "...(recopié du modèle)",
+    "skin_details": "...(recopié du modèle)"
+  },
+  "pose": {
+    "body_position": "description détaillée de la pose en anglais",
+    "expression": "expression faciale en anglais"
+  },
+  "environment": {
+    "setting": "...(recopié du lieu)",
+    "background_elements": "...(recopié du lieu)",
+    "time_of_day": "...(recopié du lieu)"
+  },
+  "camera": {
+    "angle": "angle de caméra en anglais"
+  },
+  "lighting": {
+    "source": "...(recopié du lieu ou adapté)"
+  },
+  "vibe": "ambiance/mood en anglais",
+  "style": "Casual amateur photo for Instagram/TikTok. Smartphone camera: deep focus, 26mm wide lens, no bokeh. Like a friend took this photo.",
+  "negative_prompt": "low quality, blurry, deformed anatomy, extra fingers, AI generated, plastic skin, bokeh, DSLR, studio lighting, 3d render, cartoon, watermark, phone UI, inconsistent background"
+}
+
+RÈGLES:
+1. Réponds UNIQUEMENT avec le JSON, pas de commentaires
+2. Tout le texte dans le JSON doit être en ANGLAIS
+3. La description de pose doit être naturelle et amateur, pas de pose de mannequin pro
+4. Si l'utilisateur ne précise pas quelque chose, utilise les valeurs du contexte
+5. L'apparel doit être une description fashion détaillée même si l'utilisateur dit juste "en maillot"`;
+
+/**
+ * Generate an optimized JSON prompt matrix from a natural language description.
+ * Uses Gemini TEXT to convert casual user input into structured prompt.
+ * @param {string} apiKey
+ * @param {string} userText - Natural language description in any language
+ * @param {object} modelData - Model traits (demographics, body, hair, face, skin)
+ * @param {object} locationData - Location data (environment, lighting, props)
+ * @returns {Promise<object>} - Optimized JSON matrix
+ */
+export const generateSmartPrompt = async (apiKey, userText, modelData, locationData) => {
+  return withRetry(async () => {
+    const modelContext = `
+MODÈLE (données physiques — recopier tel quel):
+- Ethnie: ${modelData.ethnicity || 'non spécifié'}
+- Âge: ${modelData.age || 'jeune adulte'}
+- Corps: ${modelData.body?.type || 'non spécifié'}, ${modelData.body?.height || ''}
+- Cheveux: ${modelData.hair?.color || ''} ${modelData.hair?.length || ''} ${modelData.hair?.texture || ''}
+- Visage: ${modelData.face?.shape || ''}, yeux ${modelData.eyes?.color || ''}
+- Peau: ${modelData.skin?.tone || ''} ${modelData.skin?.texture || ''}
+- Anatomie: ${modelData.body?.bust || ''}, hanches ${modelData.body?.hips || ''}, taille ${modelData.body?.waist || ''}`;
+
+    const locationContext = locationData ? `
+LIEU (environnement — recopier tel quel):
+- Nom: ${locationData.name || ''}
+- Environnement: ${locationData.environment || ''}
+- Éclairage: ${locationData.default_lighting || ''}
+- Ambiance: ${locationData.default_vibe || ''}
+- Décor/props: ${locationData.anchor_details || ''}
+- Moment: ${locationData.time_of_day || ''}
+- Palette: ${locationData.color_palette || ''}` : '';
+
+    const prompt = `${modelContext}\n${locationContext}\n\nDESCRIPTION DE L'UTILISATEUR:\n"${userText}"\n\nGénère la matrice JSON optimisée.`;
+
+    logger.info('generation', `Smart prompt: "${userText.slice(0, 80)}..."`);
+    debugLogger.prompt('smartPrompt:input', { userText, hasModel: !!modelData, hasLocation: !!locationData });
+
+    const body = {
+      system_instruction: { parts: [{ text: SMART_PROMPT_INSTRUCTION }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.7,
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      ],
+    };
+
+    const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const t0 = Date.now();
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(fetchErr => {
+      const e = new Error(`Erreur réseau: ${fetchErr.message}`);
+      e._retryable = true;
+      throw e;
+    });
+
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `Erreur ${res.status}`;
+      if (RETRYABLE_CODES.includes(res.status)) {
+        const e = new Error(res.status === 429 ? 'Quota dépassé.' : `Serveur saturé (${res.status})`);
+        e._retryable = true;
+        throw e;
+      }
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    try {
+      const matrix = JSON.parse(text);
+      logger.success('generation', `Smart prompt → JSON en ${elapsed}s`);
+      debugLogger.prompt('smartPrompt:output', { elapsed: `${elapsed}s`, keys: Object.keys(matrix) });
+      return matrix;
+    } catch {
+      throw new Error('Smart prompt: réponse invalide. Réessaie.');
+    }
+  }, 'smart-prompt');
+};
+
 /* ─── LOCATION IMAGE GENERATION ─── */
 
 /**

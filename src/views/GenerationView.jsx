@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
-import { DEFAULT_SCENE } from '../constants/sceneOptions';
+import { DEFAULT_SCENE, SCENE_OPTIONS } from '../constants/sceneOptions';
 import { getApiKey, saveLastSession, getModelRefs, loadModelRefBase64, getLocationRefs, loadLocationRefBase64 } from '../utils/storage';
-import { generateAnchorMatrixViaGemini } from '../utils/googleAI';
+import { generateAnchorMatrixViaGemini, generateSmartPrompt } from '../utils/googleAI';
 import SceneEditor from '../features/SceneEditor/SceneEditor';
 import ImagePreview from '../features/ImagePreview/ImagePreview';
 import ReferenceUpload from '../features/ReferenceUpload/ReferenceUpload';
@@ -14,8 +14,12 @@ import PromptHistoryPanel from '../features/PromptHistoryPanel/PromptHistoryPane
 import ApiKeyModal from '../features/ApiKeyModal/ApiKeyModal';
 import { SparklesIcon, ImageIcon, CameraIcon, FileTextIcon, SettingsIcon, ZapIcon } from '../components/Icons';
 
+// Ref tab icon (inline SVG)
+const EyeIcon = ({ size = 13 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+
 const TABS = [
     { id: 'image', Icon: ImageIcon, label: 'Image' },
+    { id: 'refs', Icon: EyeIcon, label: 'Refs' },
     { id: 'galerie', Icon: CameraIcon, label: 'Galerie' },
     { id: 'historique', Icon: FileTextIcon, label: 'Prompts' },
     { id: 'matrice', Icon: SettingsIcon, label: 'Matrice' },
@@ -24,8 +28,10 @@ const TABS = [
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
     const [showPromptPreview, setShowPromptPreview] = useState(false);
+    const [smartText, setSmartText] = useState('');
+    const [isSmartLoading, setIsSmartLoading] = useState(false);
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -246,8 +252,77 @@ const GenerationView = () => {
 
             {/* WORKSPACE */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
-                <div className="lg:col-span-4 h-full flex flex-col overflow-hidden">
+                <div className="lg:col-span-4 h-full flex flex-col overflow-hidden gap-2">
                     <SceneEditor location={currentLocation} />
+
+                    {/* ─── SMART PROMPT ─── */}
+                    <div className="shrink-0 bg-[#0e0e10] border border-white/[0.05] rounded-xl p-3 animate-fade-in">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-semibold text-zinc-400">✍️ Décrire la scène</span>
+                            <span className="text-[9px] text-zinc-700">Français → JSON optimisé</span>
+                        </div>
+                        <textarea
+                            value={smartText}
+                            onChange={(e) => setSmartText(e.target.value)}
+                            placeholder="Ex: elle est assise sur le lit en train de scroller son tel, en débardeur et short, lumière de fin de journée..."
+                            className="w-full h-16 bg-[#0a0a0c] border border-white/[0.06] rounded-lg px-3 py-2 text-[12px] text-zinc-300 placeholder-zinc-700 resize-none focus:outline-none focus:border-violet-500/40 transition-colors"
+                        />
+                        <div className="flex items-center gap-2 mt-2">
+                            <button
+                                onClick={async () => {
+                                    if (!smartText.trim()) { toast.info('Décris la scène d\'abord'); return; }
+                                    const key = getApiKey();
+                                    if (!key) { setShowApiKeyModal(true); return; }
+                                    setIsSmartLoading(true);
+                                    try {
+                                        const matrix = await generateSmartPrompt(key, smartText, model, currentLocation);
+                                        const prompt = JSON.stringify(matrix, null, 2);
+                                        toast.success('Prompt optimisé — génération...');
+                                        setRightPanel('image');
+                                        setTimeout(() => {
+                                            imagePreviewRef.current?.handleGenerateWithPrompt(prompt);
+                                        }, 100);
+                                    } catch (e) {
+                                        toast.error(e.message);
+                                    } finally {
+                                        setIsSmartLoading(false);
+                                    }
+                                }}
+                                disabled={isSmartLoading || !smartText.trim()}
+                                className="flex-1 velvet-btn-primary text-[11px] font-semibold py-1.5 disabled:opacity-30 flex items-center justify-center gap-1.5"
+                            >
+                                {isSmartLoading ? (
+                                    <><div className="w-3 h-3 border border-white/40 border-t-white rounded-full animate-spin" /> Optimisation...</>
+                                ) : (
+                                    <><SparklesIcon size={12} /> Décrire & Générer</>
+                                )}
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (!smartText.trim()) return;
+                                    const key = getApiKey();
+                                    if (!key) { setShowApiKeyModal(true); return; }
+                                    setIsSmartLoading(true);
+                                    try {
+                                        const matrix = await generateSmartPrompt(key, smartText, model, currentLocation);
+                                        const prompt = JSON.stringify(matrix, null, 2);
+                                        navigator.clipboard.writeText(prompt);
+                                        toast.success('Prompt optimisé copié !');
+                                        setShowPromptPreview(true);
+                                    } catch (e) {
+                                        toast.error(e.message);
+                                    } finally {
+                                        setIsSmartLoading(false);
+                                    }
+                                }}
+                                disabled={isSmartLoading || !smartText.trim()}
+                                className="text-[10px] font-medium text-zinc-600 hover:text-zinc-300 px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-30"
+                                title="Optimiser et copier le prompt sans générer"
+                            >
+                                📋
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
@@ -423,6 +498,75 @@ const GenerationView = () => {
                                     key={historyKey}
                                     onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
                                 />
+                            </div>
+                        ) : rightPanel === 'refs' ? (
+                            /* ─── REFS PANEL ─── */
+                            <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-auto custom-scrollbar p-4">
+                                <div className="space-y-4">
+                                    {/* Coherence Status */}
+                                    <div className="flex items-center gap-3 pb-3 border-b border-white/[0.05]">
+                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${referenceImages.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                            {referenceImages.length > 0 ? '✅' : '⚠️'} {referenceImages.length} ref{referenceImages.length !== 1 ? 's' : ''} modèle
+                                        </div>
+                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${locationRefImages.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                            {locationRefImages.length > 0 ? '✅' : '⚠️'} {locationRefImages.length} ref lieu
+                                        </div>
+                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${scene.seed ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                            {scene.seed ? '✅' : '⚠️'} Seed {scene.seed ? 'fixé' : 'aléatoire'}
+                                        </div>
+                                    </div>
+
+                                    {/* Model References */}
+                                    <div>
+                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">👤 Références Modèle</h4>
+                                        {referenceImages.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {referenceImages.map((img, i) => (
+                                                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden border border-violet-500/20 bg-zinc-900">
+                                                        <img src={img.dataUrl} alt={`Ref modèle ${i + 1}`} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-[11px] text-zinc-700 italic">Aucune ref modèle — l'identité ne sera pas cohérente entre les générations.</p>
+                                        )}
+                                    </div>
+
+                                    {/* Location Reference */}
+                                    <div>
+                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">📍 Référence Lieu</h4>
+                                        {locationRefImages.length > 0 ? (
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {locationRefImages.map((img, i) => (
+                                                    <div key={i} className="aspect-video rounded-lg overflow-hidden border border-emerald-500/20 bg-zinc-900">
+                                                        <img src={img.dataUrl} alt={`Ref lieu ${i + 1}`} className="w-full h-full object-cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-[11px] text-zinc-700 italic">Aucune ref lieu — le décor sera interprété librement par Gemini.</p>
+                                        )}
+                                    </div>
+
+                                    {/* Anchor Summary */}
+                                    <div className="pt-3 border-t border-white/[0.05]">
+                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">🔒 Ancrage</h4>
+                                        <div className="space-y-1.5 text-[11px]">
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-zinc-600 shrink-0 w-16">Lieu</span>
+                                                <span className="text-zinc-400">{currentLocation?.environment || 'Non défini'}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-zinc-600 shrink-0 w-16">Lumière</span>
+                                                <span className="text-zinc-400">{currentLocation?.default_lighting || scene.lighting || '—'}</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-zinc-600 shrink-0 w-16">Modèle</span>
+                                                <span className="text-zinc-400">{model.name || '—'} · {model.age || '?'} ans · {(model.ethnicity || '').split(',')[0]}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <ImagePreview
