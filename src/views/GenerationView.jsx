@@ -311,6 +311,7 @@ const GenerationView = () => {
                             <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-hidden">
                                 <PromptHistoryPanel
                                     key={historyKey}
+                                    generatedPrompt={generatedPrompt}
                                     onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
                                 />
                             </div>

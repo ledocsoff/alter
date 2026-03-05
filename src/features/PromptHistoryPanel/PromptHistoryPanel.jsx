@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { getPromptHistory, clearPromptHistory } from '../../utils/storage';
 import { debugLogger } from '../../utils/debugLogger';
@@ -22,8 +21,7 @@ const CATEGORY_COLORS = {
     error: 'text-red-400',
 };
 
-const PromptHistoryPanel = ({ onReuse }) => {
-    const { generatedPrompt } = useStudio();
+const PromptHistoryPanel = ({ onReuse, generatedPrompt }) => {
     const toast = useToast();
     const [history, setHistory] = useState(() => getPromptHistory());
     const [search, setSearch] = useState('');
