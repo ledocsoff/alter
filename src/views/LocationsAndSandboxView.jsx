@@ -58,9 +58,9 @@ const LocationsAndSandboxView = () => {
     const [newLocNegativePrompt, setNewLocNegativePrompt] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isAutoFilling, setIsAutoFilling] = useState(false);
-    const [isGeneratingPresets, setIsGeneratingPresets] = useState(false);
     const [pendingLocPhotos, setPendingLocPhotos] = useState([]);
-    const [isGeneratingLocImage, setIsGeneratingLocImage] = useState(false);
+    const [generatingLocationId, setGeneratingLocationId] = useState(null);
+    const [generationStep, setGenerationStep] = useState('');
     const pendingPhotosInputRef = useRef(null);
     const dragItem = useRef(null);
     const dragOverItem = useRef(null);
@@ -121,9 +121,10 @@ const LocationsAndSandboxView = () => {
                     const savedModel = updated.find(m => m.id === modelId);
                     const savedAccount = savedModel?.accounts?.find(a => a.id === accountId);
                     const savedLoc = savedAccount?.locations?.find(l => l.name === locationData.name);
+                    const hadPhotos = pendingLocPhotos.length > 0;
 
                     // Upload pending photos if any
-                    if (savedLoc && pendingLocPhotos.length > 0) {
+                    if (savedLoc && hadPhotos) {
                         try {
                             await uploadLocationRefs(savedLoc.id, pendingLocPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType })));
                             toast.success(`${pendingLocPhotos.length} photo(s) du lieu sauvegardée(s)`);
@@ -132,7 +133,9 @@ const LocationsAndSandboxView = () => {
                     }
 
                     if (apiKey && savedLoc) {
-                        setIsGeneratingPresets(true);
+                        setGeneratingLocationId(savedLoc.id);
+                        // Step 1: Generate presets
+                        setGenerationStep('Génération des ambiances...');
                         try {
                             const result = await generateLocationPresets(apiKey, savedLoc);
                             const updated2 = saveLocationData(modelId, accountId, { ...savedLoc, ai_presets: result.presets, ai_outfits: result.outfits, ai_poses: result.poses });
@@ -140,23 +143,21 @@ const LocationsAndSandboxView = () => {
                             toast.success(`${result.presets.length} ambiances + ${result.outfits.length} tenues + ${result.poses.length} poses générées`);
                         } catch (err) {
                             toast.error(`Presets IA: ${err.message}`);
-                        } finally {
-                            setIsGeneratingPresets(false);
                         }
 
-                        // Auto-generate AI location image (if no photos were uploaded manually)
-                        if (pendingLocPhotos.length === 0) {
-                            setIsGeneratingLocImage(true);
+                        // Step 2: Generate location image (if no manual photos)
+                        if (!hadPhotos) {
+                            setGenerationStep('Génération de l\'image du lieu...');
                             try {
                                 const locImg = await generateLocationImage(apiKey, savedLoc);
                                 await uploadLocationRefs(savedLoc.id, [{ base64: locImg.imageBase64, mimeType: locImg.mimeType }]);
-                                toast.success('🖼️ Image du lieu générée et sauvegardée');
+                                toast.success('🖼️ Image du lieu générée');
                             } catch (err) {
                                 toast.error(`Image lieu: ${err.message}`);
-                            } finally {
-                                setIsGeneratingLocImage(false);
                             }
                         }
+                        setGeneratingLocationId(null);
+                        setGenerationStep('');
                     }
                 }
             } else {
@@ -513,30 +514,7 @@ const LocationsAndSandboxView = () => {
                             )}
                         </div>
 
-                        {/* AI PRESETS LOADER */}
-                        {isGeneratingPresets && (
-                            <div className="mb-6 p-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.03] animate-fade-in-up">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-violet-300">Génération des ambiances IA...</p>
-                                        <p className="text-[11px] text-zinc-500">8 ambiances + 8 tenues + 8 poses adaptées seront générées</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
-                        {isGeneratingLocImage && (
-                            <div className="mb-6 p-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] animate-fade-in-up">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                                    <div>
-                                        <p className="text-sm font-semibold text-amber-300">🖼️ Génération de l'image du lieu...</p>
-                                        <p className="text-[11px] text-zinc-500">L'IA crée une photo de référence pour l'ancrage visuel</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
                         {/* SAVED LOCATIONS */}
                         <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">
@@ -553,88 +531,109 @@ const LocationsAndSandboxView = () => {
                             </div>
                         ) : (
                             <div className="space-y-2.5 stagger-children">
-                                {currentAccount.locations.map((loc, idx) => (
-                                    <div
-                                        key={loc.id}
-                                        draggable
-                                        onDragStart={() => handleDragStart(idx)}
-                                        onDragEnter={() => handleDragEnter(idx)}
-                                        onDragEnd={handleDragEnd}
-                                        onDragOver={(e) => e.preventDefault()}
-                                        className={`velvet-card group p-4 ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {/* Drag handle */}
-                                            <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
-                                                <GripVerticalIcon size={14} />
-                                            </div>
-                                            {/* Left: clickable area for navigation */}
-                                            <div
-                                                className="flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                                onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                            >
-                                                <div className="flex items-center gap-2.5 mb-0.5">
-                                                    <MapPinIcon size={14} className="text-violet-400 shrink-0" />
-                                                    <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
-                                                    <LockScore location={loc} />
-                                                </div>
-                                                <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
-                                            </div>
-
-                                            {/* Right: action buttons — SEPARATE from navigation */}
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <button
-                                                    onClick={() => enterEditMode(loc)}
-                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
-                                                    title="Modifier"
+                                {currentAccount.locations.map((loc, idx) => {
+                                    const isGenerating = generatingLocationId === loc.id;
+                                    return (
+                                        <div
+                                            key={loc.id}
+                                            draggable={!isGenerating}
+                                            onDragStart={() => handleDragStart(idx)}
+                                            onDragEnter={() => handleDragEnter(idx)}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={(e) => e.preventDefault()}
+                                            className={`velvet-card group p-4 transition-all ${isGenerating ? '!border-violet-500/30 !bg-violet-500/[0.03]' : ''} ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {/* Drag handle */}
+                                                {!isGenerating && (
+                                                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
+                                                        <GripVerticalIcon size={14} />
+                                                    </div>
+                                                )}
+                                                {/* Left: clickable area for navigation — disabled while generating */}
+                                                <div
+                                                    className={`flex-1 min-w-0 transition-opacity ${isGenerating ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+                                                    onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
                                                 >
-                                                    <EditIcon size={15} />
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        const updated = duplicateLocationLocal(modelId, accountId, loc.id);
-                                                        if (updated) {
-                                                            setAllModelsDatabase(updated);
-                                                            toast.success('Lieu dupliqué');
+                                                    <div className="flex items-center gap-2.5 mb-0.5">
+                                                        {isGenerating
+                                                            ? <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                                                            : <MapPinIcon size={14} className="text-violet-400 shrink-0" />
                                                         }
-                                                    }}
-                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
-                                                    title="Dupliquer"
-                                                >
-                                                    <CopyIcon size={15} />
-                                                </button>
-                                                <button
-                                                    onClick={() => setConfirmDelete(loc)}
-                                                    className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                                                    title="Supprimer"
-                                                >
-                                                    <TrashIcon size={15} />
-                                                </button>
-                                                <div className="w-px h-5 bg-zinc-800 mx-1" />
-                                                <button
-                                                    onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                                                    className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[12px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
-                                                >
-                                                    Studio
-                                                    <ChevronRightIcon size={14} />
-                                                </button>
+                                                        <h4 className="font-semibold text-zinc-100 text-sm truncate">{loc.name}</h4>
+                                                        {!isGenerating && <LockScore location={loc} />}
+                                                    </div>
+                                                    {isGenerating ? (
+                                                        <div className="pl-[22px] mt-1">
+                                                            <p className="text-[12px] text-violet-300 font-medium">{generationStep}</p>
+                                                            <div className="mt-1.5 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                                                <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full animate-pulse" style={{ width: generationStep.includes('image') ? '80%' : '40%' }} />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-[12px] text-zinc-500 mt-0.5 truncate pl-[22px]">{loc.environment}</p>
+                                                    )}
+                                                </div>
+
+                                                {/* Right: action buttons — hidden while generating */}
+                                                {!isGenerating && (
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <button
+                                                            onClick={() => enterEditMode(loc)}
+                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                            title="Modifier"
+                                                        >
+                                                            <EditIcon size={15} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                const updated = duplicateLocationLocal(modelId, accountId, loc.id);
+                                                                if (updated) {
+                                                                    setAllModelsDatabase(updated);
+                                                                    toast.success('Lieu dupliqué');
+                                                                }
+                                                            }}
+                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                                            title="Dupliquer"
+                                                        >
+                                                            <CopyIcon size={15} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setConfirmDelete(loc)}
+                                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                                            title="Supprimer"
+                                                        >
+                                                            <TrashIcon size={15} />
+                                                        </button>
+                                                        <div className="w-px h-5 bg-zinc-800 mx-1" />
+                                                        <button
+                                                            onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                                                            className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-[12px] font-medium px-2 py-1 rounded-lg hover:bg-white/[0.04]"
+                                                        >
+                                                            Studio
+                                                            <ChevronRightIcon size={14} />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
-                                            {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
-                                            {loc.ai_presets?.length > 0 && (
-                                                <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">
-                                                    IA ✓ {loc.ai_presets.length} ambiances{loc.ai_outfits?.length > 0 ? ` · ${loc.ai_outfits.length} tenues` : ''}{loc.ai_poses?.length > 0 ? ` · ${loc.ai_poses.length} poses` : ''}
-                                                </span>
+                                            {!isGenerating && (
+                                                <div className="flex flex-wrap gap-1.5 pl-[22px] mt-2">
+                                                    {loc.seed && <span className="velvet-tag !text-violet-400/70 !bg-violet-500/8 !border-violet-500/10 font-mono">Seed {loc.seed}</span>}
+                                                    {loc.ai_presets?.length > 0 && (
+                                                        <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">
+                                                            IA ✓ {loc.ai_presets.length} ambiances{loc.ai_outfits?.length > 0 ? ` · ${loc.ai_outfits.length} tenues` : ''}{loc.ai_poses?.length > 0 ? ` · ${loc.ai_poses.length} poses` : ''}
+                                                        </span>
+                                                    )}
+                                                    {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
+                                                    {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
+                                                    {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}
+                                                    {loc.color_palette && <span className="velvet-tag">Palette</span>}
+                                                    {loc.negative_prompt && <span className="velvet-tag !text-red-400/70 !bg-red-500/8 !border-red-500/10">Neg prompt</span>}
+                                                </div>
                                             )}
-                                            {loc.default_lighting && <span className="velvet-tag">Eclairage</span>}
-                                            {loc.time_of_day && <span className="velvet-tag">Horaire</span>}
-                                            {loc.anchor_details && <span className="velvet-tag !text-emerald-400/70 !bg-emerald-500/8 !border-emerald-500/10">Ancrage</span>}
-                                            {loc.color_palette && <span className="velvet-tag">Palette</span>}
-                                            {loc.negative_prompt && <span className="velvet-tag !text-red-400/70 !bg-red-500/8 !border-red-500/10">Neg prompt</span>}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
