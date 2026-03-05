@@ -110,13 +110,14 @@ const ModelsView = () => {
             )}
             {allModelsDatabase.length > 0 && (
               <div className="relative">
-                <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Rechercher..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="velvet-input h-9 w-40 pl-8 text-sm"
+                  className="velvet-input h-9 w-40 text-sm"
+                  style={{ paddingLeft: '2.25rem' }}
                 />
               </div>
             )}
