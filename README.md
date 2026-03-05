@@ -125,3 +125,4 @@ All data is stored in the `sauvegarde/` folder at the project root:
 ## License
 
 Private project.
+ 
