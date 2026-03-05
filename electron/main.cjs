@@ -81,17 +81,29 @@ function startServer() {
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
 
+            const fs = require('fs');
+            const logPath = path.join(app.getPath('userData'), 'server-crash.log');
+            fs.writeFileSync(logPath, '[Electron] Starting internal server...\n', { flag: 'a' });
+
             serverProcess.stdout?.on('data', (data) => {
-                console.log('[Server]', data.toString().trim());
+                const msg = data.toString().trim();
+                console.log('[Server]', msg);
+                fs.writeFileSync(logPath, `[OUT] ${msg}\n`, { flag: 'a' });
             });
 
             serverProcess.stderr?.on('data', (data) => {
-                console.error('[Server Error]', data.toString().trim());
+                const msg = data.toString().trim();
+                console.error('[Server Error]', msg);
+                fs.writeFileSync(logPath, `[ERR] ${msg}\n`, { flag: 'a' });
             });
 
-            serverProcess.on('error', reject);
+            serverProcess.on('error', (err) => {
+                fs.writeFileSync(logPath, `[SPAWN ERR] ${err.message}\n`, { flag: 'a' });
+                reject(err);
+            });
 
             serverProcess.on('exit', (code, signal) => {
+                fs.writeFileSync(logPath, `[EXIT] code=${code} signal=${signal}\n`, { flag: 'a' });
                 if (signal === 'SIGTERM' || signal === 'SIGINT') return; // Intentional kill
                 console.warn(`[Electron] ⚠ Server crashed (code ${code}). Restarting in 2s...`);
                 setTimeout(() => {
