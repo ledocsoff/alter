@@ -151,7 +151,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
 
     vibe: scene.vibe || null,
 
-    style: "Fashion lifestyle photo for Instagram. Resort editorial, sun-kissed lighting. Smartphone camera: deep focus, 26mm wide lens, no bokeh. Photorealistic: visible skin texture, natural light, no retouching.",
+    style: "Casual amateur photo for Instagram/TikTok. Smartphone camera: deep focus, 26mm wide lens, no bokeh, no studio lighting. Photorealistic: visible skin texture, natural imperfect lighting, no retouching, no beauty filter. Like a friend took this photo with their phone.",
 
     negative_prompt: negativeStr,
   };

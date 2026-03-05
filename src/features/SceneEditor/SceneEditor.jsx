@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
-import { SCENE_OPTIONS, OUTFIT_PRESETS, SCENE_PRESETS } from '../../constants/sceneOptions';
+import { SCENE_OPTIONS, OUTFIT_PRESETS, SCENE_PRESETS, MIRROR_LOCATION_KEYWORDS } from '../../constants/sceneOptions';
 import { getSceneTemplates, saveSceneTemplate, deleteSceneTemplate, getApiKey, saveLocationData, getSavedModels } from '../../utils/storage';
 import { generateLocationPresets } from '../../utils/googleAI';
 import { TrashIcon, SparklesIcon } from '../../components/Icons';
@@ -407,7 +407,7 @@ const SceneEditor = ({ location = null }) => {
                                         // Hide mirror option if location doesn't have a mirror
                                         const isMirrorOption = pt.promptEN.includes('mirror');
                                         const envLower = (scene.environment || '').toLowerCase();
-                                        const hasMirror = envLower.includes('mirror') || envLower.includes('bathroom') || envLower.includes('vestiaire') || envLower.includes('locker') || envLower.includes('gym') || envLower.includes('salle de bain');
+                                        const hasMirror = MIRROR_LOCATION_KEYWORDS.some(kw => envLower.includes(kw));
                                         if (isMirrorOption && !hasMirror) return null;
                                         const isActive = scene.photo_type === pt.promptEN;
                                         return (

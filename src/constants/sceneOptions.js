@@ -97,7 +97,7 @@ export const SCENE_OPTIONS = {
   aspect_ratio: [
     { labelFR: "Story / TikTok (9:16)", promptEN: "--ar 9:16", icon: "📱" },
     { labelFR: "Feed / Carré (1:1)", promptEN: "--ar 1:1", icon: "⏹️" }
-  ]
+  ],
 };
 
 // Presets de scènes complètes — appliquent environment + lighting + camera + pose + expression + vibe d'un coup
@@ -173,3 +173,6 @@ export const DEFAULT_SCENE = {
   seed: null,
   custom_negative_prompt: '',
 };
+
+// Keywords that indicate a location has a mirror (for photo_type validation)
+export const MIRROR_LOCATION_KEYWORDS = ['mirror', 'bathroom', 'salle de bain', 'vestiaire', 'locker', 'gym', 'dressing', 'chambre', 'bedroom'];

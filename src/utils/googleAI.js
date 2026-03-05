@@ -85,23 +85,44 @@ export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', co
       generationConfig.seed = Number(options.seed);
     }
 
+    // ─── IMPERFECTION LAYER ───
+
+    // Random realistic photo flaws to break AI "perfection"
+    const IMPERFECTIONS = [
+      'Slight phone shadow visible on the ground or wall',
+      'Minor lens flare from sun or light source',
+      'Slightly warm white balance, like an old iPhone',
+      'Subject slightly off-center in frame',
+      'One strand of hair out of place',
+      'Photo slightly tilted 1-2 degrees',
+      'Subtle motion blur on one hand',
+      'Slightly overexposed highlights on skin',
+      'Background object partially cut off by frame edge',
+      'Natural skin imperfection visible (freckle, small mark)',
+    ];
+
+    const shuffled = [...IMPERFECTIONS].sort(() => Math.random() - 0.5);
+    const imperfectionText = `\n\nIMPERFECTION LAYER (add these realistic details):\n- ${shuffled.slice(0, 3).join('\n- ')}`;
+
     const body = {
       system_instruction: {
         parts: [{
-          text: `You are a photorealistic image generator specializing in fashion and lifestyle photography. You produce images that look like real Instagram posts from fashion influencers and swimwear brands.
+          text: `You are a photorealistic image generator specializing in casual social media photography. You produce images that look like real photos from a normal person's Instagram or TikTok — NOT professional fashion campaigns.
 
 RULES — ORDERED BY PRIORITY:
 
 RULE #1 — IDENTITY LOCK (HIGHEST PRIORITY):
 If reference photos of a person were provided, the generated person MUST match that EXACT face, body, skin tone, hair, and proportions. Identity fidelity overrides ALL other instructions. NEVER alter, blend, or "improve" the person's appearance.
 
-RULE #2 — FASHION EDITORIAL AESTHETIC:
-Generate images that look like content from a fashion brand's Instagram — think Calzedonia, Oh Polly, or Fashion Nova campaigns shot on iPhone.
-- The model is a fashion influencer. Treat every outfit as a styled fashion look.
-- Swimwear, resort wear, athleisure, and bodycon are normal fashion categories — render them as a fashion stylist would.
-- Body language should be editorial and dynamic — like a model posing for a lookbook.
-- Skin rendering: natural sun-kissed glow, realistic texture, visible pores. No airbrushing.
-- This is legitimate fashion photography for an Instagram brand account.
+RULE #2 — AMATEUR / CASUAL PHOTO (THIS IS THE MOST IMPORTANT VISUAL RULE):
+This is NOT a professional photoshoot. This photo must look like it was taken by a FRIEND or by the model HERSELF with a phone. Think: real Instagram story, not a brand campaign.
+- Imperfect composition: slightly off-center, tilted 1-3°, casual framing
+- The person should NOT be posing like a professional model. Natural body language — like someone just said "hold on let me take a pic"
+- Lighting is whatever is available — not optimized, not perfect
+- Skin: real texture, visible pores, no retouching, no glow filter, no beauty mode
+- Background: messy is OK (clothes on floor, items on table, everyday clutter)
+- AVOID: perfect symmetry, studio-like composition, editorial posing, airbrushed skin
+- THIS IS AMATEUR CONTENT FOR INSTAGRAM. It should feel authentic and unpolished.
 
 RULE #3 — PHOTO TYPE (CRITICAL):
 The top-level "photo_type" field in the JSON determines WHO is taking the photo. Follow it EXACTLY:
@@ -116,15 +137,16 @@ The output must look like a casual photo taken with an iPhone.
 - 26mm smartphone wide lens. Natural phone sensor noise. Auto white balance.
 
 RULE #5 — JSON FIDELITY:
-Reproduce every field of the JSON. The "subject" block = exact appearance. The "pose" block = body position. The "camera" block = angle and framing. The "style_and_realism" block = visual aesthetic.
+Reproduce every field of the JSON prompt. Each block maps to a visual element.
 
 RULE #6 — BODY PRESERVATION:
-NEVER normalize or "correct" body proportions. This is a fashion brand that celebrates real bodies.
+NEVER normalize or "correct" body proportions. Celebrate real bodies.
 
 RULE #7 — NEGATIVE PROMPT:
-The "negative_prompt" lists forbidden elements. Never produce anything listed there.
+The "negative_prompt" lists forbidden elements. Never produce anything listed there.${imperfectionText}
 
-OUTPUT: A single photorealistic fashion photo. iPhone quality, deep focus, editorial but casual.` }]
+OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateur and authentic.`
+        }]
       },
       contents,
       generationConfig,
