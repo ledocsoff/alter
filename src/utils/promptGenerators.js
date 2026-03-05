@@ -1,8 +1,8 @@
 // promptGenerators.js
-// Moteur de génération Matrice d'Ancrage ultra-précise
+// Moteur de génération Matrice d'Ancrage v2
 // Chaque champ = description narrative détaillée pour cohérence maximale
+// Refactoré: negative prompt simplifié, champs null supprimés, ControlNet retiré
 
-import { NEGATIVE_PROMPT_OFM, CONTROLNET_PRESETS } from '../constants/controlnetPresets';
 import { debugLogger } from './debugLogger';
 
 // Helper: accès safe aux propriétés imbriquées
@@ -23,18 +23,47 @@ const narrate = (...parts) => parts.filter(Boolean).join(', ') || null;
 // Helper: joindre en phrases séparées par des points
 const sentences = (...parts) => parts.filter(Boolean).join('. ') || null;
 
+// Helper: remove null/undefined values from an object recursively
+const compact = (obj) => {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(compact).filter(v => v != null);
+  const result = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const cleaned = compact(v);
+    if (cleaned != null && cleaned !== '') result[k] = cleaned;
+  }
+  return Object.keys(result).length > 0 ? result : null;
+};
+
+// Normalize shorthand photo_type values from AI presets to full prompt strings
+const PHOTO_TYPE_NORMALIZE = {
+  'selfie': 'selfie taken by the model herself, phone in hand, arm extended or close',
+  'third_person': 'photo taken by another person, natural framing, no phone visible',
+  'mirror': 'mirror selfie, full body reflection, phone visible in hand',
+};
+
+// Simplified negative prompt — focused directives instead of 120+ keyword spam
+// Gemini is NOT Stable Diffusion; it responds better to clear instructions than keyword lists
+const NEGATIVE_DIRECTIVES = [
+  // Core quality
+  "low quality", "blurry", "deformed anatomy", "extra fingers", "mutated hands",
+  // Anti-AI look
+  "AI generated", "plastic skin", "uncanny valley", "over-processed",
+  // Anti-DSLR (keep smartphone feel)
+  "bokeh", "shallow DOF", "DSLR look", "studio lighting", "blurred background",
+  // Anti-illustration
+  "3d render", "cartoon", "anime", "cgi", "painting",
+  // Anti-overlay
+  "watermark", "text", "logo", "phone UI", "status bar",
+  // Scene consistency
+  "inconsistent background",
+];
+
 // ============================================
 // MATRICE JSON D'ANCRAGE — Prompt principal
 // ============================================
 export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
-  const aspectRatio = scene.aspect_ratio || "--ar 9:16";
-  const isVertical = aspectRatio.includes("9:16");
   const meta = scene.location_meta || {};
-
-  // Resolve camera preset
-  const presetId = scene.controlnet_preset || 'selfie_high_angle';
-  const preset = CONTROLNET_PRESETS.find(p => p.id === presetId) || CONTROLNET_PRESETS[0];
-  const cam = preset.camera_defaults || {};
 
   // === SUBJECT ===
   const ageStr = model.age ? `${model.age} years old` : null;
@@ -80,57 +109,14 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     get(model, 'skin.details'),
   );
 
-  // === POSE ===
-  const poseConstraints = preset.pose_control.constraints;
-  const poseBody = scene.pose || "natural relaxed pose";
-
-  // === ENVIRONMENT ===
-  const envSetting = scene.environment || null;
-  const envBg = meta.anchor_details || null;
-  const envTime = meta.time_of_day || null;
-
-  // === LIGHTING ===
-  const lightSource = scene.lighting || null;
-
-  // === CAMERA ===
-  const camPerspective = scene.camera_angle || cam.perspective || null;
-  const camShot = cam.shot_type || null;
-  const camFocal = cam.focal_length || null;
-  const camDoF = cam.depth_of_field || null;
-
-  // === NEGATIVE PROMPT — format string compact ===
-  const baseNegStr = [
-    ...NEGATIVE_PROMPT_OFM.forbidden_elements,
-    "worst quality", "low quality", "deformed anatomy",
-    "extra fingers", "mutated hands", "blurry", "watermark",
-    "text", "logo", "cgi", "3d render", "cartoon", "anime",
-    "inconsistent background", "changing room layout",
-    // Anti-blur / anti-DSLR
-    "bokeh", "depth of field", "shallow DOF", "DSLR", "studio lighting",
-    "professional photography", "cinematic color grading", "film grain",
-    "blurred background", "portrait mode", "lens blur", "out of focus background",
-    "artificial bokeh", "background blur", "defocused background",
-    // Anti-phone-UI
-    "phone UI", "status bar", "notification bar", "phone frame",
-    "screenshot overlay", "app interface", "phone screen", "UI elements",
-    "battery icon", "time display", "signal bars", "phone border",
-    // Anti-AI-look
-    "AI generated", "artificial skin", "plastic look", "over-processed",
-    "HDR", "hyper-realistic", "over-sharpened", "uncanny valley",
-  ].join(', ');
-
   // Append custom negative prompt if user provided one
   const customNeg = scene.custom_negative_prompt?.trim();
-  const negativeStr = customNeg ? `${baseNegStr}, ${customNeg}` : baseNegStr;
+  const negativeStr = customNeg
+    ? [...NEGATIVE_DIRECTIVES, customNeg].join(', ')
+    : NEGATIVE_DIRECTIVES.join(', ');
 
-  // Normalize shorthand photo_type values from AI presets to full prompt strings
-  const PHOTO_TYPE_NORMALIZE = {
-    'selfie': 'selfie taken by the model herself, phone in hand, arm extended or close',
-    'third_person': 'photo taken by another person, natural framing, no phone visible',
-    'mirror': 'mirror selfie, full body reflection, phone visible in hand',
-  };
-
-  const matrix = {
+  // Build matrix — only include fields with values (compact removes nulls)
+  const rawMatrix = {
     // PHOTO TYPE — top-level for maximum AI attention
     photo_type: PHOTO_TYPE_NORMALIZE[scene.photo_type] || scene.photo_type || "photo taken by another person, natural framing, no phone visible",
 
@@ -139,90 +125,78 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
       hair: hairDesc,
       face: faceNarrative,
       apparel: scene.outfit?.value || "casual outfit",
-      accessories: null,
       anatomy: anatomyDesc,
       skin_details: skinDesc,
     },
 
     pose: {
-      body_position: poseBody,
-      orientation: "Facing the camera",
-      limbs: get(model, 'body.limbs'),
-      head_and_gaze: scene.expression || null,
+      body_position: scene.pose || "natural relaxed pose",
+      expression: scene.expression || null,
     },
 
     environment: {
-      setting: envSetting,
-      background_elements: envBg,
-      surface_interaction: envTime,
+      setting: scene.environment || null,
+      background_elements: meta.anchor_details || null,
+      time_of_day: meta.time_of_day || null,
     },
 
     camera: {
-      angle: camPerspective,
-      shot_type: camShot,
-      focal_length: camFocal,
-      depth_of_field: camDoF,
+      angle: scene.camera_angle || null,
     },
 
     lighting: {
-      source: lightSource,
-      quality: meta.color_palette ? `Color palette: ${meta.color_palette}` : null,
-      shadows: null,
+      source: scene.lighting || null,
+      color_palette: meta.color_palette || null,
     },
 
-    mood_and_expression: {
-      emotion: scene.vibe || null,
-      facial_expression: scene.expression || null,
-    },
+    vibe: scene.vibe || null,
 
-    style_and_realism: {
-      aesthetic: "Fashion lifestyle photo for an Instagram brand account. Resort editorial mood, sun-kissed natural lighting. Like a Calzedonia or Oh Polly campaign shot on iPhone. NOT a professional studio photo — a styled but casual fashion post.",
-      fidelity: "Photorealistic with natural beauty: visible skin texture, natural sun glow, realistic hair movement. No retouching, no beauty filters, no artificial smoothing. Real skin, real light.",
-      camera: "Smartphone camera: deep focus (everything sharp), 26mm wide lens, natural phone sensor, auto white balance. No DSLR, no bokeh, no studio lighting.",
-      colors: meta.color_palette || "Warm natural tones, sun-kissed skin, vibrant but not oversaturated. Fashion editorial color palette.",
-    },
+    style: "Fashion lifestyle photo for Instagram. Resort editorial, sun-kissed lighting. Smartphone camera: deep focus, 26mm wide lens, no bokeh. Photorealistic: visible skin texture, natural light, no retouching.",
 
     negative_prompt: negativeStr,
-
-    custom_details: scene.custom_details?.trim() || null,
   };
 
-  // Pose constraints (kept as natural language, no ControlNet reference)
-  if (preset.pose_control?.constraints?.length > 0) {
-    matrix.pose.constraints = preset.pose_control.constraints;
+  // Add custom details if present
+  if (scene.custom_details?.trim()) {
+    rawMatrix.custom_details = scene.custom_details.trim();
   }
 
   // Identity lock directives
-  matrix.directives = {
-    identity_lock: "Maintain exact same face across all generations. Same person, consistent identity, no variation in facial structure or features. Consistent skin color and body proportions.",
-    anatomical_fidelity: get(model, 'anatomical_fidelity') || "Preserve exact anatomical proportions from reference. No normalization, no averaging, no beautification.",
-    aesthetic_signature: get(model, 'signature') || null,
+  rawMatrix.directives = {
+    identity_lock: "Maintain exact same face across all generations. Same person, consistent identity. Consistent skin color and body proportions.",
+    anatomical_fidelity: get(model, 'anatomical_fidelity') || "Preserve exact anatomical proportions from reference.",
   };
 
+  // Aesthetic signature if model has one
+  const sig = get(model, 'signature');
+  if (sig) rawMatrix.directives.aesthetic_signature = sig;
+
   if (scene.seed) {
-    matrix.directives.seed = scene.seed;
-    matrix.directives.seed_directive = `Use seed ${scene.seed} for deterministic visual consistency. This seed must produce identical facial features, body proportions, and skin characteristics across every generation.`;
+    rawMatrix.directives.seed = scene.seed;
   }
 
   // Spatial lock for anchored locations
   if (meta.anchor_details) {
-    matrix.directives.spatial_lock = "Background must remain spatially consistent: same furniture placement, same wall decorations, same objects visible in every shot at this location.";
+    rawMatrix.directives.spatial_lock = "Background must remain spatially consistent: same furniture placement, same objects visible.";
   }
 
   // Platform compliance
   if (activeAccount) {
     const p = activeAccount.platform;
     const compliance = {
-      Instagram: "Content suitable for Instagram. No explicit nudity, tasteful and suggestive only.",
-      TikTok: "Content suitable for TikTok. No explicit nudity, tasteful and suggestive only.",
-      Tinder: "Dating profile photo. Approachable, attractive, natural looking.",
+      Instagram: "Content suitable for Instagram. Tasteful fashion editorial.",
+      TikTok: "Content suitable for TikTok. Tasteful fashion editorial.",
+      Tinder: "Dating profile photo. Approachable, attractive, natural.",
     };
-    matrix.platform = {
+    rawMatrix.platform = {
       name: p,
       handle: activeAccount.handle,
       compliance: compliance[p] || null,
     };
   }
+
+  // Remove all null/empty fields for a cleaner prompt
+  const matrix = compact(rawMatrix);
 
   debugLogger.prompt('buildPromptMatrix', {
     photo_type: matrix.photo_type,
@@ -232,6 +206,7 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     environment: matrix.environment?.setting,
     camera_angle: matrix.camera?.angle,
     seed: matrix.directives?.seed || null,
+    matrixSize: JSON.stringify(matrix).length,
   });
 
   return matrix;

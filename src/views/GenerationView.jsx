@@ -23,6 +23,7 @@ const TABS = [
 
 const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
+    const [showPromptPreview, setShowPromptPreview] = useState(false);
     const navigate = useNavigate();
     const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, anchorMatrix, generatedPrompt, setReferenceImages, setLocationRefImages } = useStudio();
     const toast = useToast();
@@ -278,8 +279,8 @@ const GenerationView = () => {
                                                     const matrix = JSON.parse(generatedPrompt);
                                                     if (i > 0) {
                                                         matrix.pose.body_position = pickRandom(SCENE_OPTIONS.pose).promptEN;
-                                                        matrix.camera.perspective = pickRandom(SCENE_OPTIONS.camera_angle).promptEN;
-                                                        matrix.mood_and_expression.facial_expression = pickRandom(SCENE_OPTIONS.expression).promptEN;
+                                                        matrix.camera.angle = pickRandom(SCENE_OPTIONS.camera_angle).promptEN;
+                                                        matrix.pose.expression = pickRandom(SCENE_OPTIONS.expression).promptEN;
                                                     }
                                                     return JSON.stringify(matrix, null, 2);
                                                 } catch { return generatedPrompt; }
@@ -297,8 +298,38 @@ const GenerationView = () => {
                             {rightPanel === 'matrice' && (
                                 <span className="text-[10px] text-zinc-700 font-mono">Prompt ultra-précis</span>
                             )}
+                            {/* Prompt Preview Toggle */}
+                            <button
+                                onClick={() => setShowPromptPreview(!showPromptPreview)}
+                                className={`text-[10px] font-medium px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${showPromptPreview ? 'bg-amber-500/15 text-amber-400' : 'text-zinc-600 hover:text-zinc-400 hover:bg-zinc-800/50'}`}
+                                title="Voir le prompt JSON avant génération"
+                            >
+                                👁️ Prompt
+                            </button>
                         </div>
                     </div>
+
+                    {/* PROMPT PREVIEW (collapsible) */}
+                    {showPromptPreview && (
+                        <div className="shrink-0 max-h-[30vh] bg-[#08080a] border border-amber-500/20 rounded-xl overflow-hidden flex flex-col">
+                            <div className="shrink-0 px-3 py-1.5 border-b border-amber-500/10 flex items-center justify-between">
+                                <span className="text-[11px] font-semibold text-amber-400">Prompt JSON envoyé à Gemini</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] text-zinc-600 font-mono">{generatedPrompt.length} chars</span>
+                                    <button
+                                        onClick={() => { navigator.clipboard.writeText(generatedPrompt); toast.success('Prompt copié'); }}
+                                        className="text-[9px] text-zinc-500 hover:text-zinc-300 px-1.5 py-0.5 rounded hover:bg-zinc-800/50 transition-colors"
+                                    >
+                                        📋 Copier
+                                    </button>
+                                </div>
+                            </div>
+                            <pre className="flex-1 overflow-auto custom-scrollbar px-3 py-2 text-[10px] text-zinc-400 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                                {generatedPrompt}
+                            </pre>
+                        </div>
+                    )}
+
                     {/* ACTIVE PANEL */}
                     <div className="flex-1 min-h-0">
                         {rightPanel === 'matrice' ? (
@@ -411,7 +442,7 @@ const GenerationView = () => {
                 onClose={() => setShowApiKeyModal(false)}
             />
 
-        </div>
+        </div >
     );
 };
 
