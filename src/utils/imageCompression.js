@@ -11,18 +11,21 @@ const JPEG_QUALITY = 0.85;
  */
 export const compressImage = (file, maxDim = MAX_DIMENSION, quality = JPEG_QUALITY) => {
     return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Compression timeout (10s)')), 10000);
+        const done = (result) => { clearTimeout(timeout); resolve(result); };
+        const fail = (err) => { clearTimeout(timeout); reject(err); };
         const reader = new FileReader();
-        reader.onerror = () => reject(new Error('Erreur lecture fichier'));
+        reader.onerror = () => fail(new Error('Erreur lecture fichier'));
         reader.onload = () => {
             const img = new Image();
-            img.onerror = () => reject(new Error('Image invalide'));
+            img.onerror = () => fail(new Error('Image invalide'));
             img.onload = () => {
                 let { width, height } = img;
 
                 // Skip compression if already small enough
                 if (width <= maxDim && height <= maxDim && file.size < 500 * 1024) {
                     const base64 = reader.result.split(',')[1];
-                    resolve({
+                    done({
                         base64,
                         mimeType: file.type || 'image/jpeg',
                         file,
@@ -48,11 +51,11 @@ export const compressImage = (file, maxDim = MAX_DIMENSION, quality = JPEG_QUALI
 
                 canvas.toBlob(
                     (blob) => {
-                        if (!blob) { reject(new Error('Compression échouée')); return; }
+                        if (!blob) { fail(new Error('Compression échouée')); return; }
                         const blobReader = new FileReader();
                         blobReader.onload = () => {
                             const base64 = blobReader.result.split(',')[1];
-                            resolve({
+                            done({
                                 base64,
                                 mimeType: 'image/jpeg',
                                 file: new File([blob], file.name?.replace(/\.\w+$/, '.jpg') || 'photo.jpg', { type: 'image/jpeg' }),

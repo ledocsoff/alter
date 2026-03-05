@@ -6,6 +6,14 @@ import { StudioProvider } from './store/StudioContext.jsx'
 import { ToastProvider } from './store/ToastContext.jsx'
 import { loadFromServer } from './utils/storage.js'
 
+// Global error handlers — catch unhandled errors before React boots
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[Velvet] Unhandled rejection:', e.reason);
+});
+window.onerror = (msg, src, line, col, err) => {
+  console.error('[Velvet] Uncaught error:', msg, { src, line, col, err });
+};
+
 // Load data from server (sauvegarde/) into localStorage BEFORE React boots
 loadFromServer().then(() => {
   ReactDOM.createRoot(document.getElementById('root')).render(
@@ -19,5 +27,14 @@ loadFromServer().then(() => {
   )
 }).catch(err => {
   console.error('[Velvet] Fatal:', err);
-  document.getElementById('root').innerHTML = '<div style="color:#ef4444;padding:50px;font-family:system-ui"><h1>Erreur de démarrage</h1><p>' + err.message + '</p></div>';
+  const root = document.getElementById('root');
+  root.textContent = '';
+  const container = document.createElement('div');
+  container.style.cssText = 'color:#ef4444;padding:50px;font-family:system-ui';
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Erreur de démarrage';
+  const p = document.createElement('p');
+  p.textContent = err.message;
+  container.append(h1, p);
+  root.appendChild(container);
 })

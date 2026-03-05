@@ -16,12 +16,16 @@ const API_BASE = (typeof window !== 'undefined' && window.location.protocol === 
 let syncTimeout = null;
 let hasPendingSync = false;
 
-const buildSyncPayload = () => ({
-    dataVersion: 1,
-    models: getSavedModels(),
-    templates: getSceneTemplates(),
-    history: getPromptHistory(),
-});
+const buildSyncPayload = () => {
+    let templates = [];
+    try { templates = JSON.parse(localStorage.getItem(TEMPLATES_KEY)) || []; } catch { }
+    return {
+        dataVersion: 1,
+        models: getSavedModels(),
+        templates,
+        history: getPromptHistory(),
+    };
+};
 
 const syncToServer = () => {
     clearTimeout(syncTimeout);
@@ -406,7 +410,7 @@ export const exportAllData = () => {
         version: 'velvet_v4',
         exportedAt: new Date().toISOString(),
         models: getSavedModels(),
-        templates: getSceneTemplates(),
+        templates: (() => { try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY)) || []; } catch { return []; } })(),
         history: getPromptHistory(),
     }, null, 2);
 };

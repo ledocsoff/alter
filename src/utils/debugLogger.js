@@ -7,6 +7,8 @@
  * Activation: toggle dans le panneau Logs ou window.__VELVET_DEBUG = true
  */
 
+import React from 'react';
+
 const MAX_ENTRIES = 500;
 const STORAGE_KEY = 'velvet_debug_mode';
 
@@ -212,5 +214,5 @@ export const useDebugLog = () => {
     return debugLogger;
 };
 
-// Lazy import React for the hook
-import React from 'react';
+
+

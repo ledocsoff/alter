@@ -14,12 +14,6 @@ import AccountsView from './views/AccountsView';
 import LocationsView from './views/LocationsAndSandboxView';
 import GenerationView from './views/GenerationView';
 
-const LoadingFallback = () => (
-  <div className="flex-1 flex items-center justify-center">
-    <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin"></div>
-  </div>
-);
-
 const Breadcrumb = () => {
   const { modelId, accountId, locationId } = useParams();
   const location = useLocation();

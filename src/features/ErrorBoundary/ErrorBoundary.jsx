@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertIcon } from '../../components/Icons';
+import logger from '../../utils/logger';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -13,6 +14,7 @@ class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, errorInfo) {
         console.error('[Velvet] Erreur fatale:', error, errorInfo);
+        logger.error('app', `Crash: ${error?.message || error}`, errorInfo?.componentStack?.split('\n').slice(0, 5).join('\n'));
     }
 
     render() {
