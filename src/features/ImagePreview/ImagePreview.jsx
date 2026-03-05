@@ -7,7 +7,7 @@ import { generateImage } from '../../utils/googleAI';
 const MAX_HISTORY_TURNS = 5; // Garder les 5 derniers échanges pour la cohérence
 
 const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryUpdate }, ref) => {
-  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages } = useStudio();
+  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene } = useStudio();
   const toast = useToast();
 
   const [status, setStatus] = useState('idle');
@@ -103,7 +103,7 @@ The environment adapts around the person, not the other way around.` },
     }
 
     try {
-      const aspectRatio = anchorMatrix?.aspect_ratio_and_output?.ratio === '1:1' ? '1:1' : '9:16';
+      const aspectRatio = scene?.aspect_ratio?.includes('1:1') ? '1:1' : '9:16';
       const fullHistory = [...anchorHistory, ...conversationHistory];
       const seed = galleryMetaRef.current?.seed || null;
       const result = await generateImage(apiKey, promptToSend, aspectRatio, fullHistory, { seed });

@@ -123,9 +123,16 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   const customNeg = scene.custom_negative_prompt?.trim();
   const negativeStr = customNeg ? `${baseNegStr}, ${customNeg}` : baseNegStr;
 
+  // Normalize shorthand photo_type values from AI presets to full prompt strings
+  const PHOTO_TYPE_NORMALIZE = {
+    'selfie': 'selfie taken by the model herself, phone in hand, arm extended or close',
+    'third_person': 'photo taken by another person, natural framing, no phone visible',
+    'mirror': 'mirror selfie, full body reflection, phone visible in hand',
+  };
+
   const matrix = {
     // PHOTO TYPE — top-level for maximum AI attention
-    photo_type: scene.photo_type || "photo taken by another person, natural framing, no phone visible",
+    photo_type: PHOTO_TYPE_NORMALIZE[scene.photo_type] || scene.photo_type || "photo taken by another person, natural framing, no phone visible",
 
     subject: {
       demographics,
