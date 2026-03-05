@@ -8,8 +8,8 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Velvet Studio-5.2.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
-| **Windows** (x64) | [Velvet Studio Setup 5.2.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **macOS** (Apple Silicon) | [Velvet Studio-5.3.0-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **Windows** (x64) | [Velvet Studio Setup 5.3.0.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
 
 > **Note**: The app is not code-signed. On macOS, right-click → Open on first launch. On Windows, click "More info" → "Run anyway".
 
@@ -34,6 +34,12 @@ Velvet Studio is a premium prompt engineering workstation for AI image generatio
 - **Data validation** — Automatic repair of corrupted data on load
 - **Auto-update** — In-app updates via GitHub Releases (Electron only)
 - **Security hardened** — Rate limiting, input validation, path traversal protection, XSS protection, API key obfuscation
+- **Remote Access (Tailscale/LAN)** — Dynamic CORS routing to access the studio from a phone on a private network
+- **Mobile Responsive UI** — Touch targets, safe-areas, and fully responsive layouts for mobile usage
+
+## Audits & Quality Control
+
+Velvet Studio (v5.3.0) has passed a rigorous 6-phase master technical audit. The detailed reports (Cybersecurity OWASP 2025, Performance, Accessibility, and Server Integrity) can be found in the [`docs/audits/`](docs/audits/) directory.
 
 ## Quick Start (Development)
 
