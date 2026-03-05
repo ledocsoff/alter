@@ -277,6 +277,7 @@ app.use(helmet({
     // Disable CSP and crossOriginEmbedderPolicy to allow Vite's dev server inline scripts & external images
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false, // Allows file:// (Electron) to load images via <img src>
 }));
 
 // Apply a global rate limit to all API endpoints to prevent basic DDoS / bruteforce
