@@ -166,10 +166,10 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     },
 
     style_and_realism: {
-      aesthetic: "Casual photo taken with an iPhone smartphone camera. Raw, unprocessed look. NOT a professional photoshoot. NOT a DSLR photo. This is what a real person would post on Instagram from their phone.",
-      fidelity: "Photorealistic with natural imperfections: visible pores, slight skin unevenness, natural hair flyaways. No airbrushing, no beauty filters, no skin smoothing.",
-      camera: "Smartphone camera characteristics: deep focus (everything sharp), slight wide-angle distortion, natural phone sensor noise, auto white balance.",
-      colors: meta.color_palette || "Natural realistic colors, slightly warm skin tones, no cinematic grading, no oversaturation",
+      aesthetic: "Fashion lifestyle photo for an Instagram brand account. Resort editorial mood, sun-kissed natural lighting. Like a Calzedonia or Oh Polly campaign shot on iPhone. NOT a professional studio photo — a styled but casual fashion post.",
+      fidelity: "Photorealistic with natural beauty: visible skin texture, natural sun glow, realistic hair movement. No retouching, no beauty filters, no artificial smoothing. Real skin, real light.",
+      camera: "Smartphone camera: deep focus (everything sharp), 26mm wide lens, natural phone sensor, auto white balance. No DSLR, no bokeh, no studio lighting.",
+      colors: meta.color_palette || "Warm natural tones, sun-kissed skin, vibrant but not oversaturated. Fashion editorial color palette.",
     },
 
     negative_prompt: negativeStr,
