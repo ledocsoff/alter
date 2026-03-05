@@ -20,7 +20,6 @@ const EyeIcon = ({ size = 13 }) => <svg width={size} height={size} viewBox="0 0 
 
 const TABS = [
     { id: 'image', Icon: ImageIcon, label: 'Image' },
-    { id: 'refs', Icon: EyeIcon, label: 'Refs' },
     { id: 'galerie', Icon: CameraIcon, label: 'Galerie' },
     { id: 'historique', Icon: FileTextIcon, label: 'Prompts' },
     { id: 'matrice', Icon: SettingsIcon, label: 'Matrice' },
@@ -199,8 +198,28 @@ const GenerationView = () => {
                         {currentModel.name} / {currentAccount?.handle}
                     </span>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
+                    {/* MODEL REFS — small thumbnails */}
                     <ReferenceUpload />
+
+                    {/* LOCATION REFS — tiny thumbnails */}
+                    {locationRefImages.length > 0 && (
+                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15">
+                            <span className="text-[9px] text-emerald-500/70 font-medium">📍</span>
+                            {locationRefImages.map((img, i) => (
+                                <img
+                                    key={i}
+                                    src={img.dataUrl}
+                                    alt={`Lieu ${i + 1}`}
+                                    className="w-6 h-6 rounded object-cover border border-emerald-500/20"
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* DIVIDER */}
+                    <div className="w-px h-5 bg-white/[0.06]" />
+
                     {/* SEED BADGE */}
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                         <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
@@ -438,75 +457,6 @@ const GenerationView = () => {
                                     key={historyKey}
                                     onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
                                 />
-                            </div>
-                        ) : rightPanel === 'refs' ? (
-                            /* ─── REFS PANEL ─── */
-                            <div className="h-full bg-[#0a0a0c] border border-white/[0.05] rounded-xl overflow-auto custom-scrollbar p-4">
-                                <div className="space-y-4">
-                                    {/* Coherence Status */}
-                                    <div className="flex items-center gap-3 pb-3 border-b border-white/[0.05]">
-                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${referenceImages.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                                            {referenceImages.length > 0 ? '✅' : '⚠️'} {referenceImages.length} ref{referenceImages.length !== 1 ? 's' : ''} modèle
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${locationRefImages.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                                            {locationRefImages.length > 0 ? '✅' : '⚠️'} {locationRefImages.length} ref lieu
-                                        </div>
-                                        <div className={`flex items-center gap-1.5 text-[11px] font-medium ${scene.seed ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                                            {scene.seed ? '✅' : '⚠️'} Seed {scene.seed ? 'fixé' : 'aléatoire'}
-                                        </div>
-                                    </div>
-
-                                    {/* Model References */}
-                                    <div>
-                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">👤 Références Modèle</h4>
-                                        {referenceImages.length > 0 ? (
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {referenceImages.map((img, i) => (
-                                                    <div key={i} className="aspect-[3/4] rounded-lg overflow-hidden border border-violet-500/20 bg-zinc-900">
-                                                        <img src={img.dataUrl} alt={`Ref modèle ${i + 1}`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-[11px] text-zinc-700 italic">Aucune ref modèle — l'identité ne sera pas cohérente entre les générations.</p>
-                                        )}
-                                    </div>
-
-                                    {/* Location Reference */}
-                                    <div>
-                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">📍 Référence Lieu</h4>
-                                        {locationRefImages.length > 0 ? (
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {locationRefImages.map((img, i) => (
-                                                    <div key={i} className="aspect-video rounded-lg overflow-hidden border border-emerald-500/20 bg-zinc-900">
-                                                        <img src={img.dataUrl} alt={`Ref lieu ${i + 1}`} className="w-full h-full object-cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-[11px] text-zinc-700 italic">Aucune ref lieu — le décor sera interprété librement par Gemini.</p>
-                                        )}
-                                    </div>
-
-                                    {/* Anchor Summary */}
-                                    <div className="pt-3 border-t border-white/[0.05]">
-                                        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">🔒 Ancrage</h4>
-                                        <div className="space-y-1.5 text-[11px]">
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-zinc-600 shrink-0 w-16">Lieu</span>
-                                                <span className="text-zinc-400">{currentLocation?.environment || 'Non défini'}</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-zinc-600 shrink-0 w-16">Lumière</span>
-                                                <span className="text-zinc-400">{currentLocation?.default_lighting || scene.lighting || '—'}</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-zinc-600 shrink-0 w-16">Modèle</span>
-                                                <span className="text-zinc-400">{model.name || '—'} · {model.age || '?'} ans · {(model.ethnicity || '').split(',')[0]}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         ) : (
                             <ImagePreview
