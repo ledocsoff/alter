@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { getPromptHistory, clearPromptHistory } from '../../utils/storage';
 import { debugLogger } from '../../utils/debugLogger';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
-import { FileTextIcon, ZapIcon } from '../../components/Icons';
+import { FileTextIcon } from '../../components/Icons';
 
 const CATEGORY_COLORS = {
     system: 'text-violet-400',
@@ -22,18 +23,24 @@ const CATEGORY_COLORS = {
 };
 
 const PromptHistoryPanel = ({ onReuse }) => {
+    const { generatedPrompt } = useStudio();
     const toast = useToast();
     const [history, setHistory] = useState(() => getPromptHistory());
-    const [expandedId, setExpandedId] = useState(null);
     const [search, setSearch] = useState('');
     const [confirmClear, setConfirmClear] = useState(false);
-    const [activeTab, setActiveTab] = useState('history'); // 'history' | 'debug'
+    const [confirmReuse, setConfirmReuse] = useState(null); // { id, prompt }
+    const [activeTab, setActiveTab] = useState('prompt'); // 'prompt' | 'history' | 'debug'
 
     // Debug panel state
     const [debugEnabled, setDebugEnabled] = useState(() => debugLogger.enabled);
     const [debugEntries, setDebugEntries] = useState(() => debugLogger.getEntries());
     const [debugFilter, setDebugFilter] = useState('all');
     const [expandedDebugId, setExpandedDebugId] = useState(null);
+
+    // Refresh history when switching to history tab
+    useEffect(() => {
+        if (activeTab === 'history') setHistory(getPromptHistory());
+    }, [activeTab]);
 
     // Subscribe to debug logger updates
     useEffect(() => {
@@ -63,19 +70,9 @@ const PromptHistoryPanel = ({ onReuse }) => {
         return ['all', ...Array.from(cats)];
     }, [debugEntries]);
 
-    const handleClear = () => {
-        setConfirmClear(true);
-    };
-
-    const executeClear = () => {
-        setHistory(clearPromptHistory());
-        setConfirmClear(false);
-        toast.success('Historique vidé');
-    };
-
-    const handleCopy = (prompt) => {
-        navigator.clipboard.writeText(prompt);
-        toast.success('Prompt copié');
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success('Copié');
     };
 
     const handleToggleDebug = useCallback(() => {
@@ -99,8 +96,8 @@ const PromptHistoryPanel = ({ onReuse }) => {
         const now = new Date();
         const diffMin = Math.floor((now - d) / 60000);
         if (diffMin < 1) return 'A l\'instant';
-        if (diffMin < 60) return `Il y a ${diffMin}min`;
-        if (diffMin < 1440) return `Il y a ${Math.floor(diffMin / 60)}h`;
+        if (diffMin < 60) return `${diffMin}min`;
+        if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h`;
         return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     };
 
@@ -120,37 +117,77 @@ const PromptHistoryPanel = ({ onReuse }) => {
         }
     };
 
+    const galleryImageUrl = (id) => id ? `http://localhost:3001/api/gallery/${encodeURIComponent(id)}/image` : null;
+
     return (
         <>
             <div className="h-full flex flex-col overflow-hidden">
-                {/* Tabs */}
+                {/* Sub-tabs */}
                 <div className="shrink-0 flex items-center border-b border-zinc-800/40">
+                    <button
+                        onClick={() => setActiveTab('prompt')}
+                        className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'prompt' ? 'text-zinc-200 border-violet-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
+                    >
+                        Prompt actuel
+                    </button>
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'history' ? 'text-zinc-200 border-violet-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
                     >
                         Historique
+                        {history.length > 0 && <span className="ml-1 text-[9px] text-zinc-600">({history.length})</span>}
                     </button>
                     <button
                         onClick={() => setActiveTab('debug')}
                         className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 flex items-center justify-center gap-1.5 ${activeTab === 'debug' ? 'text-zinc-200 border-emerald-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
                     >
-                        🔧 Debug
+                        🔧
                         {debugEnabled && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />}
                     </button>
                 </div>
 
-                {activeTab === 'history' ? (
+                {/* ─── PROMPT ACTUEL ─── */}
+                {activeTab === 'prompt' && (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {generatedPrompt ? (
+                            <>
+                                <div className="shrink-0 px-3 py-2 border-b border-zinc-800/30 flex items-center justify-between">
+                                    <span className="text-[11px] font-semibold text-zinc-400">Prompt JSON envoyé à Gemini</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] text-zinc-700 font-mono">{generatedPrompt.length} chars</span>
+                                        <button
+                                            onClick={() => handleCopy(generatedPrompt)}
+                                            className="text-[9px] text-zinc-500 hover:text-zinc-300 px-1.5 py-0.5 rounded hover:bg-zinc-800/50 transition-colors"
+                                        >
+                                            📋 Copier
+                                        </button>
+                                    </div>
+                                </div>
+                                <pre className="flex-1 overflow-auto custom-scrollbar px-3 py-2.5 text-[10px] text-zinc-400 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                                    {generatedPrompt}
+                                </pre>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center">
+                                <div className="text-center px-6">
+                                    <div className="text-2xl mb-2 opacity-20">📝</div>
+                                    <p className="text-zinc-500 text-[12px] font-medium">Aucun prompt</p>
+                                    <p className="text-zinc-700 text-[11px] mt-0.5">Discutez avec le Directeur Photo pour générer un prompt</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ─── HISTORIQUE ─── */}
+                {activeTab === 'history' && (
                     <>
                         {/* History Header */}
                         <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-800/40">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-semibold text-zinc-300">Historique</span>
-                                <span className="text-[10px] text-zinc-600">{history.length} prompt{history.length !== 1 ? 's' : ''}</span>
-                            </div>
+                            <span className="text-[11px] text-zinc-500">{history.length} prompt{history.length !== 1 ? 's' : ''}</span>
                             {history.length > 0 && (
                                 <button
-                                    onClick={handleClear}
+                                    onClick={() => setConfirmClear(true)}
                                     className="text-[10px] text-zinc-600 hover:text-red-400 px-1.5 py-0.5 rounded-md hover:bg-red-500/10 transition-colors"
                                 >
                                     Vider
@@ -183,63 +220,51 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                 </div>
                             ) : (
                                 <div className="divide-y divide-zinc-800/30">
-                                    {filtered.map(entry => (
-                                        <div
-                                            key={entry.id}
-                                            className="px-3 py-2 hover:bg-zinc-800/20 transition-colors cursor-pointer group"
-                                            onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                                        >
-                                            <div className="flex items-center justify-between mb-0.5">
-                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                    {entry.modelName && (
-                                                        <span className="text-[9px] text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.modelName}</span>
-                                                    )}
-                                                    {entry.locationName && (
-                                                        <span className="text-[9px] text-fuchsia-400/60 bg-fuchsia-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
-                                                    )}
-                                                    {entry.turnCount > 0 && (
-                                                        <span className="text-[9px] text-emerald-400/60 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">Tour {entry.turnCount + 1}</span>
-                                                    )}
-                                                    {entry.refCount > 0 && (
-                                                        <span className="text-[9px] text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.refCount} ref{entry.refCount > 1 ? 's' : ''}</span>
+                                    {filtered.map(entry => {
+                                        const imgUrl = galleryImageUrl(entry.galleryImageId);
+                                        return (
+                                            <div
+                                                key={entry.id}
+                                                className="flex items-start gap-2.5 px-3 py-2.5 hover:bg-zinc-800/20 transition-colors cursor-pointer group"
+                                                onClick={() => setConfirmReuse({ id: entry.id, prompt: entry.prompt })}
+                                            >
+                                                {/* Image thumbnail */}
+                                                <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-zinc-900 border border-white/[0.05]">
+                                                    {imgUrl ? (
+                                                        <img
+                                                            src={imgUrl}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10">
+                                                            <FileTextIcon size={14} className="text-violet-400/30" />
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[9px] text-zinc-700 shrink-0">{formatTime(entry.timestamp)}</span>
-                                            </div>
-                                            <p className="text-[10px] text-zinc-500 truncate">{truncatePrompt(entry.prompt)}</p>
 
-                                            {/* Expanded */}
-                                            {expandedId === entry.id && (
-                                                <div className="mt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
-                                                    <pre className="text-[9px] text-zinc-600 font-mono bg-zinc-950/80 rounded-md p-2 max-h-32 overflow-auto custom-scrollbar whitespace-pre-wrap break-all">
-                                                        {entry.prompt}
-                                                    </pre>
-                                                    <div className="flex gap-1.5">
-                                                        <button
-                                                            onClick={() => handleCopy(entry.prompt)}
-                                                            className="text-[10px] text-zinc-500 hover:text-zinc-200 px-2 py-0.5 rounded-md hover:bg-zinc-800/50 transition-colors"
-                                                        >
-                                                            Copier
-                                                        </button>
-                                                        {onReuse && (
-                                                            <button
-                                                                onClick={() => { onReuse(entry.prompt); toast.info('Prompt réutilisé'); }}
-                                                                className="text-[10px] text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded-md hover:bg-violet-500/10 transition-colors"
-                                                            >
-                                                                <ZapIcon size={10} className="inline -mt-px" /> Réutiliser
-                                                            </button>
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                                        {entry.locationName && (
+                                                            <span className="text-[9px] text-fuchsia-400/60 bg-fuchsia-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
                                                         )}
+                                                        <span className="text-[9px] text-zinc-700 ml-auto shrink-0">{formatTime(entry.timestamp)}</span>
                                                     </div>
+                                                    <p className="text-[10px] text-zinc-500 truncate group-hover:text-zinc-300 transition-colors">{truncatePrompt(entry.prompt)}</p>
                                                 </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
                     </>
-                ) : (
-                    /* ─── DEBUG TAB ─── */
+                )}
+
+                {/* ─── DEBUG TAB ─── */}
+                {activeTab === 'debug' && (
                     <>
                         {/* Debug Header */}
                         <div className="shrink-0 px-3 py-2 border-b border-zinc-800/40">
@@ -271,7 +296,7 @@ const PromptHistoryPanel = ({ onReuse }) => {
                                     <div className="text-3xl mb-3 opacity-30">🔧</div>
                                     <p className="text-zinc-400 text-[12px] font-medium mb-1">Mode debug désactivé</p>
                                     <p className="text-zinc-600 text-[11px] leading-relaxed">
-                                        Active le debug pour enregistrer tous les prompts envoyés, réponses API, changements de scène et erreurs.
+                                        Active le debug pour enregistrer tous les prompts envoyés, réponses API et erreurs.
                                     </p>
                                     <button
                                         onClick={handleToggleDebug}
@@ -334,13 +359,31 @@ const PromptHistoryPanel = ({ onReuse }) => {
                     </>
                 )}
             </div>
+
+            {/* Confirm Clear Modal */}
             <ConfirmModal
                 isOpen={confirmClear}
                 title="Vider l'historique ?"
                 message="Tous les prompts seront définitivement supprimés."
                 confirmLabel="Vider"
-                onConfirm={executeClear}
+                onConfirm={() => { setHistory(clearPromptHistory()); setConfirmClear(false); toast.success('Historique vidé'); }}
                 onCancel={() => setConfirmClear(false)}
+            />
+
+            {/* Confirm Reuse Modal */}
+            <ConfirmModal
+                isOpen={!!confirmReuse}
+                title="Recharger ce prompt ?"
+                message="Le prompt actuel sera remplacé par celui sélectionné. L'image sera régénérée avec ce prompt."
+                confirmLabel="Recharger"
+                onConfirm={() => {
+                    if (confirmReuse && onReuse) {
+                        onReuse(confirmReuse.prompt);
+                        toast.info('Prompt rechargé');
+                    }
+                    setConfirmReuse(null);
+                }}
+                onCancel={() => setConfirmReuse(null)}
             />
         </>
     );

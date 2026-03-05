@@ -120,21 +120,23 @@ The environment adapts around the person, not the other way around.` },
       setStatus('done');
 
       // Auto-save to gallery (now async — server filesystem)
+      let galleryResult = null;
       try {
-        await saveToGallery(
+        galleryResult = await saveToGallery(
           { base64: result.imageBase64, mimeType: result.mimeType },
           { ...galleryMetaRef.current, prompt: promptToSend }
         );
         window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
       } catch { /* silent — gallery save is best-effort */ }
 
-      // Auto-save prompt to history (enriched with context)
+      // Auto-save prompt to history (enriched with context + gallery link)
       try {
         const turnCount = Math.floor(conversationHistory.length / 2);
         savePromptToHistory(promptToSend, {
           ...galleryMetaRef.current,
           refCount: referenceImages.length,
           turnCount,
+          galleryImageId: galleryResult?.id || null,
         });
       } catch { /* silent */ }
 
