@@ -453,73 +453,83 @@ const LocationsAndSandboxView = () => {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</label>
-                                            <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
-                                                <option value="">Libre</option>
-                                                {SCENE_OPTIONS.lighting.map(l => (
-                                                    <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
-                                            <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
-                                                <option value="">Libre</option>
-                                                {SCENE_OPTIONS.vibe.map(v => (
-                                                    <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
-                                            <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
-                                                <option value="">Libre</option>
-                                                {TIME_OF_DAY_OPTIONS.map(t => (
-                                                    <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
+                                    {/* Collapsed advanced details */}
+                                    <details className="group">
+                                        <summary className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider cursor-pointer hover:text-zinc-400 transition-colors flex items-center gap-1.5 select-none">
+                                            <span className="text-[9px] group-open:rotate-90 transition-transform">▶</span>
+                                            Détails avancés
+                                            <span className="text-[9px] text-zinc-700 normal-case font-normal ml-1">remplis auto par l'IA</span>
+                                        </summary>
+                                        <div className="mt-3 space-y-3 animate-fade-in">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div>
+                                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</label>
+                                                    <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
+                                                        <option value="">Libre</option>
+                                                        {SCENE_OPTIONS.lighting.map(l => (
+                                                            <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
+                                                    <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
+                                                        <option value="">Libre</option>
+                                                        {SCENE_OPTIONS.vibe.map(v => (
+                                                            <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
+                                                    <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
+                                                        <option value="">Libre</option>
+                                                        {TIME_OF_DAY_OPTIONS.map(t => (
+                                                            <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                                                Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
-                                            </label>
-                                            <textarea
-                                                placeholder="Objets récurrents: pink LED strip, grey duvet, cactus on nightstand..."
-                                                value={newLocAnchorDetails}
-                                                onChange={(e) => setNewLocAnchorDetails(e.target.value)}
-                                                rows={3}
-                                                className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
-                                            <textarea
-                                                placeholder="warm beige walls, white sheets, soft pink accents, dark wood..."
-                                                value={newLocColorPalette}
-                                                onChange={(e) => setNewLocColorPalette(e.target.value)}
-                                                rows={3}
-                                                className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
-                                            />
-                                        </div>
-                                    </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                                        Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
+                                                    </label>
+                                                    <textarea
+                                                        placeholder="Objets récurrents: pink LED strip, grey duvet..."
+                                                        value={newLocAnchorDetails}
+                                                        onChange={(e) => setNewLocAnchorDetails(e.target.value)}
+                                                        rows={2}
+                                                        className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
+                                                    <textarea
+                                                        placeholder="warm beige walls, white sheets, soft pink..."
+                                                        value={newLocColorPalette}
+                                                        onChange={(e) => setNewLocColorPalette(e.target.value)}
+                                                        rows={2}
+                                                        className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                    />
+                                                </div>
+                                            </div>
 
-                                    <div>
-                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                                            Negative prompt <span className="text-zinc-600 normal-case font-normal">éléments à éviter</span>
-                                        </label>
-                                        <textarea
-                                            placeholder="tattoo, piercing, neon lights, cluttered background..."
-                                            value={newLocNegativePrompt}
-                                            onChange={(e) => setNewLocNegativePrompt(e.target.value)}
-                                            rows={2}
-                                            className="velvet-input w-full resize-none font-mono text-[12px] leading-relaxed"
-                                        />
-                                    </div>
+                                            <div>
+                                                <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
+                                                    Negative prompt <span className="text-zinc-600 normal-case font-normal">éléments à éviter</span>
+                                                </label>
+                                                <textarea
+                                                    placeholder="tattoo, piercing, neon lights..."
+                                                    value={newLocNegativePrompt}
+                                                    onChange={(e) => setNewLocNegativePrompt(e.target.value)}
+                                                    rows={1}
+                                                    className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </details>
 
                                     {/* LOCATION REFERENCE PHOTOS (only in edit mode where ID is known) */}
                                     {isEditing && (
