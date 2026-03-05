@@ -84,7 +84,7 @@ const LocationsAndSandboxView = () => {
             if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
             if (!newLocEnv.trim()) { toast.error('Environnement requis'); return; }
 
-            const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
+            const isCreating = locFormMode === 'create' || locFormMode === 'review';
 
             const locationData = {
                 name: newLocName.trim(),
@@ -144,10 +144,8 @@ const LocationsAndSandboxView = () => {
         }
     };
 
-    const handleDeleteLocation = (e, loc) => {
-        e.stopPropagation();
-        setConfirmDelete(loc);
-    };
+
+
 
     const executeDeleteLocation = () => {
         if (!confirmDelete) return;

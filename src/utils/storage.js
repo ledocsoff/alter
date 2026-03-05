@@ -303,10 +303,9 @@ export const saveLocationData = (modelId, accountId, locationData) => {
         time_of_day: locationData.time_of_day || "",
         anchor_details: locationData.anchor_details || "",
         color_palette: locationData.color_palette || "",
+        negative_prompt: locationData.negative_prompt || existingLoc?.negative_prompt || "",
         seed: locationData.seed || existingLoc?.seed || generateSeed(),
-        ai_presets: locationData.ai_presets || existingLoc?.ai_presets || [],
-        ai_outfits: locationData.ai_outfits || existingLoc?.ai_outfits || [],
-        ai_poses: locationData.ai_poses || existingLoc?.ai_poses || [],
+
     };
 
     const index = account.locations.findIndex(l => l.id === id);
