@@ -5,17 +5,12 @@ import { useToast } from '../store/ToastContext';
 import { saveLocationData, deleteLocationData, duplicateLocationLocal, getLocationLockScore, generateSeed, getApiKey, reorderLocations, uploadLocationRefs } from '../utils/storage';
 import { autoFillLocation, generateLocationImage } from '../utils/googleAI';
 import { TrashIcon, CopyIcon, EditIcon, PlusIcon, MapPinIcon, SparklesIcon, ChevronRightIcon, GripVerticalIcon, CameraIcon } from '../components/Icons';
-import { SCENE_OPTIONS } from '../constants/sceneOptions';
+
 import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 import LocationRefUpload from '../features/LocationRefUpload/LocationRefUpload';
 
-const TIME_OF_DAY_OPTIONS = [
-    { labelFR: "Matin (lumiere douce)", promptEN: "morning, soft early light" },
-    { labelFR: "Apres-midi", promptEN: "afternoon, bright ambient light" },
-    { labelFR: "Golden hour", promptEN: "golden hour, warm sunset light" },
-    { labelFR: "Soiree / Nuit", promptEN: "evening, night time, artificial indoor lighting" },
-    { labelFR: "Nuit club", promptEN: "late night, club atmosphere, colored lights" },
-];
+
+
 
 const LockScore = ({ location }) => {
     const { filled, total } = getLocationLockScore(location);
@@ -47,9 +42,7 @@ const LocationsAndSandboxView = () => {
 
     const [locFormMode, setLocFormMode] = useState('create');
     const [newLocName, setNewLocName] = useState('');
-    const [isCustomEnv, setIsCustomEnv] = useState(false);
-    const [newLocEnvDrop, setNewLocEnvDrop] = useState(SCENE_OPTIONS.environment[0].promptEN);
-    const [newLocEnvCustom, setNewLocEnvCustom] = useState('');
+    const [newLocEnv, setNewLocEnv] = useState('');
     const [newLocLighting, setNewLocLighting] = useState('');
     const [newLocVibe, setNewLocVibe] = useState('');
     const [newLocTimeOfDay, setNewLocTimeOfDay] = useState('');
@@ -84,22 +77,18 @@ const LocationsAndSandboxView = () => {
 
 
 
-
-    const presetEnvironmentsEN = SCENE_OPTIONS.environment.map(env => env.promptEN);
-
     const safeStr = v => (typeof v === 'string' ? v : String(v || '')).trim();
 
     const handleSaveLocation = async () => {
         try {
             if (!newLocName.trim()) { toast.error('Nom du lieu requis'); return; }
-            const finalEnvironment = safeStr(newLocEnvCustom) || newLocEnvDrop;
-            if (!finalEnvironment) { toast.error('Environnement requis'); return; }
+            if (!newLocEnv.trim()) { toast.error('Environnement requis'); return; }
 
             const isCreating = locFormMode === 'create' || locFormMode === 'review' || locFormMode === 'manual';
 
             const locationData = {
                 name: newLocName.trim(),
-                environment: finalEnvironment,
+                environment: newLocEnv.trim(),
                 default_lighting: newLocLighting,
                 default_vibe: newLocVibe,
                 time_of_day: newLocTimeOfDay,
@@ -169,41 +158,25 @@ const LocationsAndSandboxView = () => {
         setConfirmDelete(null);
     };
 
-    const handleDuplicateLocation = (e, locId) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const updated = duplicateLocationLocal(modelId, accountId, locId);
-        if (updated) {
-            setAllModelsDatabase(updated);
-            toast.success('Lieu dupliqué');
-        }
-    };
+
 
     const enterEditMode = (loc) => {
         setLocFormMode(loc.id);
         setNewLocName(loc.name);
+        setNewLocEnv(loc.environment || '');
         setNewLocLighting(loc.default_lighting || '');
         setNewLocVibe(loc.default_vibe || '');
         setNewLocTimeOfDay(loc.time_of_day || '');
         setNewLocAnchorDetails(loc.anchor_details || '');
         setNewLocColorPalette(loc.color_palette || '');
         setNewLocNegativePrompt(loc.negative_prompt || '');
-        if (!presetEnvironmentsEN.includes(loc.environment)) {
-            setIsCustomEnv(true);
-            setNewLocEnvCustom(loc.environment);
-        } else {
-            setIsCustomEnv(false);
-            setNewLocEnvDrop(loc.environment);
-        }
         document.getElementById('loc-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const resetForm = () => {
         setLocFormMode('create');
         setNewLocName('');
-        setIsCustomEnv(false);
-        setNewLocEnvCustom('');
-        setNewLocEnvDrop(SCENE_OPTIONS.environment[0].promptEN);
+        setNewLocEnv('');
         setNewLocLighting('');
         setNewLocVibe('');
         setNewLocTimeOfDay('');
@@ -213,7 +186,7 @@ const LocationsAndSandboxView = () => {
         setPendingLocPhotos([]);
     };
 
-    const isEditing = locFormMode !== 'create' && locFormMode !== 'review' && locFormMode !== 'manual';
+    const isEditing = locFormMode !== 'create' && locFormMode !== 'review';
 
     const handleAutoFill = async () => {
         if (!newLocName.trim()) { toast.error('Entrez une description d\'abord'); return; }
@@ -224,7 +197,7 @@ const LocationsAndSandboxView = () => {
             const result = await autoFillLocation(apiKey, newLocName.trim());
             const str = v => Array.isArray(v) ? v.join(', ') : (typeof v === 'string' ? v : String(v || ''));
             if (result.name) setNewLocName(str(result.name));
-            if (result.environment) { setIsCustomEnv(true); setNewLocEnvCustom(str(result.environment)); }
+            if (result.environment) setNewLocEnv(str(result.environment));
             if (result.lighting) setNewLocLighting(str(result.lighting));
             if (result.vibe) setNewLocVibe(str(result.vibe));
             if (result.time_of_day) setNewLocTimeOfDay(str(result.time_of_day));
@@ -232,6 +205,7 @@ const LocationsAndSandboxView = () => {
             if (result.color_palette) setNewLocColorPalette(str(result.color_palette));
             if (result.negative_prompt) setNewLocNegativePrompt(str(result.negative_prompt));
             setLocFormMode('review');
+            setNewLocName(str(result.name) || newLocName);
             toast.success('Lieu rempli par l\'IA — vérifie et enregistre');
         } catch (err) {
             toast.error(`Auto-fill échoué: ${err.message}`);
@@ -268,11 +242,6 @@ const LocationsAndSandboxView = () => {
                                 <div className="flex items-center gap-2">
                                     {isEditing && (
                                         <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
-                                    )}
-                                    {!isEditing && locFormMode === 'create' && newLocName.trim() && (
-                                        <button onClick={() => { setIsCustomEnv(true); setLocFormMode('manual'); }} className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors">
-                                            Mode manuel →
-                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -378,7 +347,7 @@ const LocationsAndSandboxView = () => {
                             )}
 
                             {/* STEP 2: FULL FORM (pre-filled after AI or in edit/manual mode) */}
-                            {(isEditing || locFormMode === 'manual' || locFormMode === 'review') && (
+                            {(isEditing || locFormMode === 'review') && (
                                 <div className="space-y-4">
                                     {locFormMode === 'review' && (
                                         <div className="p-3 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] mb-2">
@@ -397,51 +366,37 @@ const LocationsAndSandboxView = () => {
                                         />
                                     </div>
 
-                                    {/* All details collapsed */}
+                                    <div>
+                                        <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Environnement</label>
+                                        <textarea
+                                            placeholder="Ex: cozy bedroom with fairy lights, white sheets, warm tones..."
+                                            value={newLocEnv}
+                                            onChange={(e) => setNewLocEnv(e.target.value)}
+                                            rows={2}
+                                            className="velvet-input w-full resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Détails avancés — collapsible */}
                                     <details className="group">
                                         <summary className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider cursor-pointer hover:text-zinc-400 transition-colors flex items-center gap-1.5 select-none">
                                             <span className="text-[9px] group-open:rotate-90 transition-transform">▶</span>
-                                            Détails du lieu
+                                            Détails avancés
                                             <span className="text-[9px] text-zinc-700 normal-case font-normal ml-1">remplis auto par l'IA</span>
                                         </summary>
                                         <div className="mt-3 space-y-3 animate-fade-in">
-                                            <div>
-                                                <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Environnement</label>
-                                                <textarea
-                                                    placeholder="Description détaillée en anglais..."
-                                                    value={newLocEnvCustom}
-                                                    onChange={(e) => setNewLocEnvCustom(e.target.value)}
-                                                    rows={2}
-                                                    className="velvet-input w-full resize-none"
-                                                />
-                                            </div>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                 <div>
                                                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Éclairage</label>
-                                                    <select value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full">
-                                                        <option value="">Libre</option>
-                                                        {SCENE_OPTIONS.lighting.map(l => (
-                                                            <option key={l.promptEN} value={l.promptEN}>{l.labelFR}</option>
-                                                        ))}
-                                                    </select>
+                                                    <input type="text" placeholder="soft natural light..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full text-[12px]" />
                                                 </div>
                                                 <div>
                                                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Vibe</label>
-                                                    <select value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full">
-                                                        <option value="">Libre</option>
-                                                        {SCENE_OPTIONS.vibe.map(v => (
-                                                            <option key={v.promptEN} value={v.promptEN}>{v.labelFR}</option>
-                                                        ))}
-                                                    </select>
+                                                    <input type="text" placeholder="cozy, intimate..." value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full text-[12px]" />
                                                 </div>
                                                 <div>
                                                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Moment</label>
-                                                    <select value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full">
-                                                        <option value="">Libre</option>
-                                                        {TIME_OF_DAY_OPTIONS.map(t => (
-                                                            <option key={t.promptEN} value={t.promptEN}>{t.labelFR}</option>
-                                                        ))}
-                                                    </select>
+                                                    <input type="text" placeholder="golden hour, evening..." value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full text-[12px]" />
                                                 </div>
                                             </div>
 
@@ -451,21 +406,21 @@ const LocationsAndSandboxView = () => {
                                                         Détails d'ancrage <span className="text-violet-400/60 normal-case font-normal">cohérence</span>
                                                     </label>
                                                     <textarea
-                                                        placeholder="Objets récurrents: pink LED strip, grey duvet..."
+                                                        placeholder="pink LED strip, grey duvet..."
                                                         value={newLocAnchorDetails}
                                                         onChange={(e) => setNewLocAnchorDetails(e.target.value)}
                                                         rows={2}
-                                                        className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                        className="velvet-input w-full resize-none text-[12px]"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">Palette couleurs</label>
                                                     <textarea
-                                                        placeholder="warm beige walls, white sheets, soft pink..."
+                                                        placeholder="warm beige, white sheets, soft pink..."
                                                         value={newLocColorPalette}
                                                         onChange={(e) => setNewLocColorPalette(e.target.value)}
                                                         rows={2}
-                                                        className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                        className="velvet-input w-full resize-none text-[12px]"
                                                     />
                                                 </div>
                                             </div>
@@ -479,7 +434,7 @@ const LocationsAndSandboxView = () => {
                                                     value={newLocNegativePrompt}
                                                     onChange={(e) => setNewLocNegativePrompt(e.target.value)}
                                                     rows={1}
-                                                    className="velvet-input w-full resize-none font-mono text-[12px]"
+                                                    className="velvet-input w-full resize-none text-[12px]"
                                                 />
                                             </div>
                                         </div>
@@ -491,12 +446,12 @@ const LocationsAndSandboxView = () => {
                                     )}
 
                                     <div className="flex justify-end gap-2 pt-2">
-                                        {(locFormMode === 'review' || locFormMode === 'manual') && (
+                                        {locFormMode === 'review' && (
                                             <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
                                         )}
                                         <button
                                             onClick={handleSaveLocation}
-                                            disabled={!newLocName.trim() || (!safeStr(newLocEnvCustom) && !newLocEnvDrop)}
+                                            disabled={!newLocName.trim() || !newLocEnv.trim()}
                                             className={`h-10 px-5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 ${isEditing
                                                 ? 'bg-violet-500 text-white hover:bg-violet-400 hover:shadow-lg hover:shadow-violet-500/20'
                                                 : 'velvet-btn-primary'
@@ -566,7 +521,7 @@ const LocationsAndSandboxView = () => {
                                                 </div>
 
                                                 {/* Right: action buttons — hidden while busy */}
-                                                {!isBusy && (
+                                                {!isGenerating && (
                                                     <div className="flex items-center gap-1.5 shrink-0">
                                                         <button
                                                             onClick={() => enterEditMode(loc)}

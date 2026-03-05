@@ -250,8 +250,8 @@ const GenerationView = () => {
             )}
 
             {/* WORKSPACE */}
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden">
-                <div className="lg:col-span-4 h-full overflow-hidden">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 min-h-0 overflow-hidden">
+                <div className="lg:col-span-4 h-full min-h-0 overflow-hidden">
                     <AIChatPanel
                         model={model}
                         location={currentLocation}
