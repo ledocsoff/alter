@@ -54,7 +54,7 @@ const PromptHistoryPanel = ({ onReuse, generatedPrompt }) => {
         }
     };
 
-    const galleryImageUrl = (id) => id ? `http://localhost:3001/api/gallery/${encodeURIComponent(id)}/image` : null;
+    const galleryImageUrl = (id) => id ? `/api/gallery/${encodeURIComponent(id)}/image` : null;
 
     // Determine success for old entries (no field) vs new ones
     const isSuccess = (entry) => entry.success !== false;

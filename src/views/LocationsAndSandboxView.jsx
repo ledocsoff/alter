@@ -481,7 +481,7 @@ const LocationsAndSandboxView = () => {
                             <div className="space-y-2.5 stagger-children">
                                 {currentAccount.locations.map((loc, idx) => {
                                     const isGenerating = generatingLocationId === loc.id;
-                                    const thumbUrl = loc.id ? `http://localhost:3001/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
+                                    const thumbUrl = loc.id ? `/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
                                     return (
                                         <div
                                             key={loc.id}

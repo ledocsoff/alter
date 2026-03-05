@@ -1,6 +1,5 @@
 const STORAGE_KEY = 'velvet_studio_v4';
 const HISTORY_KEY = 'velvet_history';
-const TEMPLATES_KEY = 'velvet_templates';
 
 const API_KEY_KEY = 'velvet_api_key';
 
@@ -396,39 +395,6 @@ export const clearPromptHistory = () => {
     localStorage.removeItem(HISTORY_KEY);
     syncToServer();
     return [];
-};
-
-// ============================================
-// SCENE TEMPLATES
-// ============================================
-export const getSceneTemplates = () => {
-    try {
-        const data = localStorage.getItem(TEMPLATES_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch { return []; }
-};
-
-export const saveSceneTemplate = (name, scene) => {
-    const templates = getSceneTemplates();
-    const { environment, location_meta, ...sceneWithoutLocation } = scene;
-    const entry = {
-        id: `tpl_${Date.now()}`,
-        name,
-        scene: sceneWithoutLocation,
-        createdAt: Date.now(),
-    };
-    templates.unshift(entry);
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-    syncToServer();
-    return templates;
-};
-
-export const deleteSceneTemplate = (templateId) => {
-    let templates = getSceneTemplates();
-    templates = templates.filter(t => t.id !== templateId);
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-    syncToServer();
-    return templates;
 };
 
 // ============================================

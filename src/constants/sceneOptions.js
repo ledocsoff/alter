@@ -1,4 +1,4 @@
-export const OUTFIT_PRESETS = [
+const OUTFIT_PRESETS = [
   { id: "bikini_string", label: "String Bikini", value: "tiny string bikini, minimal coverage, thin straps", icon: "👙" },
   { id: "bikini_micro", label: "Micro Bikini", value: "micro triangle bikini, minimal fabric, revealing cut", icon: "🔥" },
   { id: "bikini_black", label: "Bikini Noir", value: "sleek black bikini, classic cut, matte fabric", icon: "🖤" },
@@ -18,7 +18,7 @@ export const OUTFIT_PRESETS = [
   { id: "school", label: "Uniforme", value: "pleated plaid skirt, white collar shirt, tie, knee-high socks", icon: "📚" }
 ];
 
-export const SCENE_OPTIONS = {
+const SCENE_OPTIONS = {
   vibe: [
     { labelFR: "Photo Instagram spontanée", promptEN: "candid Instagram photo" },
     { labelFR: "Photo Polaroid vintage", promptEN: "warm vintage tones, faded colors, casual candid" },
@@ -100,66 +100,6 @@ export const SCENE_OPTIONS = {
   ],
 };
 
-// Presets de scènes complètes — appliquent environment + lighting + camera + pose + expression + vibe d'un coup
-export const SCENE_PRESETS = [
-  {
-    id: 'shower_selfie', label: '🚿 Douche', desc: 'Selfie plongée, buée',
-    scene: { photo_type: 'selfie', environment: 'steamy shower, glass door, water droplets on skin', lighting: 'warm bathroom lighting', camera_angle: 'high angle shot, looking down', pose: 'holding phone for selfie', expression: 'playful lip bite', vibe: 'amateur selfie' },
-  },
-  {
-    id: 'bedroom_cozy', label: '🛏️ Chambre', desc: 'Lit défait, lumière chaude',
-    scene: { photo_type: 'third_person', environment: 'cozy messy bedroom with clothes on bed', lighting: 'warm bedroom lamplight', camera_angle: 'medium shot from waist up', pose: 'sitting on bed, legs crossed', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
-  },
-  {
-    id: 'pool_tropical', label: '🏊 Piscine', desc: 'Villa tropicale, soleil',
-    scene: { photo_type: 'third_person', environment: 'tropical villa private pool', lighting: 'golden hour sunlight', camera_angle: 'eye-level shot', pose: 'sitting on edge of pool', expression: 'laughing candidly', vibe: 'candid Instagram photo' },
-  },
-  {
-    id: 'beach_sunset', label: '🏖️ Plage', desc: 'Sable, vagues, coucher de soleil',
-    scene: { photo_type: 'third_person', environment: 'tropical beach, turquoise waves, white sand', lighting: 'golden hour sunlight', camera_angle: 'low angle shot, looking up', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: 'casual everyday snapshot' },
-  },
-  {
-    id: 'mirror_bathroom', label: '🪞 Miroir SdB', desc: 'Selfie miroir classique',
-    scene: { photo_type: 'mirror', environment: 'standard apartment bathroom mirror', lighting: 'flash photography', camera_angle: 'full body shot', pose: 'holding phone for selfie', expression: 'seductive smirk', vibe: 'amateur selfie' },
-  },
-  {
-    id: 'gym_locker', label: '💪 Vestiaire', desc: 'Miroir salle de sport',
-    scene: { photo_type: 'mirror', environment: 'local gym locker room mirror', lighting: 'harsh direct sunlight', camera_angle: 'full body shot', pose: 'casual standing, hand on hip', expression: 'serious model stare', vibe: 'casual everyday snapshot' },
-  },
-  {
-    id: 'bed_laying', label: '😴 Au Lit', desc: 'Allongée, lumière douce',
-    scene: { photo_type: 'selfie', environment: 'simple white bedroom walls, unmade bed', lighting: 'warm bedroom lamplight', camera_angle: 'high angle shot, looking down', pose: 'laying on stomach on bed', expression: 'mouth slightly open, relaxed', vibe: 'behind the scenes candid' },
-  },
-  {
-    id: 'car_seat', label: '🚗 Voiture', desc: 'Selfie passager',
-    scene: { photo_type: 'selfie', environment: 'passenger seat of a regular car', lighting: 'soft overcast daylight', camera_angle: 'high angle shot, looking down', pose: 'holding phone for selfie', expression: 'soft natural smile', vibe: 'candid Instagram photo' },
-  },
-  {
-    id: 'yacht_luxury', label: '🛥️ Yacht', desc: 'Deck luxe, golden hour',
-    scene: { photo_type: 'third_person', environment: 'luxury yacht deck', lighting: 'golden hour sunlight', camera_angle: 'full body shot', pose: 'leaning against wall', expression: 'seductive smirk', vibe: 'candid Instagram photo' },
-  },
-  {
-    id: 'balcony_city', label: '🌆 Balcon', desc: 'Vue urbaine, soirée',
-    scene: { photo_type: 'third_person', environment: 'city apartment balcony with plants', lighting: 'moody low light', camera_angle: 'eye-level shot', pose: 'looking over shoulder', expression: 'serious model stare', vibe: 'warm vintage tones, faded colors, casual candid' },
-  },
-  {
-    id: 'cafe_terrace', label: '☕ Café', desc: 'Terrasse, lumière naturelle',
-    scene: { photo_type: 'third_person', environment: 'local coffee shop interior', lighting: 'soft overcast daylight', camera_angle: 'medium shot from waist up', pose: 'sitting casually, leaning forward', expression: 'laughing candidly', vibe: 'candid Instagram photo' },
-  },
-  {
-    id: 'street_walk', label: '🚶 Rue', desc: 'Trottoir, snap spontané',
-    scene: { photo_type: 'third_person', environment: 'regular city street sidewalk', lighting: 'soft overcast daylight', camera_angle: 'full body shot', pose: 'casual standing, hand on hip', expression: 'soft natural smile', vibe: 'casual everyday snapshot' },
-  },
-  {
-    id: 'gym_workout', label: '🏋️ Sport', desc: 'Salle de gym, en action',
-    scene: { photo_type: 'mirror', environment: 'modern gym interior equipment', lighting: 'harsh direct sunlight', camera_angle: 'full body shot', pose: 'casual standing, hand on hip', expression: 'serious model stare', vibe: 'casual everyday snapshot' },
-  },
-  {
-    id: 'kitchen_casual', label: '🍳 Cuisine', desc: 'Petite cuisine, quotidien',
-    scene: { photo_type: 'third_person', environment: 'small modern domestic kitchen', lighting: 'window natural light crossing room', camera_angle: 'medium shot from waist up', pose: 'adjusting hair casually', expression: 'soft natural smile', vibe: 'behind the scenes candid' },
-  },
-];
-
 export const DEFAULT_SCENE = {
   outfit: OUTFIT_PRESETS[0],
   photo_type: SCENE_OPTIONS.photo_type[1].promptEN, // Default: prise par quelqu'un
@@ -174,5 +114,5 @@ export const DEFAULT_SCENE = {
   custom_negative_prompt: '',
 };
 
-// Keywords that indicate a location has a mirror (for photo_type validation)
-export const MIRROR_LOCATION_KEYWORDS = ['mirror', 'bathroom', 'salle de bain', 'vestiaire', 'locker', 'gym', 'dressing', 'chambre', 'bedroom'];
+
+
