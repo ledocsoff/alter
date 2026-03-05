@@ -171,12 +171,12 @@ const AIChatPanel = ({ model, location, onGenerate, onShowApiKeyModal }) => {
     return (
         <div className="bg-[#0e0e10] border border-white/[0.05] rounded-xl flex flex-col h-full overflow-hidden animate-fade-in">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.04] shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-3 sm:px-4 py-2.5 border-b border-white/[0.04] shrink-0">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-[12px] font-semibold text-zinc-300">Directeur Photo IA</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5 ml-auto">
                     {readyPrompt && (
                         <span className="text-[9px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                             Prompt prêt
@@ -201,12 +201,12 @@ const AIChatPanel = ({ model, location, onGenerate, onShowApiKeyModal }) => {
                     >
                         <div
                             className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[12px] leading-relaxed ${msg.role === 'user'
-                                    ? 'bg-violet-500/20 text-violet-100 rounded-br-md'
-                                    : msg.isError
-                                        ? 'bg-red-500/10 text-red-300 border border-red-500/20 rounded-bl-md'
-                                        : msg.hasPrompt
-                                            ? 'bg-emerald-500/10 text-emerald-200 border border-emerald-500/15 rounded-bl-md'
-                                            : 'bg-zinc-800/60 text-zinc-300 border border-white/[0.04] rounded-bl-md'
+                                ? 'bg-teal-500/20 text-teal-100 rounded-br-md'
+                                : msg.isError
+                                    ? 'bg-red-500/10 text-red-300 border border-red-500/20 rounded-bl-md'
+                                    : msg.hasPrompt
+                                        ? 'bg-emerald-500/10 text-emerald-200 border border-emerald-500/15 rounded-bl-md'
+                                        : 'bg-zinc-800/60 text-zinc-300 border border-white/[0.04] rounded-bl-md'
                                 }`}
                         >
                             {msg.text.split('\n').map((line, j) => (
@@ -227,9 +227,9 @@ const AIChatPanel = ({ model, location, onGenerate, onShowApiKeyModal }) => {
                     <div className="flex justify-start">
                         <div className="bg-zinc-800/60 border border-white/[0.04] rounded-2xl rounded-bl-md px-4 py-3">
                             <div className="flex gap-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                         </div>
                     </div>
@@ -254,21 +254,22 @@ const AIChatPanel = ({ model, location, onGenerate, onShowApiKeyModal }) => {
                 <div className="flex items-end gap-2">
                     <textarea
                         ref={inputRef}
+                        aria-label="Message au directeur photo IA"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={readyPrompt ? "Modifie quelque chose ou génère..." : "Décris ta scène..."}
-                        className="flex-1 bg-[#0a0a0c] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-zinc-300 placeholder-zinc-700 resize-none focus:outline-none focus:border-violet-500/40 transition-colors max-h-20"
+                        className="flex-1 min-w-0 bg-[#0a0a0c] border border-white/[0.06] rounded-xl px-3 py-2 text-[12px] text-zinc-300 placeholder-zinc-700 resize-none focus:outline-none focus:border-teal-500/40 transition-colors max-h-20"
                         rows={1}
                         disabled={isLoading}
                     />
                     <button
                         onClick={handleSend}
                         disabled={isLoading || !input.trim()}
-                        className="shrink-0 w-9 h-9 rounded-xl bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 flex items-center justify-center transition-all disabled:opacity-30"
+                        className="shrink-0 w-9 h-9 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 flex items-center justify-center transition-all disabled:opacity-30"
                     >
                         {isLoading ? (
-                            <div className="w-3.5 h-3.5 border-2 border-violet-400/40 border-t-violet-400 rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-teal-400/40 border-t-teal-400 rounded-full animate-spin" />
                         ) : (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />

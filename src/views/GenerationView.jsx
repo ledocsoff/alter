@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStudio } from '../store/StudioContext';
 import { useToast } from '../store/ToastContext';
@@ -131,13 +131,13 @@ const GenerationView = () => {
     }, [locationId, isLoaded, setLocationRefImages]);
 
 
-    // Lightweight djb2 hash for model fingerprinting
-    const modelHash = (() => {
+    // Lightweight djb2 hash for model fingerprinting (Memoized to prevent JSON.stringify on every render)
+    const modelHash = useMemo(() => {
         const str = JSON.stringify(currentModel || {});
         let hash = 5381;
         for (let i = 0; i < str.length; i++) hash = ((hash << 5) + hash) + str.charCodeAt(i);
         return (hash >>> 0).toString(36);
-    })();
+    }, [currentModel]);
 
     const meta = {
         modelName: currentModel?.name || '',
@@ -169,7 +169,7 @@ const GenerationView = () => {
     if (!isLoaded || !currentModel) {
         return (
             <div className="flex-1 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-teal-500/40 border-t-teal-500 rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -180,23 +180,25 @@ const GenerationView = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
 
             {/* HEADER BAR */}
-            <div className="shrink-0 h-11 px-5 border-b border-white/[0.04] bg-[#0c0c0e] flex items-center justify-between animate-fade-in">
-                <div className="flex items-center gap-3 min-w-0">
+            <div className="shrink-0 min-h-11 h-auto py-2 px-3 sm:px-5 border-b border-white/[0.04] bg-[#0c0c0e] flex flex-wrap items-center justify-between gap-y-2 animate-fade-in">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 max-w-[50%] sm:max-w-none">
                     <div className="w-2 h-2 rounded-full shrink-0 bg-emerald-500"></div>
-                    <span className="text-[13px] font-semibold text-zinc-200 truncate">
+                    <span className="text-[12px] sm:text-[13px] font-semibold text-zinc-200 truncate">
                         {currentLocation?.name}
                     </span>
-                    <span className="text-[11px] text-zinc-600 shrink-0">
-                        {currentModel.name} / {currentAccount?.handle}
+                    <span className="text-[10px] sm:text-[11px] text-zinc-600 shrink-0 truncate max-w-[80px] sm:max-w-none">
+                        {currentModel.name}
                     </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {/* MODEL REFS — small thumbnails */}
-                    <ReferenceUpload />
+                    <div className="hidden sm:block">
+                        <ReferenceUpload />
+                    </div>
 
                     {/* LOCATION REFS — tiny thumbnails */}
                     {locationRefImages.length > 0 && (
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15">
+                        <div className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15">
                             <span className="text-[9px] text-emerald-500/70 font-medium">📍</span>
                             {locationRefImages.map((img, i) => (
                                 <img
@@ -210,20 +212,20 @@ const GenerationView = () => {
                     )}
 
                     {/* DIVIDER */}
-                    <div className="w-px h-5 bg-white/[0.06]" />
+                    <div className="hidden sm:block w-px h-5 bg-white/[0.06]" />
 
                     {/* SEED BADGE */}
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                        <span className="text-[10px] text-zinc-500 font-medium">Seed</span>
-                        <span className="text-[11px] text-violet-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <span className="text-[9px] sm:text-[10px] text-zinc-500 font-medium">Seed</span>
+                        <span className="text-[10px] sm:text-[11px] text-teal-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
                     </div>
                     <button
                         onClick={() => setShowRecap(!showRecap)}
-                        className={`text-[10px] font-medium px-2.5 py-1 rounded-lg transition-all ${showRecap ? 'text-violet-400 bg-violet-500/10' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]'}`}
+                        className={`text-[9px] sm:text-[10px] font-medium px-2 py-1 sm:px-2.5 rounded-lg transition-all ${showRecap ? 'text-teal-400 bg-teal-500/10' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]'}`}
                     >
                         Fiche modèle
                     </button>
-                    <span className="text-[10px] text-emerald-400/60 font-medium shrink-0 flex items-center gap-1">
+                    <span className="hidden sm:flex text-[10px] text-emerald-400/60 font-medium shrink-0 items-center gap-1">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
                         verrouillé
                     </span>
@@ -277,14 +279,14 @@ const GenerationView = () => {
                 </div>
                 <div className="lg:col-span-8 h-full flex flex-col overflow-hidden gap-3">
                     {/* PANEL TABS */}
-                    <div className="flex items-center shrink-0">
-                        <div className="flex items-center bg-white/[0.02] border border-white/[0.05] rounded-xl p-1 gap-0.5">
+                    <div className="flex flex-wrap items-center justify-between gap-y-2 shrink-0">
+                        <div className="flex items-center bg-white/[0.02] border border-white/[0.05] rounded-xl p-1 gap-0.5 max-w-full overflow-x-auto custom-scrollbar">
                             {TABS.map(tab => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setRightPanel(tab.id)}
                                     title={tab.label}
-                                    className={`text-[12px] px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${rightPanel === tab.id
+                                    className={`text-[12px] px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${rightPanel === tab.id
                                         ? 'bg-white/[0.06] shadow-sm text-zinc-200 font-medium'
                                         : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'
                                         }`}
@@ -294,9 +296,9 @@ const GenerationView = () => {
                                 </button>
                             ))}
                         </div>
-                        <div className="ml-auto flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             {rightPanel === 'image' && (
-                                <span className="text-[10px] text-zinc-700 font-mono">⌘G générer</span>
+                                <span className="hidden sm:inline text-[10px] text-zinc-700 font-mono">⌘G générer</span>
                             )}
                         </div>
                     </div>

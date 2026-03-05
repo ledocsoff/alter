@@ -73,8 +73,8 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
         </div>
 
         <p className="text-[12px] text-zinc-500 mb-4 leading-relaxed">
-          Clé API <span className="text-violet-400 font-medium">Google AI Studio</span> — Obtenez-la sur{' '}
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">aistudio.google.com</a>
+          Clé API <span className="text-teal-400 font-medium">Google AI Studio</span> — Obtenez-la sur{' '}
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">aistudio.google.com</a>
         </p>
 
         {/* PRIMARY KEY */}

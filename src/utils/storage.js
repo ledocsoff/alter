@@ -110,6 +110,30 @@ const validateAndRepairModels = (models) => {
     return repaired;
 };
 
+// ============================================
+// LECTURE GLOBALE — avec auto-recovery
+// ============================================
+export const getSavedModels = () => {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) return [];
+        const parsed = JSON.parse(data);
+        if (!Array.isArray(parsed)) {
+            console.error('[Velvet] Données corrompues détectées, nettoyage...');
+            localStorage.removeItem(STORAGE_KEY);
+            return [];
+        }
+        // FAIL-SAFE CRITIQUE : Toujours valider et réparer le schéma local
+        // Empêche les Fatal Errors React si le localStorage a été corrompu hors-ligne
+        const safeModels = validateAndRepairModels(parsed);
+        return safeModels;
+    } catch (error) {
+        console.error('[Velvet] Erreur critique localStorage — reset:', error.message);
+        try { localStorage.removeItem(STORAGE_KEY); } catch { }
+        return [];
+    }
+};
+
 /**
  * Charge les données depuis le serveur (sauvegarde/) dans localStorage.
  * Appelé une seule fois au démarrage de l'app.
@@ -178,10 +202,12 @@ export const getApiKey = () => {
 
 export const saveApiKey = (key) => {
     localStorage.setItem(_apiStorageKey, _obfuscate(key));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
 };
 
 export const removeApiKey = () => {
     localStorage.removeItem(_apiStorageKey);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
 };
 
 // ============================================
@@ -198,10 +224,12 @@ export const getApiKey2 = () => {
 
 export const saveApiKey2 = (key) => {
     localStorage.setItem(_apiStorageKey2, _obfuscate(key));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
 };
 
 export const removeApiKey2 = () => {
     localStorage.removeItem(_apiStorageKey2);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
 };
 
 // ============================================
@@ -216,31 +244,13 @@ export const saveLastSession = (info) => {
 export const getLastSession = () => {
     try {
         const session = JSON.parse(localStorage.getItem(LAST_SESSION_KEY));
-        if (!session) return null;
+        if (!session || typeof session !== 'object') return null;
+        if (!session.modelId || !session.accountId) return null; // Corrupted or incomplete session
         return session;
     } catch { return null; }
 };
 
-// ============================================
-// LECTURE GLOBALE — avec auto-recovery
-// ============================================
-export const getSavedModels = () => {
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (!data) return [];
-        const parsed = JSON.parse(data);
-        if (!Array.isArray(parsed)) {
-            console.error('[Velvet] Données corrompues détectées, nettoyage...');
-            localStorage.removeItem(STORAGE_KEY);
-            return [];
-        }
-        return parsed;
-    } catch (error) {
-        console.error('[Velvet] Erreur critique localStorage — reset:', error.message);
-        try { localStorage.removeItem(STORAGE_KEY); } catch { }
-        return [];
-    }
-};
+// getSavedModels has been moved up to scope properly with validateAndRepairModels
 
 const _saveAll = (data) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));

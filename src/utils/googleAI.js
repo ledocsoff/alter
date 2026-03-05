@@ -171,15 +171,21 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
     });
 
     const t0 = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: controller.signal,
     }).catch(fetchErr => {
-      const e = new Error(`Erreur reseau: ${fetchErr.message}`);
+      clearTimeout(timeout);
+      const msg = fetchErr.name === 'AbortError' ? 'Timeout: le serveur n\'a pas répondu en 2 minutes' : `Erreur reseau: ${fetchErr.message}`;
+      const e = new Error(msg);
       e._retryable = true;
       throw e;
     });
+    clearTimeout(timeout);
 
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
@@ -190,11 +196,11 @@ OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateu
       logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
 
       if (RETRYABLE_CODES.includes(res.status)) {
-        // On 429 (quota), try fallback to secondary API key if available
-        if (res.status === 429 && !options._usedFallback) {
+        // On 429 (quota) or 503 (service unavailable), try fallback to secondary API key if available
+        if ((res.status === 429 || res.status === 503) && !options._usedFallback) {
           const key2 = getApiKey2();
           if (key2 && key2 !== apiKey) {
-            logger.warn('api', 'Quota dépassé — basculement sur la clé secondaire');
+            logger.warn('api', `Erreur ${res.status} — basculement sur la clé secondaire`);
             return generateImage(key2, promptText, aspectRatio, conversationHistory, { ...options, _usedFallback: true });
           }
         }
@@ -737,23 +743,26 @@ export const generateLocationImage = async (apiKey, location) => {
       location.time_of_day ? `Time of day: ${location.time_of_day}` : null,
     ].filter(Boolean).join('\n');
 
-    const prompt = `Generate a photorealistic EMPTY environment photograph based on this description:
+    // Randomize a few "lived-in" imperfections to break the sterile AI look
+    const IMPERFECTIONS = [
+      'A few personal objects left casually on a surface',
+      'Slightly rumpled throw pillow or bed sheets',
+      'A half-used candle or dried plant visible in the corner',
+      'Ambient dust particles visible in a ray of light',
+      'Slight lens distortion from a wide-angle phone camera',
+      'One item slightly out of place, as if someone just left the room',
+      'A water glass or cup somewhere in frame',
+      'Slightly uneven natural light, one corner brighter than the other',
+    ];
+    const randomImperfection = IMPERFECTIONS[Math.floor(Math.random() * IMPERFECTIONS.length)];
 
-${locationDesc}
-
-CRITICAL RULES:
-- Absolutely NO person, NO human, NO silhouette, NO body parts in the image
-- Show ONLY the environment, background, decor, furniture, props
-- Must be photorealistic (not illustration, not painting, not 3D render)
-- High quality, sharp focus on the environment details
-- The image should feel like a "before" shot where a model will be placed later
-- Include all specific props and details mentioned above`;
+    const prompt = `Take a casual iPhone snapshot of this empty space. It's a quick reference photo, not a styled interior shot.\n\n${locationDesc}\n\nHOW TO SHOOT:\n- Handheld casual shot — very slight natural camera tilt (1-2 degrees), no tripod perfection\n- Ambient natural or room light only, NO studio strobes, NO ring lights\n- Imperfection to add: ${randomImperfection}\n- Depth: shoot flat, deep focus across the whole room, NO dramatic bokeh\n- Color: natural white balance, slightly warm like an iPhone 14 would render it\n\nSTRICT RULES:\n- ZERO people, NO human silhouettes, NO shadows of people, NO body parts\n- NO stock-photo framing — avoid perfectly centered, perfectly lit, perfectly clean compositions\n- NOT a 3D render, NOT an illustration, NOT a CGI image, NOT a painting\n- NO text, NO watermarks, NO camera UI overlays\n- Output a raw, photorealistic, casual snapshot of the actual environment`;
 
     logger.info('generation', `Generating location image for "${location.name}"`);
 
     const body = {
       system_instruction: {
-        parts: [{ text: `You are a photorealistic environment photographer. You generate images of EMPTY locations — no people. Focus on accurately reproducing the described space with correct lighting, colors, props, and atmosphere. The images will be used as visual references for consistent scene reproduction.` }]
+        parts: [{ text: `You are a casual photographer taking a quick, unstyled reference photo of an empty room with an iPhone. Focus on capturing the lived-in, imperfect reality of the space, not a polished interior design shot. The image should feel like a candid snapshot, not a professional setup.` }]
       },
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {

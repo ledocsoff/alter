@@ -66,13 +66,13 @@ const PromptHistoryPanel = ({ onReuse, generatedPrompt }) => {
                 <div className="shrink-0 flex items-center border-b border-zinc-800/40">
                     <button
                         onClick={() => setActiveTab('prompt')}
-                        className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'prompt' ? 'text-zinc-200 border-violet-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
+                        className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'prompt' ? 'text-zinc-200 border-teal-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
                     >
                         Prompt actuel
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'history' ? 'text-zinc-200 border-violet-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
+                        className={`flex-1 text-[11px] font-semibold py-2 text-center transition-colors border-b-2 ${activeTab === 'history' ? 'text-zinc-200 border-teal-500' : 'text-zinc-600 border-transparent hover:text-zinc-400'}`}
                     >
                         Historique
                         {history.length > 0 && <span className="ml-1 text-[9px] text-zinc-600">({history.length})</span>}
@@ -196,7 +196,7 @@ const PromptHistoryPanel = ({ onReuse, generatedPrompt }) => {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-1.5 mb-0.5">
                                                         {entry.locationName && (
-                                                            <span className="text-[9px] text-fuchsia-400/60 bg-fuchsia-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
+                                                            <span className="text-[9px] text-emerald-400/60 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">{entry.locationName}</span>
                                                         )}
                                                         {!success && (
                                                             <span className="text-[9px] text-red-400/60 bg-red-500/10 px-1.5 py-0.5 rounded shrink-0">Échec</span>

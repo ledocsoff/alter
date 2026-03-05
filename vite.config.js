@@ -26,6 +26,7 @@ export default defineConfig({
     server: {
         port: 5173,
         strictPort: true,
+        host: true, // Expose on LAN/Tailscale for remote access
         open: false,
         proxy: {
             '/api': 'http://localhost:3001'

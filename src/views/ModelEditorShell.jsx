@@ -256,7 +256,7 @@ const ModelEditorShell = ({ mode }) => {
           {/* MODEL NAME */}
           <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-5 mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-violet-500/10">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-teal-500/10">
                 {modelName ? modelName.charAt(0).toUpperCase() : '?'}
               </div>
               <input
@@ -352,7 +352,7 @@ const ModelEditorShell = ({ mode }) => {
                 <h2 className="text-sm font-semibold text-zinc-200">Extraction depuis photos</h2>
                 <p className="text-[12px] text-zinc-600 mt-0.5">
                   Uploadez 1 à 5 photos de la modèle. Gemini extraira le profil physique en JSON.
-                  <span className="text-violet-400/80"> Ces photos serviront aussi d'ancrage visuel pour chaque génération.</span>
+                  <span className="text-teal-400/80"> Ces photos serviront aussi d'ancrage visuel pour chaque génération.</span>
                 </p>
               </div>
 
@@ -402,7 +402,7 @@ const ModelEditorShell = ({ mode }) => {
               <button
                 onClick={handleExtractFromPhotos}
                 disabled={photos.length === 0 || isExtracting}
-                className="mt-5 w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white hover:from-violet-400 hover:to-fuchsia-400 transition-all shadow-lg shadow-violet-500/10 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="mt-5 w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:from-teal-400 hover:to-emerald-400 transition-all shadow-lg shadow-teal-500/10 active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isExtracting ? (
                   <>
@@ -434,13 +434,13 @@ const ModelEditorShell = ({ mode }) => {
           )}
 
           {/* ENRICHMENT PHOTOS SECTION */}
-          <div className="bg-zinc-900/60 border border-violet-500/20 rounded-xl p-5 mt-4">
+          <div className="bg-zinc-900/60 border border-teal-500/20 rounded-xl p-5 mt-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                  <CameraIcon size={14} className="text-violet-400" />
+                  <CameraIcon size={14} className="text-teal-400" />
                   Photos complémentaires
-                  <span className="text-[10px] font-normal text-violet-400/60 bg-violet-500/10 px-1.5 py-0.5 rounded-md">enrichissement</span>
+                  <span className="text-[10px] font-normal text-teal-400/60 bg-teal-500/10 px-1.5 py-0.5 rounded-md">enrichissement</span>
                 </h2>
                 <p className="text-[11px] text-zinc-600 mt-1">
                   Ajoutez des détails que l'IA doit connaître : tatouages, piercings, taches de naissance, cicatrices, angles spécifiques...
@@ -457,7 +457,7 @@ const ModelEditorShell = ({ mode }) => {
                   <img
                     src={ref.imageUrl}
                     alt="Ref"
-                    className="w-16 h-16 rounded-lg object-cover border border-violet-500/30 ring-1 ring-violet-500/10"
+                    className="w-16 h-16 rounded-lg object-cover border border-teal-500/30 ring-1 ring-teal-500/10"
                   />
                   <button
                     onClick={() => handleDeleteSavedRef(ref.id)}
@@ -492,7 +492,7 @@ const ModelEditorShell = ({ mode }) => {
               {(savedRefs.length + pendingRefs.length) < 5 && (
                 <button
                   onClick={() => refFileInputRef.current?.click()}
-                  className="w-16 h-16 rounded-lg border-2 border-dashed border-zinc-700/60 hover:border-violet-500/40 flex flex-col items-center justify-center text-zinc-500 hover:text-violet-400 transition-all cursor-pointer hover:bg-violet-500/5"
+                  className="w-16 h-16 rounded-lg border-2 border-dashed border-zinc-700/60 hover:border-teal-500/40 flex flex-col items-center justify-center text-zinc-500 hover:text-teal-400 transition-all cursor-pointer hover:bg-teal-500/5"
                 >
                   <CameraIcon size={16} />
                   <span className="text-[8px] mt-0.5 font-medium">Ajouter</span>
@@ -519,7 +519,7 @@ const ModelEditorShell = ({ mode }) => {
           {/* HELP */}
           <div className="mt-4 px-1">
             <div className="flex items-start gap-3 text-[11px] text-zinc-600">
-              <span className="text-violet-400/60 mt-0.5">i</span>
+              <span className="text-teal-400/60 mt-0.5">i</span>
               <p>
                 {inputMode === 'json' ? (
                   <>
@@ -530,7 +530,7 @@ const ModelEditorShell = ({ mode }) => {
                 ) : (
                   <>
                     Gemini analysera vos photos et extraira un profil JSON complet.
-                    Les photos uploadées ici seront aussi <strong className="text-violet-400/80">sauvées comme ancrage visuel</strong> pour
+                    Les photos uploadées ici seront aussi <strong className="text-teal-400/80">sauvées comme ancrage visuel</strong> pour
                     chaque future génération. Plus il y a de photos (visage, corps, profil), mieux c'est.
                   </>
                 )}

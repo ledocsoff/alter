@@ -7,13 +7,13 @@ import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 import { TrashIcon, CopyIcon, PlayIcon, SearchIcon, PlusIcon, UsersIcon, MapPinIcon, GripVerticalIcon } from '../components/Icons';
 
 const MODEL_COLORS = [
-  { gradient: 'from-violet-500 to-fuchsia-600', glow: 'shadow-violet-500/20', accent: 'violet' },
+  { gradient: 'from-teal-500 to-emerald-600', glow: 'shadow-teal-500/20', accent: 'teal' },
   { gradient: 'from-pink-500 to-rose-600', glow: 'shadow-pink-500/20', accent: 'pink' },
   { gradient: 'from-cyan-500 to-teal-600', glow: 'shadow-cyan-500/20', accent: 'cyan' },
   { gradient: 'from-emerald-500 to-green-600', glow: 'shadow-emerald-500/20', accent: 'emerald' },
-  { gradient: 'from-purple-500 to-violet-600', glow: 'shadow-purple-500/20', accent: 'purple' },
+  { gradient: 'from-teal-500 to-teal-600', glow: 'shadow-teal-500/20', accent: 'teal' },
   { gradient: 'from-amber-500 to-orange-600', glow: 'shadow-amber-500/20', accent: 'amber' },
-  { gradient: 'from-fuchsia-500 to-pink-600', glow: 'shadow-fuchsia-500/20', accent: 'fuchsia' },
+  { gradient: 'from-emerald-500 to-pink-600', glow: 'shadow-emerald-500/20', accent: 'emerald' },
 ];
 
 const getModelColor = (index) => MODEL_COLORS[index % MODEL_COLORS.length];
@@ -76,7 +76,7 @@ const ModelsView = () => {
     navigate(`/models/${id}/accounts`);
   };
 
-  const lastSession = getLastSession();
+  const lastSession = useMemo(() => getLastSession(), [allModelsDatabase]);
   const hasResume = lastSession && allModelsDatabase.some(m => m.id === lastSession.modelId);
   const totalAccounts = allModelsDatabase.reduce((sum, m) => sum + (m.accounts?.length || 0), 0);
   const totalLocations = allModelsDatabase.reduce((sum, m) => sum + (m.accounts || []).reduce((s, a) => s + (a.locations?.length || 0), 0), 0);
@@ -134,8 +134,8 @@ const ModelsView = () => {
         {/* Empty state */}
         {allModelsDatabase.length === 0 ? (
           <div className="text-center py-24 rounded-2xl border border-dashed border-zinc-800/60 animate-fade-in-up">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mx-auto mb-4">
-              <PlusIcon size={24} className="text-violet-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+              <PlusIcon size={24} className="text-teal-400" />
             </div>
             <p className="text-zinc-300 font-semibold text-base mb-1">Aucun modèle</p>
             <p className="text-zinc-600 text-sm">Créez votre première influenceuse pour démarrer.</p>
@@ -160,7 +160,7 @@ const ModelsView = () => {
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => handleSelect(m)}
-                  className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-violet-500/50 bg-violet-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
+                  className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-teal-500/50 bg-teal-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
                   style={{ animationDelay: `${idx * 40}ms` }}
                 >
                   {/* Drag handle */}
@@ -203,7 +203,7 @@ const ModelsView = () => {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => handleDuplicate(e, m)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"
                       title="Dupliquer"
                     >
                       <CopyIcon size={14} />

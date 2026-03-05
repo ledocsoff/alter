@@ -1,12 +1,11 @@
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
-// ─── Auto-Update ────────────────────────────────────────
-let autoUpdater = null;
-function setupAutoUpdate() {
+// ─── Native Auto-Update (electron-updater) ─────────────────
+function setupAutoUpdate(window) {
     try {
-        autoUpdater = require('electron-updater').autoUpdater;
         autoUpdater.autoDownload = true;
         autoUpdater.autoInstallOnAppQuit = true;
 
@@ -16,16 +15,10 @@ function setupAutoUpdate() {
 
         autoUpdater.on('update-downloaded', (info) => {
             console.log(`[Update] v${info.version} téléchargée, prête à installer`);
-            dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'Mise à jour disponible',
-                message: `Velvet Studio v${info.version} est prête.`,
-                detail: 'Redémarrer maintenant pour appliquer la mise à jour ?',
-                buttons: ['Redémarrer', 'Plus tard'],
-                defaultId: 0,
-            }).then(({ response }) => {
-                if (response === 0) autoUpdater.quitAndInstall();
-            });
+            // Prevenir l'UI React qu'une mise a jour est prete
+            if (window && !window.isDestroyed()) {
+                window.webContents.send('update-downloaded', info.version);
+            }
         });
 
         autoUpdater.on('error', (err) => {
@@ -39,6 +32,30 @@ function setupAutoUpdate() {
     }
 }
 
+// IPC handler for manual check
+ipcMain.handle('check-for-updates', async (event) => {
+    try {
+        const result = await autoUpdater.checkForUpdates();
+        return { success: true, isUpdateAvailable: result?.updateInfo != null };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Notify renderer when NO update is available (useful for manual checks)
+autoUpdater.on('update-not-available', () => {
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+        windows[0].webContents.send('update-not-available');
+    }
+});
+
+// React can call this to trigger the install and restart
+ipcMain.on('restart-app', () => {
+    autoUpdater.quitAndInstall();
+});
+
+
 // ─── Configuration ──────────────────────────────────────
 const IS_DEV = process.env.ELECTRON_DEV === 'true';
 const VITE_PORT = 5173;
@@ -50,27 +67,35 @@ let serverProcess = null;
 // ─── Start the Express API server ───────────────────────
 function startServer() {
     return new Promise((resolve, reject) => {
-        // In production, server.js is next to the asar/app directory
-        const serverPath = IS_DEV
-            ? path.join(__dirname, '..', 'server.js')
-            : path.join(process.resourcesPath, 'server.js');
+        if (IS_DEV) {
+            console.log('[Electron] Dev mode: using external API server from concurrently');
+            // Do not spawn the server, just proceed to polling
+        } else {
+            const serverPath = path.join(process.resourcesPath, 'server.js');
+            serverProcess = fork(serverPath, [], {
+                env: { ...process.env, ELECTRON: 'true' },
+                stdio: 'pipe',
+            });
 
-        // Using spawn instead of fork to avoid IPC issues with ES modules in ASAR
-        const { spawn } = require('child_process');
-        serverProcess = spawn(process.execPath, [serverPath], {
-            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', ELECTRON: 'true' },
-            stdio: ['ignore', 'pipe', 'pipe'],
-        });
+            serverProcess.stdout?.on('data', (data) => {
+                console.log('[Server]', data.toString().trim());
+            });
 
-        serverProcess.stdout?.on('data', (data) => {
-            console.log('[Server]', data.toString().trim());
-        });
+            serverProcess.stderr?.on('data', (data) => {
+                console.error('[Server Error]', data.toString().trim());
+            });
 
-        serverProcess.stderr?.on('data', (data) => {
-            console.error('[Server Error]', data.toString().trim());
-        });
+            serverProcess.on('error', reject);
 
-        serverProcess.on('error', reject);
+            serverProcess.on('exit', (code, signal) => {
+                if (signal === 'SIGTERM' || signal === 'SIGINT') return; // Intentional kill
+                console.warn(`[Electron] ⚠ Server crashed (code ${code}). Restarting in 2s...`);
+                setTimeout(() => {
+                    console.log('[Electron] 🔄 Relaunching local API server...');
+                    startServer().catch(console.error);
+                }, 2000);
+            });
+        }
 
         // Poll health endpoint until server is ready (up to 10s)
         let attempts = 0;
@@ -114,6 +139,8 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.cjs'),
             nodeIntegration: false,
             contextIsolation: true,
+            sandbox: true,
+            webSecurity: true,
         },
     });
 
@@ -137,6 +164,15 @@ function createWindow() {
         return { action: 'deny' };
     });
 
+    // Block navigation to untrusted origins (XSS defense)
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const allowed = ['http://localhost:', 'file://'];
+        if (!allowed.some(prefix => url.startsWith(prefix))) {
+            event.preventDefault();
+            console.warn(`[Security] Blocked navigation to: ${url}`);
+        }
+    });
+
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
@@ -151,7 +187,7 @@ app.whenReady().then(async () => {
     createWindow();
 
     // Auto-update in production only
-    if (!IS_DEV) setupAutoUpdate();
+    if (!IS_DEV) setupAutoUpdate(mainWindow);
 
     app.on('activate', () => {
         // macOS: re-create window when dock icon is clicked

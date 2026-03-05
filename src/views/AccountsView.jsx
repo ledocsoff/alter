@@ -8,7 +8,7 @@ import ConfirmModal from '../features/ConfirmModal/ConfirmModal';
 import { PlusIcon, TrashIcon, CopyIcon, MapPinIcon, EditIcon, ChevronRightIcon, GripVerticalIcon } from '../components/Icons';
 
 const PLATFORMS = {
-  Instagram: { color: 'from-fuchsia-500 to-purple-600', accent: 'text-fuchsia-400' },
+  Instagram: { color: 'from-emerald-500 to-teal-600', accent: 'text-emerald-400' },
   TikTok: { color: 'from-cyan-400 to-blue-500', accent: 'text-cyan-400' },
   Tinder: { color: 'from-orange-500 to-rose-500', accent: 'text-rose-400' },
   OnlyFans: { color: 'from-sky-400 to-blue-600', accent: 'text-sky-400' },
@@ -44,7 +44,7 @@ const AccountsView = () => {
     return (
       <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
         Modèle introuvable.
-        <button onClick={() => navigate('/')} className="text-violet-400 ml-1.5 hover:underline font-medium">Retour</button>
+        <button onClick={() => navigate('/')} className="text-teal-400 ml-1.5 hover:underline font-medium">Retour</button>
       </div>
     );
   }
@@ -93,7 +93,7 @@ const AccountsView = () => {
         {/* HEADER */}
         <div className="mb-10 animate-fade-in">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-violet-500/20">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-teal-500/20">
               {currentModel.name?.charAt(0)?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
@@ -142,8 +142,8 @@ const AccountsView = () => {
         {/* LIST */}
         {(currentModel.accounts || []).length === 0 ? (
           <div className="text-center py-24 rounded-2xl border border-dashed border-zinc-800/60 animate-fade-in-up">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500/15 to-purple-500/15 flex items-center justify-center mx-auto mb-4">
-              <PlusIcon size={24} className="text-fuchsia-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/15 flex items-center justify-center mx-auto mb-4">
+              <PlusIcon size={24} className="text-emerald-400" />
             </div>
             <p className="text-zinc-300 font-semibold mb-1">Aucun compte</p>
             <p className="text-zinc-600 text-sm">Ajoutez un profil ci-dessus.</p>
@@ -161,7 +161,7 @@ const AccountsView = () => {
                   onDragEnter={() => handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`velvet-card group p-4 flex items-center gap-4 ${dragOverIdx === idx ? '!border-violet-500/50 bg-violet-500/5' : ''}`}
+                  className={`velvet-card group p-4 flex items-center gap-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
                 >
                   {/* Drag handle */}
                   <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
@@ -191,7 +191,7 @@ const AccountsView = () => {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => handleDuplicate(acc.id)}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"
                       title="Dupliquer"
                     >
                       <CopyIcon size={15} />

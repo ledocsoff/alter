@@ -3,12 +3,33 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SAVE_DIR = path.join(__dirname, 'sauvegarde');
+// Support both ESM (local dev) and CJS (bundled for Electron production)
+const currentDir = typeof __dirname !== 'undefined'
+    ? __dirname
+    : path.dirname(fileURLToPath(import.meta.url));
+
+const SAVE_DIR = path.join(currentDir, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');
 const MAX_BACKUPS = 5;
-const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173', 'file://'];
+
+// ============================================
+// CORS — Dynamic origin validation (localhost + LAN + Tailscale)
+// ============================================
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true; // No origin = Electron file://, same-origin, curl
+    // Localhost (dev)
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) return true;
+    // Electron file://
+    if (origin.startsWith('file://')) return true;
+    // Private LAN IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    if (/^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(origin)) return true;
+    // Tailscale IPs (100.x.x.x CGNAT range)
+    if (/^https?:\/\/100\./.test(origin)) return true;
+    return false;
+};
 
 // Ensure save directory exists
 if (!fs.existsSync(SAVE_DIR)) {
@@ -80,18 +101,15 @@ const isValidGalleryId = (id) => /^gal_\d+_[a-f0-9]+$/.test(id);
 const MAX_IMAGE_SIZE_MB = 20;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
-// ============================================
-// CORS — restreint à localhost:5173
-// ============================================
 const corsMiddleware = (req, res, next) => {
     const origin = req.headers.origin;
-    // Allow requests with no origin (Electron file://, same-origin, etc.)
-    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+    if (isAllowedOrigin(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
         if (req.method === 'OPTIONS') return res.sendStatus(204);
     } else {
+        console.warn(`[Security] CORS bloqué: ${origin}`);
         return res.status(403).json({ error: 'Origine non autorisée' });
     }
     next();
@@ -227,15 +245,7 @@ const tryRestoreFromBackup = () => {
 // ============================================
 // RATE LIMITER — par endpoint
 // ============================================
-const rateLimiters = {};
-const checkRateLimit = (key, intervalMs) => {
-    const now = Date.now();
-    if (rateLimiters[key] && now - rateLimiters[key] < intervalMs) {
-        return false; // Rate limited
-    }
-    rateLimiters[key] = now;
-    return true;
-};
+// (Ancien rate limiter manuel supprimé; remplacé par express-rate-limit ci-dessous)
 
 // ============================================
 // TEMP FILE CLEANUP — supprime les .tmp orphelins
@@ -259,8 +269,32 @@ const cleanupTempFiles = () => {
 };
 
 const app = express();
+
+// ============================================
+// SECURITY — Headers & Rate Limiting (Helmet + express-rate-limit)
+// ============================================
+app.use(helmet({
+    // Disable CSP and crossOriginEmbedderPolicy to allow Vite's dev server inline scripts & external images
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+}));
+
+// Apply a global rate limit to all API endpoints to prevent basic DDoS / bruteforce
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per 15 minutes
+    message: { error: 'Trop de requêtes, veuillez patienter avant de réessayer.' },
+    standardHeaders: true,
+});
+app.use('/api', apiLimiter);
+
 app.use(corsMiddleware);
-app.use(express.json({ limit: '50mb' }));
+
+// Middleware par défaut (limite 2MB pour textes/JSON classiques)
+app.use(express.json({ limit: '2mb' }));
+
+// Middleware spécifique pour les route acceptant du Base64 lourd
+const largePayloadMiddleware = express.json({ limit: '50mb' });
 
 // Health check — enrichi avec infos disque
 app.get('/api/health', (_req, res) => {
@@ -297,7 +331,7 @@ app.get('/api/health', (_req, res) => {
 // Version info
 let PKG_VERSION = 'unknown';
 try {
-    PKG_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf-8')).version;
+    PKG_VERSION = JSON.parse(fs.readFileSync(path.join(currentDir, 'package.json'), 'utf-8')).version;
 } catch (e) {
     console.warn('[Server] Could not read package.json version:', e.message);
 }
@@ -314,12 +348,47 @@ app.get('/api/load', (_req, res) => {
     res.json(readData());
 });
 
+// ============================================
+// GARBAGE COLLECTOR — Nettoie le disque des images orphelines
+// ============================================
+const garbageCollectOrphanedDirs = (modelsData) => {
+    try {
+        const validModelIds = new Set(modelsData?.map(m => m.id) || []);
+        const validLocationIds = new Set(
+            (modelsData || []).flatMap(m => m.accounts || [])
+                .flatMap(a => a.locations || [])
+                .map(l => l.id)
+        );
+
+        // Purge Model refs
+        if (fs.existsSync(REFS_DIR)) {
+            const modelDirs = fs.readdirSync(REFS_DIR);
+            for (const mDir of modelDirs) {
+                if (mDir.startsWith('mod_') && !validModelIds.has(mDir)) {
+                    fs.rmSync(path.join(REFS_DIR, mDir), { recursive: true, force: true });
+                    console.log(`[Server] GC: Dossier modele orphelin nettoye -> ${mDir}`);
+                }
+            }
+        }
+
+        // Purge Location refs
+        if (fs.existsSync(LOC_REFS_DIR)) {
+            const locDirs = fs.readdirSync(LOC_REFS_DIR);
+            for (const lDir of locDirs) {
+                if (lDir.startsWith('loc_') && !validLocationIds.has(lDir)) {
+                    fs.rmSync(path.join(LOC_REFS_DIR, lDir), { recursive: true, force: true });
+                    console.log(`[Server] GC: Dossier lieu orphelin nettoye -> ${lDir}`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[Server] Erreur Garbage Collection:', err.message);
+    }
+};
+
 // Save all data (with validation, atomic write, backup rotation)
 app.post('/api/save', (req, res) => {
-    // Rate limit: 1 save/seconde
-    if (!checkRateLimit('save', 1000)) {
-        return res.status(429).json({ error: 'Trop de requêtes, réessayez dans 1s' });
-    }
+    // Rate limit est géré globalement par apiLimiter désormais
 
     // Validate
     const err = validatePayload(req.body);
@@ -331,12 +400,18 @@ app.post('/api/save', (req, res) => {
     try {
         rotateBackups();
         writeDataAtomic(DATA_FILE, req.body);
+
+        // Lance le nettoyeur de disque en arriere-plan
+        if (req.body && req.body.models) {
+            setTimeout(() => garbageCollectOrphanedDirs(req.body.models), 500);
+        }
+
         const n = req.body.models?.length || 0;
         console.log(`[Server] Sauvegarde OK — ${n} modele(s)`);
         res.json({ ok: true });
     } catch (err) {
         console.error('[Server] Erreur ecriture:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -387,7 +462,7 @@ app.post('/api/restore/:n', (req, res) => {
         res.json({ ok: true, models: count });
     } catch (err) {
         console.error('[Server] Erreur restauration:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -479,12 +554,9 @@ app.get('/api/gallery/:id/image', (req, res) => {
     fs.createReadStream(imgPath).pipe(res);
 });
 
-// Save a new gallery image
-app.post('/api/gallery', (req, res) => {
-    // Rate limit: 1 image/2 secondes
-    if (!checkRateLimit('gallery_post', 2000)) {
-        return res.status(429).json({ error: 'Trop rapide, attendez 2s entre les sauvegardes' });
-    }
+// Save a new gallery image (autorise 50MB)
+app.post('/api/gallery', largePayloadMiddleware, (req, res) => {
+    // Rate limit est géré globalement par apiLimiter désormais
 
     try {
         const { base64, mimeType, prompt, scene, modelName, locationName, accountHandle, seed, modelHash } = req.body;
@@ -541,7 +613,7 @@ app.post('/api/gallery', (req, res) => {
         res.json({ ok: true, id, total: entries.length });
     } catch (err) {
         console.error('[Server] Erreur gallery save:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -582,7 +654,7 @@ app.delete('/api/gallery', (_req, res) => {
         res.json({ ok: true });
     } catch (err) {
         console.error('[Server] Erreur clear gallery:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -619,8 +691,8 @@ const writeRefsIndex = (modelId, entries) => {
     fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
 };
 
-// Upload reference photo(s) for a model
-app.post('/api/refs/:modelId', (req, res) => {
+// Upload reference photo(s) for a model (autorise 50MB)
+app.post('/api/refs/:modelId', largePayloadMiddleware, (req, res) => {
     try {
         const { modelId } = req.params;
         if (!isValidModelId(modelId)) return res.status(400).json({ error: 'Model ID invalide' });
@@ -666,7 +738,7 @@ app.post('/api/refs/:modelId', (req, res) => {
         res.json({ ok: true, added: added.length, total: updated.length });
     } catch (err) {
         console.error('[Server] Erreur ref upload:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -761,8 +833,8 @@ const writeLocRefsIndex = (locationId, entries) => {
     fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(entries, null, 2));
 };
 
-// Upload reference photo(s) for a location
-app.post('/api/location-refs/:locationId', (req, res) => {
+// Upload reference photo(s) for a location (autorise 50MB)
+app.post('/api/location-refs/:locationId', largePayloadMiddleware, (req, res) => {
     try {
         const { locationId } = req.params;
         if (!isValidLocationId(locationId)) return res.status(400).json({ error: 'Location ID invalide' });
@@ -807,7 +879,7 @@ app.post('/api/location-refs/:locationId', (req, res) => {
         res.json({ ok: true, added: added.length, total: updated.length });
     } catch (err) {
         console.error('[Server] Erreur location ref upload:', err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Erreur interne du serveur' });
     }
 });
 
@@ -834,7 +906,7 @@ app.get('/api/location-refs/:locationId/first-image', (req, res) => {
     if (!fs.existsSync(imgPath)) return res.status(404).end();
 
     res.setHeader('Content-Type', entry.mimeType || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.setHeader('Content-Length', fs.statSync(imgPath).size);
     fs.createReadStream(imgPath).pipe(res);
 });
@@ -904,17 +976,31 @@ cleanupTempFiles();
 
 // Validate data integrity on startup
 const startupData = readData();
+
 console.log(`\n  💎 Velvet Studio Server`);
 console.log(`  ➜  API:         http://localhost:${PORT}/api`);
-console.log(`  ➜  CORS:        ${ALLOWED_ORIGINS.join(', ')}`);
+console.log(`  ➜  CORS:        localhost + LAN + Tailscale (dynamique)`);
 console.log(`  ➜  Sauvegarde:  ${SAVE_DIR}/`);
 console.log(`  ➜  Galerie:     ${GALLERY_DIR}/ (max ${MAX_GALLERY} images)`);
 console.log(`  ➜  Backups:     ${MAX_BACKUPS} rotations automatiques`);
 console.log(`  ➜  Données:     ${startupData.models?.length || 0} modele(s)`);
 console.log(`  ➜  Sécurité:    écriture atomique + validation + rate limit + path sanitization`);
 
-const server = app.listen(PORT, () => {
-    console.log(`  ➜  Statut:      en ligne sur le port ${PORT}\n`);
+const server = app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`  ➜  Statut:      en ligne sur le port ${PORT}`);
+    // Show all network addresses for easy Tailscale/LAN connection
+    try {
+        const os = await import('os');
+        const nets = os.networkInterfaces();
+        for (const [name, addrs] of Object.entries(nets)) {
+            for (const addr of addrs) {
+                if (addr.family === 'IPv4' && !addr.internal) {
+                    console.log(`  ➜  Réseau:      http://${addr.address}:${PORT}  (${name})`);
+                }
+            }
+        }
+    } catch { }
+    console.log('');
 });
 
 // ============================================
@@ -943,6 +1029,12 @@ process.on('uncaughtException', (err) => {
     console.error(err.stack);
     // Don't exit — try to keep serving
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Server] ⚠ PROMESSE REJETÉE:', reason);
+    // Don't exit
+});
+
 
 process.on('unhandledRejection', (reason) => {
     console.error('[Server] ⚠ PROMISE NON GÉRÉE:', reason);

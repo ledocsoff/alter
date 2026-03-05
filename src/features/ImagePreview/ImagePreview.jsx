@@ -50,6 +50,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     if (!apiKey) { onRequestApiKey?.(); return; }
 
     const now = Date.now();
+    if (status === 'generating') { toast.info('Génération déjà en cours, patientez...'); return; }
     if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
 
     setStatus('generating');
@@ -92,6 +93,8 @@ Identity fidelity is MORE important than any other instruction.` },
     }
 
     // TURN 2: Location context (separate turn, explicitly subordinate)
+    // If we have real reference photos → use them visually (strongest)
+    // If we only have a text description → use a rich text anchor (no wasted API call)
     if (locationRefImages.length > 0) {
       anchorHistory.push({
         role: 'user',
@@ -99,12 +102,36 @@ Identity fidelity is MORE important than any other instruction.` },
           {
             text: `ENVIRONMENT CONTEXT (secondary to identity):
 The following photos show the environment/location for this scene.
-Reproduce the background, décor, lighting, and atmosphere.
+Reproduce the background, décor, lighting, and atmosphere from these reference photos.
 IMPORTANT: The person's identity from the previous reference MUST NOT change.
 The environment adapts around the person, not the other way around.` },
           ...locationRefImages.map(img => ({ inlineData: { mimeType: img.mimeType, data: img.base64 } })),
         ],
       });
+    } else {
+      // Build a text anchor from the scene location metadata
+      const locMeta = scene?.location_meta || {};
+      const locParts = [
+        scene?.environment ? `Environment: ${scene.environment}` : null,
+        locMeta.anchor_details ? `Specific details/props: ${locMeta.anchor_details}` : null,
+        scene?.lighting ? `Lighting: ${scene.lighting}` : null,
+        locMeta.time_of_day ? `Time of day: ${locMeta.time_of_day}` : null,
+        locMeta.color_palette ? `Color palette: ${locMeta.color_palette}` : null,
+        scene?.vibe ? `Atmosphere/vibe: ${scene.vibe}` : null,
+      ].filter(Boolean);
+
+      if (locParts.length > 0) {
+        anchorHistory.push({
+          role: 'user',
+          parts: [{
+            text: `ENVIRONMENT CONTEXT (secondary to identity):\nReproduce this specific setting in the background. Do NOT add any environment details beyond what is described.\n\n${locParts.join('\n')}\n\nIMPORTANT: The person's identity from the previous reference MUST NOT change. The environment surrounds the person.`,
+          }],
+        });
+        anchorHistory.push({
+          role: 'model',
+          parts: [{ text: 'Environment noted. I will place the subject in this exact setting while maintaining their identity from the reference photos.' }],
+        });
+      }
     }
 
     try {
@@ -176,7 +203,7 @@ The environment adapts around the person, not the other way around.` },
       } catch { /* silent */ }
       return null;
     }
-  }, [anchorMatrix, generatedPrompt, lastGenTime, onRequestApiKey, toast, conversationHistory]);
+  }, [anchorMatrix, generatedPrompt, lastGenTime, onRequestApiKey, toast, conversationHistory, referenceImages, locationRefImages, scene]);
 
   const handleGenerate = useCallback(async () => {
     return handleGenerateWithPrompt(generatedPrompt);
@@ -235,6 +262,7 @@ The environment adapts around the person, not the other way around.` },
     if (!apiKey) { onRequestApiKey?.(); return; }
 
     const now = Date.now();
+    if (status === 'generating') { toast.info('Génération déjà en cours, patientez...'); return; }
     if (now - lastGenTime < 2000) { toast.info('Patientez avant de régénérer'); return; }
 
     setStatus('generating');
@@ -310,7 +338,7 @@ The environment adapts around the person, not the other way around.` },
       toast.error(err.message);
       return null;
     }
-  }, [currentImage, referenceImages, locationRefImages, scene, lastGenTime, onRequestApiKey, toast]);
+  }, [currentImage, referenceImages, locationRefImages, scene, lastGenTime, onRequestApiKey, toast, onGalleryUpdate]);
 
   const hasApiKey = !!getApiKey();
   const turnCount = Math.floor(conversationHistory.length / 2);
@@ -381,17 +409,17 @@ The environment adapts around the person, not the other way around.` },
           <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
             <div className="text-center">
               {batchProgress && (
-                <p className="text-[11px] text-violet-400 font-semibold mb-2">
+                <p className="text-[11px] text-teal-400 font-semibold mb-2">
                   Batch {batchProgress.current}/{batchProgress.total}
                 </p>
               )}
               <div className="relative w-12 h-12 mx-auto mb-3">
                 <div className="absolute inset-0 rounded-full border-2 border-zinc-800"></div>
-                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-violet-500 animate-spin"></div>
-                <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-fuchsia-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-teal-500 animate-spin"></div>
+                <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-emerald-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
               </div>
               <p className="text-zinc-400 text-[13px] font-medium mb-0.5">Generation...</p>
-              <span className="text-violet-400/60 text-[12px] font-mono tabular-nums">{elapsed}s</span>
+              <span className="text-teal-400/60 text-[12px] font-mono tabular-nums">{elapsed}s</span>
             </div>
           </div>
         )}
@@ -402,7 +430,7 @@ The environment adapts around the person, not the other way around.` },
             <div className="text-center max-w-xs px-4">
               <p className="text-red-400/80 text-[13px] font-medium mb-1">Erreur</p>
               <p className="text-zinc-500 text-[11px] mb-3 leading-relaxed">{errorMsg}</p>
-              <button onClick={handleGenerate} className="text-[11px] text-violet-400 hover:text-violet-300 font-medium">Reessayer</button>
+              <button onClick={handleGenerate} className="text-[11px] text-teal-400 hover:text-teal-300 font-medium">Reessayer</button>
             </div>
           </div>
         )}
@@ -421,7 +449,7 @@ The environment adapts around the person, not the other way around.` },
               <button
                 onClick={handleGenerate}
                 disabled={status === 'generating'}
-                className="text-[10px] font-semibold text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
+                className="text-[10px] font-semibold text-teal-400 hover:text-teal-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
               >
                 Régénérer
               </button>
@@ -438,7 +466,7 @@ The environment adapts around the person, not the other way around.` },
                 <>
                   <button
                     onClick={() => setCompareMode(true)}
-                    className="text-[10px] font-medium text-violet-400 hover:text-violet-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
+                    className="text-[10px] font-medium text-teal-400 hover:text-teal-300 px-2 py-0.5 rounded hover:bg-white/5 transition-colors"
                   >
                     Comparer
                   </button>
@@ -478,7 +506,7 @@ The environment adapts around the person, not the other way around.` },
                 key={img.id}
                 onClick={() => { setCurrentImage(img); setStatus('done'); }}
                 className={`w-9 h-9 rounded-md overflow-hidden shrink-0 border transition-all ${currentImage?.id === img.id
-                  ? 'border-violet-500/50 ring-1 ring-violet-500/20'
+                  ? 'border-teal-500/50 ring-1 ring-teal-500/20'
                   : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
                   }`}
               >

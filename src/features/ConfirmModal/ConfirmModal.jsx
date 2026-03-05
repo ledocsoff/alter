@@ -31,10 +31,10 @@ const ConfirmModal = ({ isOpen, title, message, confirmLabel = 'Supprimer', canc
                 className="relative bg-[#141416] border border-white/[0.06] rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-scale"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10' : 'bg-violet-500/10'}`}>
+                <div className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${isDanger ? 'bg-red-500/10' : 'bg-teal-500/10'}`}>
                     {isDanger
                         ? <TrashIcon size={22} className="text-red-400" />
-                        : <AlertIcon size={22} className="text-violet-400" />
+                        : <AlertIcon size={22} className="text-teal-400" />
                     }
                 </div>
                 <h3 className="text-base font-bold text-zinc-100 text-center mb-1">{title}</h3>
@@ -51,7 +51,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmLabel = 'Supprimer', canc
                         onClick={onConfirm}
                         className={`flex-1 h-10 rounded-xl text-sm font-semibold transition-all ${isDanger
                             ? 'bg-red-600 text-white hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20'
-                            : 'bg-violet-600 text-white hover:bg-violet-500 hover:shadow-lg hover:shadow-violet-500/20'
+                            : 'bg-teal-600 text-white hover:bg-teal-500 hover:shadow-lg hover:shadow-teal-500/20'
                             }`}
                     >
                         {confirmLabel}

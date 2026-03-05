@@ -24,7 +24,6 @@
         "dev": "concurrently -n server,vite -c yellow,cyan \"node server.js\" \"vite\"",
         "build": "vite build",
         "preview": "vite preview",
-        "server": "node server-runner.js",
         "server:raw": "node server.js",
         "electron:dev": "concurrently -n server,vite,electron -c yellow,cyan,magenta \"node server.js\" \"vite --open false\" \"sleep 3 && ELECTRON_DEV=true npx electron .\"",
         "electron:build": "vite build && npx electron-builder --config electron-builder.json",
@@ -33,7 +32,10 @@
         "version": "node -p \"'Velvet Studio v' + require('./package.json').version\""
     },
     "dependencies": {
+        "electron-updater": "^6.8.3",
         "express": "^4.21.0",
+        "express-rate-limit": "^8.3.0",
+        "helmet": "^8.1.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-router-dom": "^6.30.3"

@@ -1,43 +1,38 @@
-name: Build & Release
+name: Build and Release Velvet Studio
 
 on:
   push:
     tags:
-      - 'v*'
-
-permissions:
-  contents: write
+      - 'v*' # Trigger build when pushing tags like v5.3.0
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            platform: mac
-          - os: windows-latest
-            platform: win
-
+  release:
     runs-on: ${{ matrix.os }}
-
+    
+    strategy:
+      matrix:
+        # Build for both Mac and Windows
+        os: [macos-latest, windows-latest]
+    
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-
-      - name: Install dependencies
+          
+      - name: Install Dependencies
         run: npm ci
-
-      - name: Build Vite app
-        run: npx vite build
-
-      - name: Build & Publish Electron (${{ matrix.platform }})
-        run: npx electron-builder --config electron-builder.json --publish always
+        
+      # Build the React application
+      - name: Build Vite App
+        run: npm run build
+        
+      # Package the Electron application using electron-builder
+      - name: Publish Electron App
         env:
+          # GitHub automatically generates this token for actions, allowing it to upload releases
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --config electron-builder.json --publish always

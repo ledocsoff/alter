@@ -75,7 +75,7 @@ const LocationRefUpload = ({ locationId }) => {
     return (
         <div>
             <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 block">
-                📷 Photos de référence du lieu <span className="text-violet-400/60 normal-case font-normal">ancrage visuel</span>
+                📷 Photos de référence du lieu <span className="text-teal-400/60 normal-case font-normal">ancrage visuel</span>
             </label>
             <div className="flex items-center gap-2 flex-wrap">
                 {/* Existing ref thumbnails */}
@@ -84,7 +84,7 @@ const LocationRefUpload = ({ locationId }) => {
                         <img
                             src={ref.imageUrl || locationRefImageUrl(locationId, ref.id)}
                             alt="Ref lieu"
-                            className="w-16 h-16 rounded-lg object-cover border border-white/[0.08] ring-1 ring-violet-500/10"
+                            className="w-16 h-16 rounded-lg object-cover border border-white/[0.08] ring-1 ring-teal-500/10"
                         />
                         <button
                             onClick={() => handleRemove(ref.id)}
@@ -102,10 +102,10 @@ const LocationRefUpload = ({ locationId }) => {
                         onDrop={handleDrop}
                         onDragOver={(e) => e.preventDefault()}
                         disabled={uploading}
-                        className={`w-16 h-16 rounded-lg border-2 border-dashed border-white/[0.08] hover:border-violet-500/30 bg-white/[0.015] hover:bg-violet-500/[0.03] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${uploading ? 'opacity-50 cursor-wait' : ''}`}
+                        className={`w-16 h-16 rounded-lg border-2 border-dashed border-white/[0.08] hover:border-teal-500/30 bg-white/[0.015] hover:bg-teal-500/[0.03] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${uploading ? 'opacity-50 cursor-wait' : ''}`}
                     >
                         {uploading ? (
-                            <div className="w-4 h-4 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-teal-500/40 border-t-teal-500 rounded-full animate-spin" />
                         ) : (
                             <>
                                 <CameraIcon size={14} className="text-zinc-600" />
