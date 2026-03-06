@@ -481,7 +481,7 @@ body {
   }
 
   /* ── Generation workspace — stack vertically ── */
-  main .grid {
+  main .generation-workspace {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -491,7 +491,7 @@ body {
   }
 
   /* ── Panels — full width, constrained height ── */
-  main .grid>div {
+  main .generation-workspace>div {
     width: 100%;
     min-height: 300px;
     max-height: 60vh;
