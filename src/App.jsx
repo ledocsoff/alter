@@ -89,8 +89,10 @@ const AppLayout = ({ children }) => {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [hasKey, setHasKey] = useState(() => !!getApiKey());
   const [hasKey2, setHasKey2] = useState(() => !!getApiKey2());
+  const [errorCount, setErrorCount] = useState(0);
+  const [serverOnline, setServerOnline] = useState(true);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [notInApplications, setNotInApplications] = useState(false);
-
   // Listen for native update events from electron-updater
   useEffect(() => {
     if (window.alter) {
