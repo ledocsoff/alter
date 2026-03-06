@@ -220,6 +220,7 @@ const AppLayout = ({ children }) => {
         await new Promise(r => setTimeout(r, 2000));
       }
       // Then check every 30s — require 3 consecutive fails before going offline
+      if (cancelled) return;
       interval = setInterval(async () => {
         const ok = await ping();
         if (!cancelled) {
@@ -244,12 +245,17 @@ const AppLayout = ({ children }) => {
 
   // Flash "Sauvegardé ✓" on successful sync
   useEffect(() => {
+    let timer;
     const onSynced = () => {
       setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2000);
+      clearTimeout(timer);
+      timer = setTimeout(() => setSavedFlash(false), 2000);
     };
     window.addEventListener('alter:synced', onSynced);
-    return () => window.removeEventListener('alter:synced', onSynced);
+    return () => {
+      window.removeEventListener('alter:synced', onSynced);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Global ? shortcut to show shortcuts modal

@@ -101,33 +101,37 @@ const GenerationView = () => {
     // Auto-load persistent model reference photos
     useEffect(() => {
         if (!modelId || !isLoaded) return;
+        let active = true;
         (async () => {
             try {
                 const refs = await getModelRefs(modelId);
-                if (!refs || refs.length === 0) return;
+                if (!refs || refs.length === 0 || !active) return;
                 const loaded = (await Promise.all(
                     refs.map(r => loadModelRefBase64(modelId, r.id))
                 )).filter(Boolean).map(r => ({ base64: r.base64, mimeType: r.mimeType, dataUrl: `data:${r.mimeType};base64,${r.base64}` }));
-                if (loaded.length > 0) {
+                if (loaded.length > 0 && active) {
                     setReferenceImages(loaded);
                 }
             } catch { /* silent */ }
         })();
+        return () => { active = false; };
     }, [modelId, isLoaded, setReferenceImages]);
 
     // Auto-load persistent location reference photos
     useEffect(() => {
         if (!locationId || !isLoaded) { setLocationRefImages([]); return; }
+        let active = true;
         (async () => {
             try {
                 const refs = await getLocationRefs(locationId);
-                if (!refs || refs.length === 0) { setLocationRefImages([]); return; }
+                if (!refs || refs.length === 0 || !active) { setLocationRefImages([]); return; }
                 const loaded = (await Promise.all(
                     refs.map(r => loadLocationRefBase64(locationId, r.id))
                 )).filter(Boolean).map(r => ({ base64: r.base64, mimeType: r.mimeType, dataUrl: `data:${r.mimeType};base64,${r.base64}` }));
-                setLocationRefImages(loaded);
-            } catch { setLocationRefImages([]); }
+                if (active) setLocationRefImages(loaded);
+            } catch { if (active) setLocationRefImages([]); }
         })();
+        return () => { active = false; };
     }, [locationId, isLoaded, setLocationRefImages]);
 
 

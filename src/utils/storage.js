@@ -423,7 +423,7 @@ export const reorderModels = (fromIndex, toIndex) => {
 export const reorderAccounts = (modelId, fromIndex, toIndex) => {
     const models = getSavedModels();
     const model = models.find(m => m.id === modelId);
-    if (!model?.accounts || fromIndex < 0 || toIndex < 0) return null;
+    if (!model?.accounts || fromIndex < 0 || toIndex < 0 || fromIndex >= model.accounts.length || toIndex >= model.accounts.length) return null;
     const [moved] = model.accounts.splice(fromIndex, 1);
     model.accounts.splice(toIndex, 0, moved);
     _saveAll(models);
@@ -434,7 +434,7 @@ export const reorderLocations = (modelId, accountId, fromIndex, toIndex) => {
     const models = getSavedModels();
     const model = models.find(m => m.id === modelId);
     const account = model?.accounts?.find(a => a.id === accountId);
-    if (!account?.locations || fromIndex < 0 || toIndex < 0) return null;
+    if (!account?.locations || fromIndex < 0 || toIndex < 0 || fromIndex >= account.locations.length || toIndex >= account.locations.length) return null;
     const [moved] = account.locations.splice(fromIndex, 1);
     account.locations.splice(toIndex, 0, moved);
     _saveAll(models);
