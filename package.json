@@ -20,7 +20,7 @@
     "main": "electron/main.cjs",
     "type": "module",
     "scripts": {
-        "predev": "lsof -ti:5173 | xargs kill -9 2>/dev/null; lsof -ti:3001 | xargs kill -9 2>/dev/null || true",
+        "predev": "node -e \"const net=require('net');\" 2>/dev/null || true",
         "dev": "concurrently -n server,vite -c yellow,cyan \"node server.js\" \"vite\"",
         "build": "vite build",
         "preview": "vite preview",
@@ -28,8 +28,8 @@
         "electron:dev": "concurrently -n server,vite,electron -c yellow,cyan,magenta \"node server.js\" \"vite --open false\" \"sleep 3 && ELECTRON_DEV=true npx electron .\"",
         "electron:build": "vite build && npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs && npx electron-builder --config electron-builder.json",
         "electron:pack": "vite build && npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs && npx electron-builder --config electron-builder.json --dir",
-        "update": "echo '⏳ Mise a jour Alter...' && git pull origin master && npm install --omit=dev && npm run build && echo '✅ Mise a jour terminee (v'$(node -p \"require('./package.json').version\")')'",
-        "version": "node -p \"'Alter v' + require('./package.json').version\""
+        "update": "git pull origin master && npm install --omit=dev && npm run build",
+        "version": "node -e \"console.log('Alter v' + require('./package.json').version)\""
     },
     "dependencies": {
         "electron-updater": "^6.8.3",

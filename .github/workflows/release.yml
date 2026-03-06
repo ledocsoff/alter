@@ -7,59 +7,82 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-    
+  # ─── macOS Build ──────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Cache npm dependencies for faster builds (~2x speedup)
       - name: Cache npm dependencies
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-npm-
-          
+          key: macos-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: macos-npm-
+
       - name: Install Dependencies
         run: npm ci
-        
+
       - name: Build Vite App
         run: npm run build
-        
+
       - name: Transpile Server to CommonJS
         run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
 
-      # macOS: sign with ad-hoc identity (no Apple Developer account needed)
-      # This allows Squirrel.Mac to validate the update without a paid certificate
-      - name: Publish Electron App (macOS - Ad-hoc signed)
-        if: matrix.os == 'macos-latest'
+      # Ad-hoc signing: no Apple Developer certificate needed
+      # Squirrel.Mac accepts ad-hoc signed apps for auto-update
+      - name: Publish Electron App (macOS)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           CODESIGN_IDENTITY: '-'
         run: npx electron-builder --config electron-builder.json --publish always --mac
 
+  # ─── Windows Build ────────────────────────────────────────
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\npm-cache
+          key: windows-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: windows-npm-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Vite App
+        run: npm run build
+
+      - name: Transpile Server to CommonJS
+        run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
+
       - name: Publish Electron App (Windows)
-        if: matrix.os == 'windows-latest'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --config electron-builder.json --publish always --win
 
-      # Auto-publish release as Latest after macOS build completes
-      # (electron-builder creates a Draft by default, this promotes it automatically)
+  # ─── Promote Release (only after BOTH builds succeed) ─────
+  promote-release:
+    runs-on: ubuntu-latest
+    needs: [build-mac, build-win]   # ← waits for both platforms
+    steps:
       - name: Promote Release to Latest
-        if: matrix.os == 'macos-latest'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit ${{ github.ref_name }} --draft=false --latest
+        run: gh release edit ${{ github.ref_name }} --repo ledocsoff/alter --draft=false --latest

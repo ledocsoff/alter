@@ -77,10 +77,12 @@ export const PromptProvider = ({ children }) => {
   }, [activeWorkflow, allModelsDatabase]);
 
   // Matrice d'ancrage = prompt principal (Nano Virtual Mode always ON)
+  // Guard: only build when model is actually loaded (not DEFAULT_MODEL with no name)
   const anchorMatrix = useMemo(() => {
-    const characterId = model.name
-      ? `MODEL_${model.name.toUpperCase().replace(/\s+/g, '_')}`
-      : 'MODEL_VIRTUAL_V01';
+    const name = (model.name || '').trim();
+    const characterId = name
+      ? `MODEL_${name.toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`
+      : null;  // null = wait for real model to be set
     return generateAnchorMatrix(model, scene, activeAccount, {
       nanoVirtualMode: true,
       globalSeed: scene.seed || null,
