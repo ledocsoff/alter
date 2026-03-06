@@ -34,7 +34,7 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
         >
             {/* Thumbnail */}
             <div
-                className="shrink-0 w-20 sm:w-[72px] bg-zinc-900 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                className="shrink-0 w-20 sm:w-[72px] self-stretch min-h-[72px] bg-zinc-900 flex items-center justify-center cursor-pointer relative overflow-hidden"
                 onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
             >
                 {!thumbFailed && backendThumbUrl ? (

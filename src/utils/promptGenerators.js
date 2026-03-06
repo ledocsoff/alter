@@ -58,13 +58,12 @@ const NEGATIVE_DIRECTIVES_BASE = [
   "inconsistent background",
 ];
 
-// Nano Virtual Mode — extended anti-normalization directives
+// Nano Virtual Mode — strict anti-normalization directives based on Grok analysis
 const NEGATIVE_DIRECTIVES_NANO = [
   "anatomy normalization", "body proportion averaging",
   "smaller bust than reference", "flattened or compressed breasts",
-  "tightened, lifted, or artificially supported breasts",
+  "tightened/lifted breasts", "dataset-average female anatomy",
   "slimmed torso", "beauty standard enforcement",
-  "dataset-average female anatomy",
   "skin smoothing", "airbrushed texture",
   "editorial fashion proportions",
   "camera angles that reduce volume", "depth flattening", "beautification filters",
@@ -147,6 +146,29 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
     ? `${baseAnatomicalFidelity} Never normalize or average body proportions. Preserve all natural volume, soft tissue behavior, sag, projection and asymmetry exactly as described. This is a virtual model with locked proportions — NO anatomy correction allowed.`
     : baseAnatomicalFidelity;
 
+  // ============================================
+  // CONTEXT-AWARE FALLBACKS
+  // ============================================
+  const baseEnv = (scene.environment || meta.anchor_details || "").toLowerCase();
+
+  // Intelligent Lighting Defaults
+  let defaultLighting = "natural ambient lighting, appropriate for the scene, highlights on skin for realism";
+  if (baseEnv.includes("gym") || baseEnv.includes("workout")) {
+    defaultLighting = "warm window light mixed with gym LED, sweaty skin highlights, glowing skin";
+  } else if (baseEnv.includes("night") || baseEnv.includes("dark") || baseEnv.includes("club")) {
+    defaultLighting = "moody low light, practical environmental lights, subtle flash reflection, cinematic contrast";
+  } else if (baseEnv.includes("bedroom") || baseEnv.includes("room") || baseEnv.includes("home")) {
+    defaultLighting = "warm indoor lighting, cozy lamp light, mixed with practical LED accents, intimate mood";
+  } else if (baseEnv.includes("outdoor") || baseEnv.includes("street") || baseEnv.includes("beach")) {
+    defaultLighting = "bright natural sunlight, soft outdoor diffusion, golden hour warmth";
+  }
+
+  // Intelligent Camera Defaults
+  let defaultCamera = "eye-level, slight low angle, subtle tilt for smartphone dynamism";
+  if (scene.photo_type === "selfie" || scene.photo_type === "mirror") {
+    defaultCamera = "close-up smartphone angle, slight high angle or mirror tilt, candid selfie framing";
+  }
+
   // Build matrix — only include fields with values (compact removes nulls)
   const rawMatrix = {
     // PHOTO TYPE — top-level for maximum AI attention
@@ -173,17 +195,20 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
     },
 
     camera: {
-      angle: scene.camera_angle || null,
+      angle: scene.camera_angle || defaultCamera,
     },
 
     lighting: {
-      source: scene.lighting || null,
+      source: scene.lighting || defaultLighting,
       color_palette: meta.color_palette || null,
     },
 
     vibe: scene.vibe || null,
 
-    style: "Casual amateur photo for Instagram/TikTok. Smartphone camera: deep focus, 26mm wide lens, no bokeh, no studio lighting. Photorealistic: visible skin texture, natural imperfect lighting, no retouching, no beauty filter. Like a friend took this photo with their phone.",
+    style_and_realism: {
+      style: "Photorealistic amateur smartphone portrait for Instagram/TikTok",
+      details: "Raw iPhone 15 Pro / 24mm lens aesthetic, subtle digital grain, visible pores, no retouching, natural imperfect lighting, like a friend took this photo"
+    },
 
     negative_prompt: negativeStr,
   };
@@ -220,10 +245,16 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
     rawMatrix.subject.virtual_model_lock =
       "This is ALWAYS the exact same virtual model. Same face, same body proportions, same skin tone, same hair texture. NEVER change identity between shots.";
 
+    // Dynamic ControlNet simulation logic based on framing
+    let volumeGuidance = "Preserve chest/hip foreground dominance. Prevent flat or depth-compressed rendering. Maintain realistic 3D soft tissue volume.";
+    if (scene.photo_type === "selfie" || scene.photo_type === "mirror") {
+      volumeGuidance = "Selfie perspective volume: maintain realistic soft tissue depth without wide-angle fish-eye distortion. Preserve authentic body proportions.";
+    }
+
     // ControlNet simulation (inform Gemini about 3D volume expectations)
     rawMatrix.virtual_depth_simulation = {
       pose_guidance: "Preserve exact shoulder width, hip angle, and spine curvature from subject description. No pose compression.",
-      volume_guidance: "Preserve chest/hip foreground dominance. Prevent flat or depth-compressed rendering. Maintain realistic 3D soft tissue volume.",
+      volume_guidance: volumeGuidance,
       realism_guidance: "Raw iPhone 15 Pro / 24mm lens aesthetic. Subtle digital grain, natural imperfect ambient lighting, visible skin texture and pores.",
     };
 
