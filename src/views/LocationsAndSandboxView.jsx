@@ -15,7 +15,8 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
     // In packaged Electron apps, the protocol is not http/https (it's file: or a custom scheme)
     const isBrowser = typeof window !== 'undefined' && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
     const apiBase = isBrowser ? '' : 'http://localhost:3001';
-    const thumbUrl = loc.id ? `${apiBase}/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
+    const backendThumbUrl = loc.id ? `${apiBase}/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
+    const legacyImage = loc.image || loc.imageUrl || loc.thumbnail || loc.referenceUrl || null;
 
     return (
         <div
@@ -36,12 +37,18 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
                 className="shrink-0 w-20 sm:w-[72px] bg-zinc-900 flex items-center justify-center cursor-pointer relative overflow-hidden"
                 onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
             >
-                {!thumbFailed && thumbUrl ? (
+                {!thumbFailed && backendThumbUrl ? (
                     <img
-                        src={thumbUrl}
+                        src={backendThumbUrl}
                         alt={loc.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 absolute inset-0"
                         onError={() => setThumbFailed(true)}
+                    />
+                ) : legacyImage ? (
+                    <img
+                        src={legacyImage}
+                        alt={loc.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 absolute inset-0"
                     />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 absolute inset-0">
