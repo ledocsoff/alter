@@ -332,22 +332,7 @@ const AppLayout = ({ children }) => {
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
-      {isUpdateModalOpen && (
-        <UpdateModal
-          isCheckingUpdate={isCheckingUpdate}
-          downloadProgress={downloadProgress}
-          hasUpdate={hasUpdate}
-          isUpdating={isUpdating}
-          isUpdateError={isUpdateError}
-          isUpToDate={isUpToDate}
-          onCheckUpdate={handleCheckUpdate}
-          onRestart={handleUpdate}
-          onClose={() => {
-            setIsUpdateModalOpen(false);
-            setIsUpToDate(false);
-          }}
-        />
-      )}
+      {/* Les modals Updates ont été supprimés */}
     </div>
   );
 };

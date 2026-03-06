@@ -9,8 +9,8 @@ Alter is a premium prompt engineering workstation for AI image generation. Manag
 | Platform | Download |
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Alter-5.3.10-arm64.dmg](https://github.com/ledocsoff/alter/releases/latest) |
-| **Windows** (x64) | [Alter Setup 5.3.10.exe](https://github.com/ledocsoff/alter/releases/latest) |
+| **macOS** (Apple Silicon) | [Alter-5.5.2-arm64.dmg](https://github.com/ledocsoff/alter/releases/latest) |
+| **Windows** (x64) | [Alter-Setup-5.5.2.exe](https://github.com/ledocsoff/alter/releases/latest) |
 
 ### 🍏 macOS Installation Guide (Important)
 Since Alter is downloaded from GitHub and is not signed by a paid Apple Developer certificate, macOS enforces strict security rules (Gatekeeper and App Translocation). To ensure the app can save your generation data and automatically update itself, please follow these exact steps:
@@ -26,9 +26,9 @@ Since Alter is downloaded from GitHub and is not signed by a paid Apple Develope
 ## Features
 
 - **Multi-model management** — Create detailed AI model profiles with physical attributes, personality traits, and reference photos
-- **Account system** — Organize models by Instagram/TikTok/Tinder/OnlyFans accounts
+- **Account system** — Organize models by platforms (Instagram, TikTok, Tinder, OnlyFans)
 - **Location & scene editor** — Configure environments, outfits, poses, lighting, camera angles per location
-- **Drag & drop reorder** — Reorganize models, accounts, and locations by dragging
+- **Drag & drop reorder** — Reorganize models, accounts, and locations seamlessly
 - **AI prompt generation** — Automatic JSON + text prompt generation via Google Gemini API
 - **Anchor matrix** — Visual consistency system that locks identity traits across generations
 - **Reference images** — Upload face/body references for identity-locked generation
@@ -36,20 +36,19 @@ Since Alter is downloaded from GitHub and is not signed by a paid Apple Develope
 - **Image gallery** — Server-side storage with pagination, favorites, and lazy loading
 - **Prompt history** — Browse, search, and reuse previous prompts with rich metadata badges
 - **Scene templates** — Save and load scene presets for quick setup
-- **Sandbox mode** — Free-form generation without location constraints
+- **Sandbox mode** — Free-form generation without location/model constraints
 - **Seed management** — Reproducible outputs with per-location seed tracking
 - **Dual API keys** — Two API key slots with automatic failover on quota exhaustion
 - **Unified logging** — Activity + Technical logs panel with export for diagnosis
-- **Auto-save & backups** — Atomic writes with 5-slot backup rotation and auto-recovery
+- **Data Persistence** — Automatic saving to `Documents/Alter/sauvegarde/` (safe updates)
 - **Data validation** — Automatic repair of corrupted data on load
-- **Auto-update** — In-app updates via GitHub Releases (Electron only)
-- **Security hardened** — Rate limiting, input validation, path traversal protection, XSS protection, API key obfuscation
+- **Security hardened** — Rate limiting, path traversal protection, XSS protection, API key obfuscation
 - **Remote Access (Tailscale/LAN)** — Dynamic CORS routing to access the studio from a phone on a private network
 - **Mobile Responsive UI** — Touch targets, safe-areas, and fully responsive layouts for mobile usage
 
 ## Audits & Quality Control
 
-Alter (v5.3.0) has passed a rigorous 6-phase master technical audit. The detailed reports (Cybersecurity OWASP 2025, Performance, Accessibility, and Server Integrity) can be found in the [`docs/audits/`](docs/audits/) directory.
+Alter (v5.5.2) has passed a rigorous multi-phase technical audit. Detailed reports covering Cybersecurity, Performance, Accessibility, and Server Integrity are in the `docs/audits/` directory.
 
 ## Quick Start (Development)
 
@@ -127,10 +126,11 @@ No `.env` file required — the API key is configured directly in the app via th
 
 ## Data Persistence
 
-All data is stored in the `sauvegarde/` folder at the project root:
-- **Backup**: Copy the `sauvegarde/` folder to preserve all data
-- **Restore**: Replace the `sauvegarde/` folder and restart
-- **Export/Import**: Use the built-in Export/Import buttons in the header
+All data is stored in the `Documents/Alter/sauvegarde/` folder on your computer (Mac or Windows):
+- **Safety**: Your data is completely shielded from application updates. Replacing the `.dmg` or `.exe` will **never** overwrite your settings.
+- **Backup**: Copy the `Documents/Alter/` folder to a USB drive to preserve everything.
+- **Restore**: Paste the `Alter/` folder into your new computer's `Documents` and launch the app.
+- **Export/Import**: Use the built-in Export/Import buttons in the UI for quick JSON snapshots.
 
 ## License
 
