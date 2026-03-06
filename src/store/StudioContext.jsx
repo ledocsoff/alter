@@ -148,7 +148,7 @@ export const PromptProvider = ({ children }) => {
     }
 
     try {
-      const result = await generateImage(apiKey, promptToSend, anchorHistory, model.name);
+      const result = await generateImage(apiKey, promptToSend, '9:16', anchorHistory, { seed: scene?.seed || null });
 
       if (!result?.success || !result?.imageUrl) {
         throw new Error(result?.error || JSON.stringify(result));

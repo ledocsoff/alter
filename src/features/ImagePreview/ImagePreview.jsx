@@ -2,11 +2,10 @@ import React, { useState, useCallback, useImperativeHandle, forwardRef, useRef, 
 import { useStudio } from '../../store/StudioContext';
 import { useToast } from '../../store/ToastContext';
 import { getApiKey, saveToGallery, savePromptToHistory } from '../../utils/storage';
-import { generateImage } from '../../utils/googleAI';
 
 const MAX_HISTORY_TURNS = 5; // Garder les 5 derniers échanges pour la cohérence
 const VARIATION_INSTRUCTION = `Generate a VARIATION of the image I just showed you.
-Same person (EXACT identity), same location and environment.
+Same person(EXACT identity), same location and environment.
 But change: pose, camera angle, expression, minor styling detail.
 Keep the same outfit unless specified otherwise.
 The result should feel like a different shot from the same photoshoot.`;
@@ -106,7 +105,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     const ext = currentImage.mimeType?.includes('jpeg') ? 'jpg' : 'png';
     const a = document.createElement('a');
     a.href = currentImage.dataUrl;
-    a.download = `alter-${Date.now()}.${ext}`;
+    a.download = `alter - ${Date.now()}.${ext} `;
     a.click();
     toast.success('Image t\u00e9l\u00e9charg\u00e9e');
   }, [currentImage, toast]);
@@ -321,10 +320,10 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
               <button
                 key={img.id}
                 onClick={() => { setCurrentImage(img); setStatus('done'); }}
-                className={`w-9 h-9 rounded-md overflow-hidden shrink-0 border transition-all ${currentImage?.id === img.id
-                  ? 'border-teal-500/50 ring-1 ring-teal-500/20'
-                  : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
-                  }`}
+                className={`w - 9 h - 9 rounded - md overflow - hidden shrink - 0 border transition - all ${currentImage?.id === img.id
+                    ? 'border-teal-500/50 ring-1 ring-teal-500/20'
+                    : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
+                  } `}
               >
                 <img src={img.dataUrl} alt="" className="w-full h-full object-cover" />
               </button>
