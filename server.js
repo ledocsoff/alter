@@ -332,7 +332,11 @@ app.get('/api/health', (_req, res) => {
 // Version info
 let PKG_VERSION = 'unknown';
 try {
-    PKG_VERSION = JSON.parse(fs.readFileSync(path.join(currentDir, 'package.json'), 'utf-8')).version;
+    // In dev, it's at root. In production, it's inside app.asar.
+    const pkgPath = fs.existsSync(path.join(currentDir, 'package.json'))
+        ? path.join(currentDir, 'package.json')
+        : path.join(currentDir, 'app.asar', 'package.json');
+    PKG_VERSION = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version;
 } catch (e) {
     console.warn('[Server] Could not read package.json version:', e.message);
 }

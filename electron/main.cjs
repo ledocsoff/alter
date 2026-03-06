@@ -203,8 +203,9 @@ function createWindow() {
         mainWindow.loadURL(`http://localhost:${VITE_PORT}`);
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
-        // In production, serve the built Vite app
-        mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+        // In production, the dist folder is moved out of app.asar into Resources/dist 
+        // because we listed it inside extraResources in electron-builder.
+        mainWindow.loadFile(path.join(process.resourcesPath, 'dist', 'index.html'));
     }
 
     // Show window once content is ready (avoids white flash)
