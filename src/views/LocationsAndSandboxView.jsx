@@ -428,22 +428,22 @@ const LocationsAndSandboxView = () => {
 
                             {/* ── STEP 2: Full form (after AI fill or in edit mode) ── */}
                             {(isEditing || locFormMode === 'review') && (
-                                <div className="p-5 space-y-5">
+                                <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
                                     {locFormMode === 'review' && (
-                                        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15">
-                                            <div className="w-4 h-4 mt-0.5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                                                <span className="text-[8px] text-emerald-400 font-bold">✓</span>
+                                        <div className="flex items-start gap-2.5 px-3 py-2 sm:px-4 sm:py-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15">
+                                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                                <span className="text-[7px] sm:text-[8px] text-emerald-400 font-bold">✓</span>
                                             </div>
-                                            <p className="text-[12px] text-emerald-300/80 leading-relaxed">
-                                                Champs remplis par l'IA. Vérifiez et ajustez si besoin, puis enregistrez.
+                                            <p className="text-[11px] sm:text-[12px] text-emerald-300/80 leading-relaxed">
+                                                Champs remplis par l'IA. Vérifiez et enregistrez.
                                             </p>
                                         </div>
                                     )}
 
-                                    <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-cols-1 gap-3 sm:gap-4">
                                         {/* Name */}
                                         <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-2 block">Nom du lieu</label>
+                                            <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5 block">Nom du lieu</label>
                                             <input
                                                 type="text"
                                                 placeholder="Chambre étudiante • Café terrasse • Studio..."
@@ -455,64 +455,64 @@ const LocationsAndSandboxView = () => {
 
                                         {/* Environment */}
                                         <div>
-                                            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-2 block">
-                                                Environnement <span className="text-teal-500/50 normal-case font-normal">· ancre principale</span>
+                                            <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                                Environnement <span className="text-teal-500/50 normal-case font-normal hidden sm:inline">· ancre principale</span>
                                             </label>
                                             <textarea
                                                 placeholder="cozy bedroom with fairy lights, white sheets, warm tones..."
                                                 value={newLocEnv}
                                                 onChange={(e) => setNewLocEnv(e.target.value)}
                                                 rows={2}
-                                                className="velvet-input w-full resize-none leading-relaxed"
+                                                className="velvet-input w-full resize-none leading-relaxed text-[13px] sm:text-sm"
                                             />
                                         </div>
 
-                                        {/* 3-column grid */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3">
+                                        {/* 3-column grid (horizontal even on mobile) */}
+                                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                             <div>
-                                                <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Éclairage</label>
-                                                <input type="text" placeholder="soft natural..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full text-[12px]" />
+                                                <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Éclairage</label>
+                                                <input type="text" placeholder="soft natural..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Vibe</label>
-                                                <input type="text" placeholder="cozy, intimate..." value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full text-[12px]" />
+                                                <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Vibe</label>
+                                                <input type="text" placeholder="cozy, intimate..." value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Moment</label>
-                                                <input type="text" placeholder="golden hour..." value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full text-[12px]" />
+                                                <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Moment</label>
+                                                <input type="text" placeholder="golden hour..." value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                         </div>
 
-                                        {/* Anchor + Palette */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3">
+                                        {/* Anchor + Palette (vertical on mobile, horizontal on sm) */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">
-                                                    Détails d'ancrage <span className="text-teal-500/40 normal-case font-normal">cohérence</span>
+                                                <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">
+                                                    Détails d'ancrage
                                                 </label>
-                                                <textarea
+                                                <input
+                                                    type="text"
                                                     placeholder="pink LED strip, grey duvet, white IKEA lamp..."
                                                     value={newLocAnchorDetails}
                                                     onChange={(e) => setNewLocAnchorDetails(e.target.value)}
-                                                    rows={2}
-                                                    className="velvet-input w-full resize-none text-[12px]"
+                                                    className="velvet-input w-full text-[12px]"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Palette couleurs</label>
-                                                <textarea
+                                                <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Palette couleurs</label>
+                                                <input
+                                                    type="text"
                                                     placeholder="warm beige, white sheets, soft pink..."
                                                     value={newLocColorPalette}
                                                     onChange={(e) => setNewLocColorPalette(e.target.value)}
-                                                    rows={2}
-                                                    className="velvet-input w-full resize-none text-[12px]"
+                                                    className="velvet-input w-full text-[12px]"
                                                 />
                                             </div>
                                         </div>
 
                                         {/* Negative */}
                                         <div>
-                                            <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">
-                                                Negative prompt <span className="text-zinc-700 normal-case font-normal">éléments à exclure</span>
+                                            <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block w-full truncate">
+                                                Negative prompt <span className="text-zinc-700 normal-case font-normal hidden sm:inline">éléments à exclure</span>
                                             </label>
                                             <input
                                                 type="text"

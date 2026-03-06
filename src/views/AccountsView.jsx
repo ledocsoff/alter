@@ -164,11 +164,11 @@ const AccountsView = () => {
                   onDragEnter={() => handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`velvet-card group px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
+                  className={`velvet-card group flex flex-col sm:flex-row w-full sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
                 >
                   {/* Left: clickable area for navigation */}
                   <div
-                    className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 sm:gap-4 w-full sm:flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => navigate(`/models/${modelId}/accounts/${acc.id}/locations`)}
                   >
                     {/* Drag handle */}
@@ -191,7 +191,7 @@ const AccountsView = () => {
                   </div>
 
                   {/* Right: action buttons — SEPARATE from navigation */}
-                  <div className="flex items-center justify-end w-full sm:w-auto gap-1.5 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-zinc-800/50 shrink-0">
+                  <div className="flex justify-end items-center w-full sm:w-auto gap-1.5 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-zinc-800/50 shrink-0">
                     <button
                       onClick={() => handleDuplicate(acc.id)}
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"

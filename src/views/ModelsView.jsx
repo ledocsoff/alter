@@ -160,10 +160,10 @@ const ModelsView = () => {
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => handleSelect(m)}
-                  className={`group relative flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-teal-500/50 bg-teal-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
+                  className={`group relative flex flex-col sm:flex-row w-full sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-teal-500/50 bg-teal-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
                   style={{ animationDelay: `${idx * 40}ms` }}
                 >
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className="flex items-center gap-3 sm:gap-4 w-full sm:flex-1 min-w-0">
                     {/* Drag handle */}
                     {!search && (
                       <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors hidden sm:block" onMouseDown={(e) => e.stopPropagation()}>
@@ -189,7 +189,7 @@ const ModelsView = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-zinc-800/50 sm:shrink-0">
+                  <div className="flex justify-between sm:justify-end items-center w-full sm:w-auto gap-4 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-zinc-800/50 shrink-0">
                     {/* Stats */}
                     <div className="flex items-center gap-3 text-[11px] text-zinc-600">
                       <span className="flex items-center gap-1" title={`${accountCount} compte(s)`}>
