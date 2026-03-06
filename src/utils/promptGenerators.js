@@ -217,7 +217,6 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
     const resolvedCharacterId = characterId || (model.name ? `MODEL_${model.name.toUpperCase().replace(/\s+/g, '_')}` : 'MODEL_V01');
 
     // Virtual model lock on subject
-    rawMatrix.subject.character_id = resolvedCharacterId;
     rawMatrix.subject.virtual_model_lock =
       "This is ALWAYS the exact same virtual model. Same face, same body proportions, same skin tone, same hair texture. NEVER change identity between shots.";
 
@@ -231,10 +230,9 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
     // Extended directives for virtual model
     rawMatrix.directives.global_seed = effectiveSeed;
     rawMatrix.directives.character_seed = effectiveSeed;
-    rawMatrix.directives.character_id = resolvedCharacterId;
     rawMatrix.directives.environment_swap_mode = "model_locked";
     rawMatrix.directives.virtual_model_rule =
-      "Only the environment section may change between shots. Model face, anatomy, skin, hair are 100% locked by character_id and character_seed. NEVER update, average or normalize the model's appearance.";
+      "Only the environment section may change between shots. Model face, anatomy, skin, hair are 100% locked by character_seed. NEVER update, average or normalize the model's appearance.";
   }
 
   // Platform compliance
@@ -246,8 +244,6 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null, options
       Tinder: "Dating profile photo. Approachable, attractive, natural.",
     };
     rawMatrix.platform = {
-      name: p,
-      handle: activeAccount.handle,
       compliance: compliance[p] || null,
     };
   }

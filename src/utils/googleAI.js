@@ -158,10 +158,10 @@ RULE #7 — NEGATIVE PROMPT:
 The "negative_prompt" lists forbidden elements. Never produce anything listed there.
 
 RULE #8 — VIRTUAL MODEL LOCK:
-If a "character_id" is present in the JSON, this defines a FIXED VIRTUAL MODEL. The SAME face, body, skin, hair, proportions MUST appear in every generation, regardless of environment changes. Never alter, blend, upgrade or normalize the model between shots.
+If a "character_seed" is present in the JSON, this defines a FIXED VIRTUAL MODEL. The SAME face, body, skin, hair, proportions MUST appear in every generation, regardless of environment changes. Never alter, blend, upgrade or normalize the model between shots.
 
 RULE #9 — ENVIRONMENT FLEXIBILITY:
-Only the "environment" section may change between shots. Model, anatomy and proportions are 100% locked by "character_id" and "character_seed". Swapping location NEVER alters the model's appearance.
+Only the "environment" section may change between shots. Model, anatomy and proportions are 100% locked by "character_seed". Swapping location NEVER alters the model's appearance.
 
 RULE #10 — RAW IPHONE AESTHETIC:
 The final image MUST look like a real iPhone 15 Pro photo. Subtle digital grain, possible 1-2° hand-held tilt, warm/cool white balance variation, deep focus throughout (no bokeh anywhere), visible skin pores and texture imperfections. Respect character_seed for visual consistency.
