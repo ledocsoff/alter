@@ -86,7 +86,7 @@ const ModelsView = () => {
       <div className="max-w-4xl mx-auto px-6 py-10">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8 animate-fade-in">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8 animate-fade-in">
           <div>
             <h2 className="text-2xl font-bold text-zinc-100 tracking-tight">Modèles</h2>
             <p className="text-zinc-500 text-sm mt-1">
@@ -96,34 +96,34 @@ const ModelsView = () => {
               }
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {hasResume && (
               <button
                 onClick={() => navigate(lastSession.path)}
-                className="velvet-btn-primary flex items-center gap-2 h-9 text-xs"
+                className="velvet-btn-primary flex items-center gap-2 h-9 text-xs flex-1 sm:flex-none justify-center"
                 title={`Reprendre : ${lastSession.modelName} — ${lastSession.locationName}`}
               >
                 <PlayIcon size={12} />
                 <span>Reprendre</span>
-                <span className="text-white/50 text-[10px]">({lastSession.modelName})</span>
+                <span className="text-white/50 text-[10px] truncate max-w-[80px]">({lastSession.modelName})</span>
               </button>
             )}
             {allModelsDatabase.length > 0 && (
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none min-w-[120px]">
                 <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Rechercher..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="velvet-input h-9 w-40 text-sm"
+                  className="velvet-input h-9 w-full sm:w-40 text-sm"
                   style={{ paddingLeft: '2.25rem' }}
                 />
               </div>
             )}
             <button
               onClick={() => navigate('/models/new')}
-              className="h-9 px-4 rounded-xl text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-all hover:shadow-lg hover:shadow-white/5 flex items-center gap-1.5"
+              className="h-9 px-4 rounded-xl text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-all hover:shadow-lg hover:shadow-white/5 flex items-center gap-1.5 shrink-0"
             >
               <PlusIcon size={14} />
               Nouveau
@@ -160,61 +160,65 @@ const ModelsView = () => {
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => handleSelect(m)}
-                  className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-teal-500/50 bg-teal-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
+                  className={`group relative flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl cursor-pointer transition-all duration-200 hover:bg-zinc-800/50 border ${dragOverIdx === globalIdx ? 'border-teal-500/50 bg-teal-500/5' : 'border-transparent hover:border-zinc-700/50'}`}
                   style={{ animationDelay: `${idx * 40}ms` }}
                 >
-                  {/* Drag handle */}
-                  {!search && (
-                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors" onMouseDown={(e) => e.stopPropagation()}>
-                      <GripVerticalIcon size={14} />
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                    {/* Drag handle */}
+                    {!search && (
+                      <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors hidden sm:block" onMouseDown={(e) => e.stopPropagation()}>
+                        <GripVerticalIcon size={14} />
+                      </div>
+                    )}
+                    {/* Avatar */}
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg ${color.glow}`}>
+                      {m.name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
-                  )}
-                  {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.gradient} flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg ${color.glow}`}>
-                    {m.name?.charAt(0)?.toUpperCase() || '?'}
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[14px] font-semibold text-zinc-100 truncate">{m.name}</h3>
+                        {m.ethnicity && <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded-md truncate max-w-[80px] sm:max-w-[120px] hidden sm:inline-block">{(m.ethnicity || '').split(',')[0]}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 sm:gap-3 mt-0.5 text-[11px] text-zinc-500 truncate">
+                        <span className="shrink-0">{m.age || '22'} ans</span>
+                        {m.body?.type && <span className="truncate">· {m.body.type}</span>}
+                        {m.hair?.color && <span className="truncate hidden sm:inline-block">· {(m.hair.color || '').split(',')[0]}</span>}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-[14px] font-semibold text-zinc-100 truncate">{m.name}</h3>
-                      {m.ethnicity && <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded-md truncate max-w-[120px]">{(m.ethnicity || '').split(',')[0]}</span>}
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-zinc-800/50 sm:shrink-0">
+                    {/* Stats */}
+                    <div className="flex items-center gap-3 text-[11px] text-zinc-600">
+                      <span className="flex items-center gap-1" title={`${accountCount} compte(s)`}>
+                        <UsersIcon size={12} />
+                        <span className="font-semibold text-zinc-400">{accountCount}</span> <span className="sm:hidden text-zinc-500">comptes</span>
+                      </span>
+                      <span className="flex items-center gap-1" title={`${locationCount} lieu(x)`}>
+                        <MapPinIcon size={12} />
+                        <span className="font-semibold text-zinc-400">{locationCount}</span> <span className="sm:hidden text-zinc-500">lieux</span>
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5 text-[11px] text-zinc-500">
-                      <span>{m.age || '22'} ans</span>
-                      {m.body?.type && <span>· {m.body.type}</span>}
-                      {m.hair?.color && <span>· {(m.hair.color || '').split(',')[0]}</span>}
+
+                    {/* Action buttons — always visible */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={(e) => handleDuplicate(e, m)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"
+                        title="Dupliquer"
+                      >
+                        <CopyIcon size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(e, m)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
                     </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-3 text-[11px] text-zinc-600 shrink-0">
-                    <span className="flex items-center gap-1" title={`${accountCount} compte(s)`}>
-                      <UsersIcon size={12} />
-                      {accountCount}
-                    </span>
-                    <span className="flex items-center gap-1" title={`${locationCount} lieu(x)`}>
-                      <MapPinIcon size={12} />
-                      {locationCount}
-                    </span>
-                  </div>
-
-                  {/* Action buttons — always visible */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={(e) => handleDuplicate(e, m)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"
-                      title="Dupliquer"
-                    >
-                      <CopyIcon size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, m)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                      title="Supprimer"
-                    >
-                      <TrashIcon size={14} />
-                    </button>
                   </div>
                 </div>
               );

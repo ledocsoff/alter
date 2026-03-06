@@ -91,48 +91,51 @@ const AccountsView = () => {
       <div className="max-w-4xl mx-auto px-6 py-10">
 
         {/* HEADER */}
-        <div className="mb-10 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-lg shadow-teal-500/20">
-              {currentModel.name?.charAt(0)?.toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-zinc-100 tracking-tight">{currentModel.name}</h2>
-                <button
-                  onClick={() => navigate(`/models/${modelId}/edit`)}
-                  className="velvet-btn-ghost text-xs flex items-center gap-1.5 py-1 px-2"
-                >
-                  <EditIcon size={12} />
-                  Editer
-                </button>
+        <div className="mb-8 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-base sm:text-lg font-bold text-white shrink-0 shadow-lg shadow-teal-500/20">
+                {currentModel.name?.charAt(0)?.toUpperCase()}
               </div>
-              <p className="text-zinc-500 text-[13px] mt-0.5">{currentModel.ethnicity?.split(',')[0]} · {currentModel.body?.type || 'Standard'}</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-100 tracking-tight truncate">{currentModel.name}</h2>
+                <p className="text-zinc-500 text-xs sm:text-[13px] mt-0.5 truncate">{currentModel.ethnicity?.split(',')[0]} · {currentModel.body?.type || 'Standard'}</p>
+              </div>
             </div>
+            <button
+              onClick={() => navigate(`/models/${modelId}/edit`)}
+              className="velvet-btn-ghost text-xs flex items-center justify-center gap-1.5 py-2 sm:py-1 px-3 sm:px-2 w-full sm:w-auto"
+            >
+              <EditIcon size={12} />
+              <span>Editer le profil</span>
+            </button>
           </div>
         </div>
 
         {/* ADD FORM */}
-        <div className="flex gap-2 mb-10 p-1.5 velvet-card rounded-xl animate-fade-in-up" style={{ animationDelay: '50ms' }}>
-          <select
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-            className="bg-transparent border-0 text-zinc-300 text-sm pl-3 pr-1 outline-none focus:ring-0 cursor-pointer"
-          >
-            {Object.keys(PLATFORMS).map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-          <input
-            type="text"
-            placeholder="@username"
-            className="flex-1 bg-transparent text-zinc-100 text-sm px-3 py-2 outline-none placeholder-zinc-600"
-            value={handle}
-            onChange={(e) => setHandle(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-          />
+        <div className="flex flex-col sm:flex-row gap-2 mb-8 p-1.5 velvet-card rounded-xl animate-fade-in-up" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center flex-1 bg-zinc-900/50 rounded-lg sm:bg-transparent sm:rounded-none px-1 py-1 sm:p-0 border border-zinc-800 sm:border-0">
+            <select
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              className="bg-transparent border-0 text-zinc-300 text-sm pl-3 pr-1 py-2 sm:py-0 outline-none focus:ring-0 cursor-pointer min-w-[100px]"
+            >
+              {Object.keys(PLATFORMS).map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <div className="w-px h-5 bg-zinc-800 mx-1 hidden sm:block"></div>
+            <input
+              type="text"
+              placeholder="@username"
+              className="flex-1 bg-transparent text-zinc-100 text-sm px-3 py-2 outline-none placeholder-zinc-600 w-full"
+              value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            />
+          </div>
           <button
             onClick={handleCreate}
             disabled={!handle.trim()}
-            className="h-9 px-4 rounded-lg text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-all disabled:opacity-20 shrink-0 flex items-center gap-1.5"
+            className="h-10 sm:h-9 px-4 rounded-lg text-sm font-semibold bg-zinc-100 text-zinc-900 hover:bg-white transition-all disabled:opacity-20 shrink-0 flex items-center justify-center gap-1.5 w-full sm:w-auto"
           >
             <PlusIcon size={13} />
             Ajouter
@@ -161,25 +164,25 @@ const AccountsView = () => {
                   onDragEnter={() => handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`velvet-card group p-4 flex items-center gap-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
+                  className={`velvet-card group px-3 sm:px-4 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
                 >
-                  {/* Drag handle */}
-                  <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors">
-                    <GripVerticalIcon size={14} />
-                  </div>
                   {/* Left: clickable area for navigation */}
                   <div
-                    className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => navigate(`/models/${modelId}/accounts/${acc.id}/locations`)}
                   >
+                    {/* Drag handle */}
+                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-700 hover:text-zinc-400 transition-colors hidden sm:block" onClick={(e) => e.stopPropagation()}>
+                      <GripVerticalIcon size={14} />
+                    </div>
                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cfg.color} flex items-center justify-center shrink-0 shadow-md`}>
                       <span className="text-white text-sm font-bold">{acc.platform.charAt(0)}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-zinc-100 text-sm leading-tight">{acc.handle}</h4>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      <h4 className="font-semibold text-zinc-100 text-[14px] leading-tight truncate">{acc.handle}</h4>
+                      <div className="flex items-center gap-2 sm:gap-3 mt-0.5">
                         <span className={`text-[11px] ${cfg.accent} font-medium`}>{acc.platform}</span>
-                        <span className="flex items-center gap-1 text-[11px] text-zinc-600">
+                        <span className="flex items-center gap-1 text-[11px] text-zinc-600 shrink-0">
                           <MapPinIcon size={10} />
                           {locCount} lieu{locCount !== 1 ? 'x' : ''}
                         </span>
@@ -188,7 +191,7 @@ const AccountsView = () => {
                   </div>
 
                   {/* Right: action buttons — SEPARATE from navigation */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center justify-end w-full sm:w-auto gap-1.5 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-zinc-800/50 shrink-0">
                     <button
                       onClick={() => handleDuplicate(acc.id)}
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all"
