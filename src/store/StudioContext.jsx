@@ -114,9 +114,37 @@ export const PromptProvider = ({ children }) => {
     setGenerationStatus('generating');
     setGenerationError('');
     setGenerationElapsed(0);
+    setGenerationElapsed(0);
     setLastGenTime(now);
 
-    const promptToSend = customPromptOverride || generatedPrompt;
+    // Helper syntax: convert JSON to flat string to avoid API 500 errors on massive nested payloads
+    const stringifyPrompt = (promptData) => {
+      try {
+        const obj = typeof promptData === 'string' ? JSON.parse(promptData) : promptData;
+        if (!obj || typeof obj !== 'object') return promptData;
+
+        // Flatten core descriptive fields while stripping JSON boilerplate
+        const parts = [];
+        if (obj.photo_type) parts.push(`Photo type: ${obj.photo_type}`);
+        if (obj.subject) {
+          const s = obj.subject;
+          parts.push(`Subject: ${[s.demographics, s.hair, s.face, s.apparel].filter(Boolean).join(', ')}`);
+        }
+        if (obj.pose) parts.push(`Pose: ${[obj.pose.body_position, obj.pose.expression].filter(Boolean).join(', ')}`);
+        if (obj.environment) parts.push(`Environment: ${[obj.environment.setting, obj.environment.background_elements, obj.environment.time_of_day].filter(Boolean).join(', ')}`);
+        if (obj.camera?.angle) parts.push(`Camera: ${obj.camera.angle}`);
+        if (obj.lighting) parts.push(`Lighting: ${[obj.lighting.source, obj.lighting.color_palette].filter(Boolean).join(', ')}`);
+        if (obj.vibe) parts.push(`Vibe: ${obj.vibe}`);
+        if (obj.style) parts.push(`Style: ${obj.style}`);
+
+        return parts.join(' | ') || JSON.stringify(obj);
+      } catch {
+        return promptData; // Fallback to raw string if not JSON
+      }
+    };
+
+    const rawPrompt = customPromptOverride || generatedPrompt;
+    const promptToSend = stringifyPrompt(rawPrompt);
     let anchorHistory = [];
 
     if (referenceImages.length > 0) {
