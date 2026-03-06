@@ -52,7 +52,6 @@
         "installerIcon": "public/icons/icon.png",
         "uninstallerIcon": "public/icons/icon.png",
         "shortcutName": "Alter",
-        "artifactName": "Alter-Setup-${version}.${ext}",
-        "requestedExecutionLevel": "user"
+        "artifactName": "Alter-Setup-${version}.${ext}"
     }
 }
