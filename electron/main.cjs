@@ -152,8 +152,7 @@ app.whenReady().then(async () => {
     await startServer();
     createWindow();
 
-    // Auto-update in production only
-    if (!IS_DEV) setupAutoUpdate(mainWindow);
+    createWindow();
 
     app.on('activate', () => {
         // macOS: re-create window when dock icon is clicked

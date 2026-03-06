@@ -198,6 +198,21 @@ body {
   animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Force CSS spinning for Windows reduced-motion builds by overriding Tailwind's default media queries */
+.animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-slide-in-down {
   animation: slideInDown 0.25s ease-out both;
 }

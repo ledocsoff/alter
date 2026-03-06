@@ -28,7 +28,6 @@
         "electron:dev": "concurrently -n server,vite,electron -c yellow,cyan,magenta \"node server.js\" \"vite --open false\" \"sleep 3 && ELECTRON_DEV=true npx electron .\"",
         "electron:build": "vite build && npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs && npx electron-builder --config electron-builder.json",
         "electron:pack": "vite build && npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs && npx electron-builder --config electron-builder.json --dir",
-        "update": "git pull origin master && npm install --omit=dev && npm run build",
         "version": "node -e \"console.log('Alter v' + require('./package.json').version)\""
     },
     "dependencies": {

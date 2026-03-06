@@ -92,13 +92,9 @@ const AppLayout = ({ children }) => {
   const [errorCount, setErrorCount] = useState(0);
   const [serverOnline, setServerOnline] = useState(true);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [notInApplications, setNotInApplications] = useState(false);
-  // Listen for native update events from electron-updater
+  // Listen for native lifecycle events from main process
   useEffect(() => {
     if (window.alter) {
-      if (window.alter.onNotInApplications) {
-        window.alter.onNotInApplications(() => setNotInApplications(true));
-      }
       if (window.alter.onBackendLog) {
         window.alter.onBackendLog((log) => {
           logger[log.level]('electron', log.source, log.msg);
@@ -224,21 +220,6 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans antialiased">
-      {notInApplications && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2 flex items-center justify-between shadow-inner shrink-0 z-[60]">
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <p className="text-[12px] text-amber-500 font-medium">
-              <strong className="text-amber-400">Installation incorrecte détectée :</strong> Déplacez Alter dans le dossier <code className="bg-amber-500/20 px-1 py-0.5 rounded text-amber-300">Applications</code> de votre Mac pour que les mises à jour fonctionnent.
-            </p>
-          </div>
-          <button onClick={() => setNotInApplications(false)} className="text-amber-500 hover:text-amber-400 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-      )}
       <header className="px-6 h-12 bg-[#09090b]/80 border-b border-zinc-800/50 flex items-center gap-6 sticky top-0 z-50 backdrop-blur-xl">
         <Link to="/" className="hover:opacity-80 transition-opacity shrink-0 flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
