@@ -89,7 +89,14 @@ export const PromptProvider = ({ children }) => {
       characterId,
     });
   }, [model, scene, activeAccount]);
-  const generatedPrompt = useMemo(() => JSON.stringify(anchorMatrix, null, 2), [anchorMatrix]);
+  const [customPromptOverride, setCustomPromptOverride] = useState(null);
+
+  // Clear override when underlying visual parameters change
+  useEffect(() => {
+    setCustomPromptOverride(null);
+  }, [anchorMatrix]);
+
+  const generatedPrompt = useMemo(() => customPromptOverride || JSON.stringify(anchorMatrix, null, 2), [anchorMatrix, customPromptOverride]);
 
   const updateSceneEntry = useCallback((key, value) => {
     setScene(prev => ({ ...prev, [key]: value }));
@@ -188,10 +195,10 @@ export const PromptProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages,
-    generationStatus, currentImage, generationElapsed, generationError,
+    generationStatus, currentImage, generationElapsed, generationError, customPromptOverride,
     setModel, setScene, setReferenceImages, setLocationRefImages, updateSceneEntry,
-    handleGenerateImage, setGenerationStatus, setCurrentImage, setGenerationError
-  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, generationStatus, currentImage, generationElapsed, generationError, updateSceneEntry, handleGenerateImage]);
+    handleGenerateImage, setGenerationStatus, setCurrentImage, setGenerationError, setCustomPromptOverride
+  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, generationStatus, currentImage, generationElapsed, generationError, updateSceneEntry, handleGenerateImage, customPromptOverride]);
 
   return (
     <PromptContext.Provider value={value}>

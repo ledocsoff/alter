@@ -36,7 +36,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
         { ...galleryMetaRef.current, prompt: promptToSend }
       );
       window.dispatchEvent(new CustomEvent('alter:gallery-updated'));
-    } catch { /* silent */ }
+    } catch (err) { console.error('Gallery save failed:', err); }
 
     // Auto-save prompt to history
     try {
@@ -47,7 +47,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
         turnCount,
         galleryImageId: galleryResult?.id || null,
       });
-    } catch { /* silent */ }
+    } catch (err) { console.error('History save failed:', err); }
 
     // Notify parent for gallery refresh
     onGalleryUpdate?.();
@@ -321,8 +321,8 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                 key={img.id}
                 onClick={() => { setCurrentImage(img); setStatus('done'); }}
                 className={`w - 9 h - 9 rounded - md overflow - hidden shrink - 0 border transition - all ${currentImage?.id === img.id
-                    ? 'border-teal-500/50 ring-1 ring-teal-500/20'
-                    : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
+                  ? 'border-teal-500/50 ring-1 ring-teal-500/20'
+                  : 'border-white/[0.05] opacity-40 hover:opacity-100 hover:border-white/[0.15]'
                   } `}
               >
                 <img src={img.dataUrl} alt="" className="w-full h-full object-cover" />

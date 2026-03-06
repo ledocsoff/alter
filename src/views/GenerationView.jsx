@@ -23,7 +23,7 @@ const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
 
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages, generationStatus } = useStudio();
+    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages, generationStatus, setCustomPromptOverride } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -152,9 +152,11 @@ const GenerationView = () => {
         modelHash,
     };
 
-    const handleGenerateImage = useCallback(() => {
-        if (imagePreviewRef.current?.handleGenerate) {
-            imagePreviewRef.current.handleGenerate();
+    const handleGenerateImage = useCallback((customPrompt) => {
+        if (customPrompt && typeof customPrompt === 'string') {
+            imagePreviewRef.current?.handleGenerateWithPrompt(customPrompt);
+        } else {
+            imagePreviewRef.current?.handleGenerate();
         }
     }, []);
 
@@ -273,9 +275,10 @@ const GenerationView = () => {
                         model={model}
                         location={currentLocation}
                         onGenerate={(prompt) => {
+                            setCustomPromptOverride(prompt);
                             setRightPanel('image');
                             setTimeout(() => {
-                                handleGenerateImage(prompt, null, toast);
+                                handleGenerateImage(prompt);
                             }, 100);
                         }}
                         onShowApiKeyModal={() => setShowApiKeyModal(true)}
@@ -321,7 +324,13 @@ const GenerationView = () => {
                                 <PromptHistoryPanel
                                     key={historyKey}
                                     generatedPrompt={generatedPrompt}
-                                    onReuse={(prompt) => imagePreviewRef.current?.handleGenerateWithPrompt(prompt)}
+                                    onReuse={(prompt) => {
+                                        setCustomPromptOverride(prompt);
+                                        setRightPanel('image');
+                                        setTimeout(() => {
+                                            imagePreviewRef.current?.handleGenerateWithPrompt(prompt);
+                                        }, 100);
+                                    }}
                                 />
                             </div>
                         ) : (
