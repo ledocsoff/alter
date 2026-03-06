@@ -22,7 +22,7 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
             onDragEnter={() => onDragEnter(idx)}
             onDragEnd={onDragEnd}
             onDragOver={(e) => e.preventDefault()}
-            className={`group flex items-center gap-0 rounded-xl border overflow-hidden transition-all duration-200 ${isGenerating
+            className={`group flex items-stretch sm:items-center gap-0 rounded-xl border overflow-hidden transition-all duration-200 ${isGenerating
                 ? 'border-teal-500/30 bg-teal-500/[0.02]'
                 : dragOverIdx === idx
                     ? 'border-teal-500/40 bg-teal-500/5 scale-[1.005]'
@@ -31,18 +31,18 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
         >
             {/* Thumbnail */}
             <div
-                className="shrink-0 w-[72px] h-[72px] bg-zinc-900 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                className="shrink-0 w-20 sm:w-[72px] bg-zinc-900 flex items-center justify-center cursor-pointer relative overflow-hidden"
                 onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
             >
                 {!thumbFailed && thumbUrl ? (
                     <img
                         src={thumbUrl}
                         alt={loc.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 absolute inset-0"
                         onError={() => setThumbFailed(true)}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 absolute inset-0">
                         <MapPinIcon size={20} className="text-zinc-700" />
                     </div>
                 )}
@@ -52,30 +52,33 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
             </div>
 
             {/* Separator */}
-            <div className="w-px h-[72px] bg-zinc-800/60 shrink-0" />
+            <div className="w-px bg-zinc-800/60 shrink-0" />
 
             {/* Content */}
-            <div className="flex-1 min-w-0 px-4 py-3 flex items-center gap-3">
-                {!isGenerating && (
-                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-800 hover:text-zinc-500 transition-colors">
-                        <GripVerticalIcon size={14} />
+            <div className="flex-1 min-w-0 p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {!isGenerating && (
+                        <div className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-800 hover:text-zinc-500 transition-colors hidden sm:block">
+                            <GripVerticalIcon size={14} />
+                        </div>
+                    )}
+                    <div
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
+                    >
+                        <div className="flex items-center gap-2 mb-0.5">
+                            {isGenerating && <div className="w-3.5 h-3.5 border-2 border-teal-400 border-t-transparent rounded-full animate-spin shrink-0" />}
+                            <span className="font-semibold text-zinc-100 text-[13px] truncate">{loc.name}</span>
+                            {!isGenerating && <LockScore location={loc} />}
+                        </div>
+                        <p className="text-[11px] text-zinc-500 truncate leading-relaxed">
+                            {isGenerating ? <span className="text-teal-300">Génération en cours…</span> : loc.environment}
+                        </p>
                     </div>
-                )}
-                <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => !isGenerating && navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                >
-                    <div className="flex items-center gap-2 mb-0.5">
-                        {isGenerating && <div className="w-3.5 h-3.5 border-2 border-teal-400 border-t-transparent rounded-full animate-spin shrink-0" />}
-                        <span className="font-semibold text-zinc-100 text-[13px] truncate">{loc.name}</span>
-                        {!isGenerating && <LockScore location={loc} />}
-                    </div>
-                    <p className="text-[11px] text-zinc-500 truncate leading-relaxed">
-                        {isGenerating ? <span className="text-teal-300">Génération en cours…</span> : loc.environment}
-                    </p>
                 </div>
+
                 {!isGenerating && (
-                    <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end sm:justify-start gap-0.5 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-zinc-800/50 w-full sm:w-auto">
                         <button onClick={onEdit} className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-teal-400 hover:bg-teal-500/10 transition-all" title="Modifier">
                             <EditIcon size={13} />
                         </button>
@@ -85,10 +88,10 @@ const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx,
                         <button onClick={onDelete} className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all" title="Supprimer">
                             <TrashIcon size={13} />
                         </button>
-                        <div className="w-px h-4 bg-zinc-800 mx-1" />
+                        <div className="w-px h-4 bg-zinc-800 mx-1 hidden sm:block" />
                         <button
                             onClick={() => navigate(`/models/${modelId}/accounts/${accountId}/locations/${loc.id}/generate`)}
-                            className="flex items-center gap-1 text-zinc-500 hover:text-zinc-100 transition-colors text-[11px] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06]"
+                            className="flex items-center gap-1 text-zinc-500 hover:text-zinc-100 transition-colors text-[11px] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] ml-auto sm:ml-0"
                         >
                             Studio
                             <ChevronRightIcon size={11} />
@@ -288,20 +291,21 @@ const LocationsAndSandboxView = () => {
         <>
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* ── Top bar ── */}
-                <div className="shrink-0 px-6 pt-7 pb-5 border-b border-zinc-800/40">
+                <div className="shrink-0 px-4 sm:px-6 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-zinc-800/40">
                     <div className="max-w-3xl mx-auto">
-                        <div className="flex items-end justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 sm:gap-4">
                             <div>
-                                <h2 className="text-xl font-bold text-zinc-100 tracking-tight flex items-center gap-2.5">
-                                    <span className="w-7 h-7 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                                <h2 className="text-lg sm:text-xl font-bold text-zinc-100 tracking-tight flex items-center gap-2.5">
+                                    <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-teal-500/15 flex items-center justify-center">
                                         <MapPinIcon size={14} className="text-teal-400" />
                                     </span>
                                     Lieux &amp; Décors
                                 </h2>
-                                <p className="text-zinc-500 text-[13px] mt-1 ml-9">
+                                <p className="text-zinc-500 text-xs sm:text-[13px] mt-1 ml-8 sm:ml-9 leading-relaxed">
                                     {locations.length} lieu{locations.length !== 1 ? 'x' : ''} enregistré{locations.length !== 1 ? 's' : ''}
-                                    <span className="text-zinc-700 mx-2">·</span>
-                                    Les ancres textuelles remplacent les images générées — plus rapide, même cohérence.
+                                    <span className="text-zinc-700 mx-1.5 sm:mx-2 hidden sm:inline-block">·</span>
+                                    <br className="sm:hidden" />
+                                    <span className="text-zinc-600 sm:text-zinc-500">Les ancres visuelles garantissent la cohérence.</span>
                                 </p>
                             </div>
                         </div>
@@ -405,12 +409,12 @@ const LocationsAndSandboxView = () => {
                                         />
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-1">
-                                        <p className="text-[11px] text-zinc-600">⌘ + Entrée pour lancer</p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0 pt-1">
+                                        <p className="text-[11px] text-zinc-600 hidden sm:block">⌘ + Entrée pour lancer</p>
                                         <button
                                             onClick={handleAutoFill}
                                             disabled={isAutoFilling || !newLocName.trim()}
-                                            className="velvet-btn-primary text-sm py-2.5 px-6 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="velvet-btn-primary w-full sm:w-auto text-sm py-3 sm:py-2.5 px-6 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             {isAutoFilling ? (
                                                 <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Analyse en cours...</>
@@ -464,7 +468,7 @@ const LocationsAndSandboxView = () => {
                                         </div>
 
                                         {/* 3-column grid */}
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3">
                                             <div>
                                                 <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">Éclairage</label>
                                                 <input type="text" placeholder="soft natural..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full text-[12px]" />
@@ -480,7 +484,7 @@ const LocationsAndSandboxView = () => {
                                         </div>
 
                                         {/* Anchor + Palette */}
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3">
                                             <div>
                                                 <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1.5 block">
                                                     Détails d'ancrage <span className="text-teal-500/40 normal-case font-normal">cohérence</span>
