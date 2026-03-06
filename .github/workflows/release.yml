@@ -1,9 +1,9 @@
-name: Build and Release Velvet Studio
+name: Build and Release Alter
 
 on:
   push:
     tags:
-      - 'v*' # Trigger build when pushing tags like v5.3.0
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,6 @@ jobs:
     
     strategy:
       matrix:
-        # Build for both Mac and Windows
         os: [macos-latest, windows-latest]
     
     steps:
@@ -27,16 +26,24 @@ jobs:
       - name: Install Dependencies
         run: npm ci
         
-      # Build the React application
       - name: Build Vite App
         run: npm run build
         
       - name: Transpile Server to CommonJS
         run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
-        
-      # Package the Electron application using electron-builder
-      - name: Publish Electron App
+
+      # macOS: sign with ad-hoc identity (no Apple Developer account needed)
+      # This allows Squirrel.Mac to validate the update without a paid certificate
+      - name: Publish Electron App (macOS - Ad-hoc signed)
+        if: matrix.os == 'macos-latest'
         env:
-          # GitHub automatically generates this token for actions, allowing it to upload releases
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --config electron-builder.json --publish always
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CODESIGN_IDENTITY: '-'
+        run: npx electron-builder --config electron-builder.json --publish always --mac
+
+      - name: Publish Electron App (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --config electron-builder.json --publish always --win

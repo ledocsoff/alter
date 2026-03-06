@@ -22,7 +22,10 @@
             "dmg",
             "zip"
         ],
-        "icon": "public/icons/icon.png"
+        "icon": "public/icons/icon.png",
+        "identity": null,
+        "hardenedRuntime": false,
+        "gatekeeperAssess": false
     },
     "win": {
         "target": [
