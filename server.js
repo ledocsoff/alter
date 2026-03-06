@@ -972,9 +972,12 @@ app.delete('/api/location-refs/:locationId/:refId', (req, res) => {
 // ============================================
 // WEB UI (Static Files for Browser Access)
 // ============================================
+// In production, `currentDir` refers to `Resources/app.asar`
+// Our `dist` is placed at `Resources/dist`
 const distDirs = [
-    path.join(currentDir, 'dist'), // Production (extraResources dist)
-    path.join(path.dirname(currentDir), 'dist') // Dev mode fallback
+    path.join(currentDir, 'dist'),                     // Local DEV
+    path.join(path.dirname(currentDir), 'dist'),       // Production: One level up from app.asar
+    path.join(currentDir, '..', 'dist')                // Fallback
 ];
 const activeDist = distDirs.find(d => fs.existsSync(d));
 
@@ -988,6 +991,14 @@ if (activeDist) {
         }
         res.sendFile(path.join(activeDist, 'index.html'));
     });
+    console.log(`[Server] Web UI servie depuis: ${activeDist}`);
+} else {
+    console.warn(`[Server] WARNING: Aucun dossier 'dist' trouvé pour l'Interface Web !`);
+    console.warn(`[Server] Vérifié: \n - ${distDirs.join('\n - ')}`);
+    try {
+        const parentFiles = fs.readdirSync(path.dirname(currentDir));
+        console.warn(`[Server] Contenu Parent (${path.dirname(currentDir)}):`, parentFiles);
+    } catch (e) { }
 }
 
 // ============================================
