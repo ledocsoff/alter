@@ -432,9 +432,10 @@ body {
 /* ── prefers-reduced-motion ─────────── */
 @media (prefers-reduced-motion: reduce) {
 
-  *,
-  *::before,
-  *::after {
+  /* Restrict reduction globally EXCEPT for functional UI loading feedback */
+  *:not(.animate-spin):not(.api-dot-active):not(.animate-bounce),
+  *:not(.animate-spin):not(.api-dot-active):not(.animate-bounce)::before,
+  *:not(.animate-spin):not(.api-dot-active):not(.animate-bounce)::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
