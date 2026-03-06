@@ -157,29 +157,15 @@ export const PromptProvider = ({ children }) => {
     try {
       const result = await generateImage(apiKey, promptToSend, '9:16', anchorHistory, { seed: scene?.seed || null });
 
-      if (!result?.success || !result?.imageUrl) {
-        throw new Error(result?.error || JSON.stringify(result));
-      }
-
-      const imgBlob = await (await fetch(result.imageUrl)).blob();
-      const objUrl = URL.createObjectURL(imgBlob);
-
-      const mimeType = result.imageMimeType || imgBlob.type;
-      let b64Str = null;
-      if (result.imageBase64) b64Str = result.imageBase64;
-      else {
-        b64Str = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(imgBlob);
-        });
+      if (!result?.imageBase64) {
+        throw new Error(result?.error || "L'API a répondu sans image ou format inattendu.");
       }
 
       const finalImage = {
-        dataUrl: objUrl,
+        dataUrl: result.dataUrl || `data:${result.mimeType || 'image/png'};base64,${result.imageBase64}`,
         prompt: promptToSend,
-        imageBase64: b64Str,
-        mimeType: mimeType,
+        imageBase64: result.imageBase64,
+        mimeType: result.mimeType || 'image/png',
       };
 
       setCurrentImage(finalImage);
@@ -187,7 +173,9 @@ export const PromptProvider = ({ children }) => {
       return finalImage;
     } catch (err) {
       console.error(err);
-      setGenerationError(err.message);
+      let errMsg = err?.message || 'Erreur inattendue';
+      if (errMsg.length > 200) errMsg = "Erreur inattendue de l'IA. " + errMsg.substring(0, 100) + "...";
+      setGenerationError(errMsg);
       setGenerationStatus('error');
       return null;
     }
