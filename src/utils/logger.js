@@ -1,10 +1,10 @@
 // ============================================
-// LOGGER UNIFIÉ — Velvet Studio
+// LOGGER UNIFIÉ — Alter
 // Deux niveaux : Activité (toujours on) + Technique (opt-in verbose)
 // ============================================
 
 const MAX_LOGS = 300;
-const VERBOSE_STORAGE_KEY = 'velvet_verbose_mode';
+const VERBOSE_STORAGE_KEY = 'alter_verbose_mode';
 
 let _logs = [];
 let _listeners = new Set();
@@ -177,7 +177,7 @@ const logger = {
     }, null, 2),
 
     exportMarkdown: () => {
-        let md = `# Velvet Studio - Debug Logs\n`;
+        let md = `# Alter - Debug Logs\n`;
         md += `Date: ${new Date().toISOString()}\n`;
         md += `Verbose Mode: ${_verbose}\n`;
         md += `Total Entries: ${_logs.length}\n\n`;
@@ -201,7 +201,7 @@ const logger = {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `velvet-logs-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        a.download = `alter-logs-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
         a.click();
         URL.revokeObjectURL(url);
     },
@@ -209,7 +209,7 @@ const logger = {
 
 // Expose globally for console access
 if (typeof window !== 'undefined') {
-    window.__VELVET_DEBUG = logger;
+    window.__ALTER_DEBUG = logger;
 }
 
 hijackSystem();

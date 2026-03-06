@@ -8,10 +8,10 @@ import { loadFromServer } from './utils/storage.js'
 
 // Global error handlers — catch unhandled errors before React boots
 window.addEventListener('unhandledrejection', (e) => {
-  console.error('[Velvet] Unhandled rejection:', e.reason);
+  console.error('[Alter] Unhandled rejection:', e.reason);
 });
 window.onerror = (msg, src, line, col, err) => {
-  console.error('[Velvet] Uncaught error:', msg, { src, line, col, err });
+  console.error('[Alter] Uncaught error:', msg, { src, line, col, err });
 };
 
 // Load data from server (sauvegarde/) into localStorage BEFORE React boots
@@ -26,7 +26,7 @@ loadFromServer().then(() => {
     </React.StrictMode>,
   )
 }).catch(err => {
-  console.error('[Velvet] Fatal:', err);
+  console.error('[Alter] Fatal:', err);
   const root = document.getElementById('root');
   root.textContent = '';
   const container = document.createElement('div');

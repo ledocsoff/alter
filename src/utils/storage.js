@@ -1,10 +1,10 @@
 import logger from './logger';
 
-const STORAGE_KEY = 'velvet_studio_v4';
-const HISTORY_KEY = 'velvet_history';
-const TEMPLATES_KEY = 'velvet_templates';
+const STORAGE_KEY = 'alter_studio_v4';
+const HISTORY_KEY = 'alter_history';
+const TEMPLATES_KEY = 'alter_templates';
 
-const API_KEY_KEY = 'velvet_api_key';
+const API_KEY_KEY = 'alter_api_key';
 
 // In Electron production (file://), API calls must target localhost:3001 directly
 // In browser/dev mode, Vite proxy handles /api → localhost:3001
@@ -41,7 +41,7 @@ const syncToServer = () => {
             });
             if (res.ok) {
                 hasPendingSync = false;
-                window.dispatchEvent(new CustomEvent('velvet:synced'));
+                window.dispatchEvent(new CustomEvent('alter:synced'));
             }
         } catch (err) {
             logger.warn('storage', 'Sync serveur échoué', err.message);
@@ -119,7 +119,7 @@ export const getSavedModels = () => {
         if (!data) return [];
         const parsed = JSON.parse(data);
         if (!Array.isArray(parsed)) {
-            console.error('[Velvet] Données corrompues détectées, nettoyage...');
+            console.error('[Alter] Données corrompues détectées, nettoyage...');
             localStorage.removeItem(STORAGE_KEY);
             return [];
         }
@@ -128,7 +128,7 @@ export const getSavedModels = () => {
         const safeModels = validateAndRepairModels(parsed);
         return safeModels;
     } catch (error) {
-        console.error('[Velvet] Erreur critique localStorage — reset:', error.message);
+        console.error('[Alter] Erreur critique localStorage — reset:', error.message);
         try { localStorage.removeItem(STORAGE_KEY); } catch { }
         return [];
     }
@@ -156,7 +156,7 @@ export const loadFromServer = async () => {
         localStorage.setItem(TEMPLATES_KEY, JSON.stringify(data.templates || []));
         localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history || []));
 
-        console.log(`[Velvet] Chargé depuis sauvegarde/: ${models.length} modèle(s)`);
+        console.log(`[Alter] Chargé depuis sauvegarde/: ${models.length} modèle(s)`);
         return models;
     } catch (err) {
         logger.error('storage', 'Serveur indisponible — mode hors ligne', err.message);
@@ -189,7 +189,7 @@ const _deobfuscate = (val) => { try { return atob(val); } catch { return val; } 
         }
         // Clean up old vertex_ai key if it exists
         localStorage.removeItem(`${API_KEY_KEY}_vertex_ai`);
-        localStorage.removeItem('velvet_api_provider');
+        localStorage.removeItem('alter_api_provider');
     } catch { }
 })();
 
@@ -202,12 +202,12 @@ export const getApiKey = () => {
 
 export const saveApiKey = (key) => {
     localStorage.setItem(_apiStorageKey, _obfuscate(key));
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('alter:apikey-changed'));
 };
 
 export const removeApiKey = () => {
     localStorage.removeItem(_apiStorageKey);
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('alter:apikey-changed'));
 };
 
 // ============================================
@@ -224,18 +224,18 @@ export const getApiKey2 = () => {
 
 export const saveApiKey2 = (key) => {
     localStorage.setItem(_apiStorageKey2, _obfuscate(key));
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('alter:apikey-changed'));
 };
 
 export const removeApiKey2 = () => {
     localStorage.removeItem(_apiStorageKey2);
-    if (typeof window !== 'undefined') window.dispatchEvent(new Event('velvet:apikey-changed'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('alter:apikey-changed'));
 };
 
 // ============================================
 // LAST SESSION — Retour rapide au dernier studio
 // ============================================
-const LAST_SESSION_KEY = 'velvet_last_session';
+const LAST_SESSION_KEY = 'alter_last_session';
 
 export const saveLastSession = (info) => {
     try { localStorage.setItem(LAST_SESSION_KEY, JSON.stringify({ ...info, timestamp: Date.now() })); } catch { }
@@ -484,7 +484,7 @@ export const clearPromptHistory = () => {
 // ============================================
 export const exportAllData = () => {
     return JSON.stringify({
-        version: 'velvet_v4',
+        version: 'alter_v4',
         exportedAt: new Date().toISOString(),
         models: getSavedModels(),
         templates: (() => { try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY)) || []; } catch { return []; } })(),

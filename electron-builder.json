@@ -1,6 +1,6 @@
 {
-    "appId": "com.velvet.studio",
-    "productName": "Velvet Studio",
+    "appId": "com.alter.studio",
+    "productName": "Alter",
     "directories": {
         "output": "release"
     },
@@ -14,7 +14,7 @@
     "publish": {
         "provider": "github",
         "owner": "ledocsoff",
-        "repo": "velvet-studio"
+        "repo": "alter"
     },
     "mac": {
         "category": "public.app-category.developer-tools",

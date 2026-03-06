@@ -105,46 +105,46 @@ const AppLayout = ({ children }) => {
 
   // Listen for native update events from electron-updater
   useEffect(() => {
-    if (window.velvet) {
-      if (window.velvet.onUpdateAvailable) {
-        window.velvet.onUpdateAvailable((info) => {
+    if (window.alter) {
+      if (window.alter.onUpdateAvailable) {
+        window.alter.onUpdateAvailable((info) => {
           setIsCheckingUpdate(false);
           setIsUpdateError(false);
           setDownloadProgress({ percent: 0, bytesPerSecond: 0 });
         });
       }
-      if (window.velvet.onUpdateDownloadProgress) {
-        window.velvet.onUpdateDownloadProgress((progress) => {
+      if (window.alter.onUpdateDownloadProgress) {
+        window.alter.onUpdateDownloadProgress((progress) => {
           setDownloadProgress(progress);
         });
       }
-      if (window.velvet.onUpdateDownloaded) {
-        window.velvet.onUpdateDownloaded((version) => {
+      if (window.alter.onUpdateDownloaded) {
+        window.alter.onUpdateDownloaded((version) => {
           setHasUpdate(true);
           setDownloadProgress(null);
           setIsCheckingUpdate(false);
           setIsUpdateModalOpen(true);
         });
       }
-      if (window.velvet.onUpdateNotAvailable) {
-        window.velvet.onUpdateNotAvailable(() => {
+      if (window.alter.onUpdateNotAvailable) {
+        window.alter.onUpdateNotAvailable(() => {
           setIsCheckingUpdate(false);
           // Ne pas spammer de toast au démarrage. Cérémonie silencieuse.
         });
       }
-      if (window.velvet.onUpdateError) {
-        window.velvet.onUpdateError((err) => {
+      if (window.alter.onUpdateError) {
+        window.alter.onUpdateError((err) => {
           setIsCheckingUpdate(false);
           setDownloadProgress(null);
           setIsUpdateError(true);
           toast.error(`AutoUpdater: ${err}`);
         });
       }
-      if (window.velvet.onNotInApplications) {
-        window.velvet.onNotInApplications(() => setNotInApplications(true));
+      if (window.alter.onNotInApplications) {
+        window.alter.onNotInApplications(() => setNotInApplications(true));
       }
-      if (window.velvet.onBackendLog) {
-        window.velvet.onBackendLog((log) => {
+      if (window.alter.onBackendLog) {
+        window.alter.onBackendLog((log) => {
           logger[log.level]('electron', log.source, log.msg);
         });
       }
@@ -152,14 +152,14 @@ const AppLayout = ({ children }) => {
   }, []);
 
   const handleCheckUpdate = async () => {
-    if (!window.velvet?.checkForUpdates) return;
+    if (!window.alter?.checkForUpdates) return;
     setIsCheckingUpdate(true);
     setIsUpdateError(false);
     setIsUpToDate(false);
     setIsUpdateModalOpen(true);
 
     try {
-      const res = await window.velvet.checkForUpdates();
+      const res = await window.alter.checkForUpdates();
       setIsCheckingUpdate(false);
 
       if (!res?.success) {
@@ -189,9 +189,9 @@ const AppLayout = ({ children }) => {
   };
 
   const handleUpdate = () => {
-    if (!window.velvet?.restartApp) return;
+    if (!window.alter?.restartApp) return;
     setIsUpdating(true);
-    window.velvet.restartApp();
+    window.alter.restartApp();
   };
 
   // Health check — ping server every 30s, with startup retry
@@ -238,8 +238,8 @@ const AppLayout = ({ children }) => {
       setHasKey(!!getApiKey());
       setHasKey2(!!getApiKey2());
     };
-    window.addEventListener('velvet:apikey-changed', handleKeyChange);
-    return () => window.removeEventListener('velvet:apikey-changed', handleKeyChange);
+    window.addEventListener('alter:apikey-changed', handleKeyChange);
+    return () => window.removeEventListener('alter:apikey-changed', handleKeyChange);
   }, []);
 
   // Flash "Sauvegardé ✓" on successful sync
@@ -248,8 +248,8 @@ const AppLayout = ({ children }) => {
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2000);
     };
-    window.addEventListener('velvet:synced', onSynced);
-    return () => window.removeEventListener('velvet:synced', onSynced);
+    window.addEventListener('alter:synced', onSynced);
+    return () => window.removeEventListener('alter:synced', onSynced);
   }, []);
 
   // Global ? shortcut to show shortcuts modal
@@ -312,7 +312,7 @@ const AppLayout = ({ children }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p className="text-[12px] text-amber-500 font-medium">
-              <strong className="text-amber-400">Installation incorrecte détectée :</strong> Déplacez Velvet Studio dans le dossier <code className="bg-amber-500/20 px-1 py-0.5 rounded text-amber-300">Applications</code> de votre Mac pour que les mises à jour fonctionnent.
+              <strong className="text-amber-400">Installation incorrecte détectée :</strong> Déplacez Alter dans le dossier <code className="bg-amber-500/20 px-1 py-0.5 rounded text-amber-300">Applications</code> de votre Mac pour que les mises à jour fonctionnent.
             </p>
           </div>
           <button onClick={() => setNotInApplications(false)} className="text-amber-500 hover:text-amber-400 transition-colors">
@@ -326,7 +326,7 @@ const AppLayout = ({ children }) => {
             <span className="text-[10px] font-black text-white leading-none">V</span>
           </div>
           <span className="text-[15px] font-bold text-zinc-100 tracking-tight hidden sm:block">
-            Velvet
+            Alter
           </span>
         </Link>
         <button

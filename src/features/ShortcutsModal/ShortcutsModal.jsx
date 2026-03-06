@@ -46,7 +46,7 @@ const ShortcutsModal = ({ isOpen, onClose }) => {
             >
                 <div className="flex items-center justify-between mb-5">
                     <h3 className="text-base font-bold text-zinc-100">Raccourcis clavier</h3>
-                    <button onClick={onClose} className="velvet-btn-delete">
+                    <button onClick={onClose} className="alter-btn-delete">
                         <CloseIcon size={14} />
                     </button>
                 </div>

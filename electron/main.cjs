@@ -121,7 +121,7 @@ function startServer() {
                     ...process.env,
                     ELECTRON_RUN_AS_NODE: '1',
                     ELECTRON: 'true',
-                    VELVET_SAVE_PATH: path.join(app.getPath('documents'), 'Velvet Studio')
+                    ALTER_SAVE_PATH: path.join(app.getPath('documents'), 'Alter')
                 },
                 stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
             });
@@ -191,7 +191,7 @@ function createWindow() {
         height: 900,
         minWidth: 1024,
         minHeight: 700,
-        title: 'Velvet Studio',
+        title: 'Alter',
         titleBarStyle: 'hiddenInset',     // Sleek macOS look
         trafficLightPosition: { x: 15, y: 15 },
         backgroundColor: '#09090b',       // Match app background
@@ -240,7 +240,7 @@ function createWindow() {
 
 // ─── App lifecycle ──────────────────────────────────────
 app.whenReady().then(async () => {
-    console.log('💎 Starting Velvet Studio...');
+    console.log('💎 Starting Alter...');
     console.log(`   Mode: ${IS_DEV ? 'Development' : 'Production'}`);
 
     await startServer();

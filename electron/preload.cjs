@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose a minimal, safe API to the renderer process
-contextBridge.exposeInMainWorld('velvet', {
+contextBridge.exposeInMainWorld('alter', {
     platform: process.platform,
     isElectron: true,
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

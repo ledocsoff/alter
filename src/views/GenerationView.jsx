@@ -30,7 +30,7 @@ const GenerationView = () => {
     const [showRecap, setShowRecap] = useState(false);
     const [showApiKeyModal, setShowApiKeyModal] = useState(false);
     const [rightPanel, setRightPanel] = useState(() => {
-        try { return sessionStorage.getItem('velvet_last_tab') || 'image'; } catch { return 'image'; }
+        try { return sessionStorage.getItem('alter_last_tab') || 'image'; } catch { return 'image'; }
     });
     const [galleryKey, setGalleryKey] = useState(0);
     const [historyKey, setHistoryKey] = useState(0);
@@ -95,7 +95,7 @@ const GenerationView = () => {
 
     // Quick Win B: Persist last tab
     useEffect(() => {
-        try { sessionStorage.setItem('velvet_last_tab', rightPanel); } catch { }
+        try { sessionStorage.setItem('alter_last_tab', rightPanel); } catch { }
     }, [rightPanel]);
 
     // Auto-load persistent model reference photos

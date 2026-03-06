@@ -38,7 +38,7 @@ export default function UpdateModal({
                 {/* Content */}
                 <div className="p-8 flex flex-col items-center text-center">
                     <h2 className="text-xl font-bold tracking-tight text-white mb-2">
-                        Mise à jour Velvet Studio
+                        Mise à jour Alter Studio
                     </h2>
 
                     {isCheckingUpdate && (
@@ -73,7 +73,7 @@ export default function UpdateModal({
                                 </svg>
                             </div>
                             <p className="text-[15px] font-medium text-zinc-300">
-                                Velvet Studio est à jour !
+                                Alter Studio est à jour !
                             </p>
                             <p className="text-sm text-zinc-500 -mt-2">
                                 Vous utilisez la dernière version disponible.

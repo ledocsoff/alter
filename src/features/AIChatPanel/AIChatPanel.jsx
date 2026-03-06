@@ -241,7 +241,7 @@ const AIChatPanel = ({ model, location, onGenerate, onShowApiKeyModal }) => {
                 <div className="px-3 pb-1 shrink-0">
                     <button
                         onClick={handleGenerate}
-                        className="w-full velvet-btn-primary text-[12px] font-semibold py-2.5 flex items-center justify-center gap-2 animate-fade-in"
+                        className="w-full alter-btn-primary text-[12px] font-semibold py-2.5 flex items-center justify-center gap-2 animate-fade-in"
                     >
                         <SparklesIcon size={14} />
                         Générer l'image

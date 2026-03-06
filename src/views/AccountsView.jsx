@@ -104,7 +104,7 @@ const AccountsView = () => {
             </div>
             <button
               onClick={() => navigate(`/models/${modelId}/edit`)}
-              className="velvet-btn-ghost text-xs flex items-center justify-center gap-1.5 py-2 sm:py-1 px-3 sm:px-2 w-full sm:w-auto"
+              className="alter-btn-ghost text-xs flex items-center justify-center gap-1.5 py-2 sm:py-1 px-3 sm:px-2 w-full sm:w-auto"
             >
               <EditIcon size={12} />
               <span>Editer le profil</span>
@@ -113,7 +113,7 @@ const AccountsView = () => {
         </div>
 
         {/* ADD FORM */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-8 p-1.5 velvet-card rounded-xl animate-fade-in-up" style={{ animationDelay: '50ms' }}>
+        <div className="flex flex-col sm:flex-row gap-2 mb-8 p-1.5 alter-card rounded-xl animate-fade-in-up" style={{ animationDelay: '50ms' }}>
           <div className="flex items-center flex-1 bg-zinc-900/50 rounded-lg sm:bg-transparent sm:rounded-none px-1 py-1 sm:p-0 border border-zinc-800 sm:border-0">
             <select
               value={platform}
@@ -164,7 +164,7 @@ const AccountsView = () => {
                   onDragEnter={() => handleDragEnter(idx)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`velvet-card group flex flex-col sm:flex-row w-full sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
+                  className={`alter-card group flex flex-col sm:flex-row w-full sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 ${dragOverIdx === idx ? '!border-teal-500/50 bg-teal-500/5' : ''}`}
                 >
                   {/* Left: clickable area for navigation */}
                   <div

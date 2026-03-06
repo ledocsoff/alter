@@ -36,7 +36,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
         { base64: finalImage.imageBase64, mimeType: finalImage.mimeType },
         { ...galleryMetaRef.current, prompt: promptToSend }
       );
-      window.dispatchEvent(new CustomEvent('velvet:gallery-updated'));
+      window.dispatchEvent(new CustomEvent('alter:gallery-updated'));
     } catch { /* silent */ }
 
     // Auto-save prompt to history
@@ -106,7 +106,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     const ext = currentImage.mimeType?.includes('jpeg') ? 'jpg' : 'png';
     const a = document.createElement('a');
     a.href = currentImage.dataUrl;
-    a.download = `velvet-${Date.now()}.${ext}`;
+    a.download = `alter-${Date.now()}.${ext}`;
     a.click();
     toast.success('Image t\u00e9l\u00e9charg\u00e9e');
   }, [currentImage, toast]);
@@ -199,7 +199,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
                   <p className="text-zinc-600 text-[11px] mb-3">Chaque génération dans la même session renforce la cohérence</p>
                   <button
                     onClick={handleGenerate}
-                    className="velvet-btn-primary h-9 px-5 rounded-lg text-[12px] active:scale-[0.97]"
+                    className="alter-btn-primary h-9 px-5 rounded-lg text-[12px] active:scale-[0.97]"
                   >
                     Générer
                   </button>

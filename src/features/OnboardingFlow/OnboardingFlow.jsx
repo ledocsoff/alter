@@ -11,7 +11,7 @@ const OnboardingFlow = ({ onComplete }) => {
 
     const handleCopyLinkClick = (e) => {
         e.preventDefault();
-        if (window.velvet && window.velvet.isElectron) {
+        if (window.alter && window.alter.isElectron) {
             // Electron will open it in the default browser natively
             window.open('https://aistudio.google.com/app/apikey', '_blank');
         } else {
@@ -60,7 +60,7 @@ const OnboardingFlow = ({ onComplete }) => {
                             <span className="text-4xl font-black text-white leading-none">V</span>
                         </div>
                         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-                            Bienvenue dans <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Velvet Studio</span>
+                            Bienvenue dans <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Alter Studio</span>
                         </h1>
                         <p className="text-lg text-zinc-400 max-w-lg mb-12 leading-relaxed">
                             Votre studio photo propulsé par l'IA. 100% privé, sans abonnements coûteux, fonctionnant avec le moteur de pointe de Google.
@@ -84,7 +84,7 @@ const OnboardingFlow = ({ onComplete }) => {
                         </div>
                         <h2 className="text-3xl font-bold mb-4">Le Moteur <span className="text-teal-400">Gemini Flash</span></h2>
                         <p className="text-zinc-400 text-base leading-relaxed max-w-md mx-auto mb-10">
-                            Plutôt que de payer des abonnements mensuels, Velvet Studio vous permet de brancher <strong>votre propre accès gratuit</strong> à Google AI Studio. <br /><br />
+                            Plutôt que de payer des abonnements mensuels, Alter Studio vous permet de brancher <strong>votre propre accès gratuit</strong> à Google AI Studio. <br /><br />
                             Nous avons besoin d'une simple "Clé API" pour connecter le moteur.
                         </p>
                         <div className="flex gap-4">
@@ -190,7 +190,7 @@ const OnboardingFlow = ({ onComplete }) => {
                         </div>
                         <h2 className="text-3xl font-bold mb-4 text-emerald-400">Moteur connecté !</h2>
                         <p className="text-zinc-400 max-w-md mx-auto mb-10">
-                            Génial, tout fonctionne parfaitement. Velvet Studio a le droit de communiquer avec Gemini. <br />Vous êtes prêt à générer vos premières scènes.
+                            Génial, tout fonctionne parfaitement. Alter Studio a le droit de communiquer avec Gemini. <br />Vous êtes prêt à générer vos premières scènes.
                         </p>
                         <button
                             onClick={onComplete}

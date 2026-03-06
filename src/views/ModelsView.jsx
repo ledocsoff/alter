@@ -100,7 +100,7 @@ const ModelsView = () => {
             {hasResume && (
               <button
                 onClick={() => navigate(lastSession.path)}
-                className="velvet-btn-primary flex items-center gap-2 h-9 text-xs flex-1 sm:flex-none justify-center"
+                className="alter-btn-primary flex items-center gap-2 h-9 text-xs flex-1 sm:flex-none justify-center"
                 title={`Reprendre : ${lastSession.modelName} — ${lastSession.locationName}`}
               >
                 <PlayIcon size={12} />
@@ -116,7 +116,7 @@ const ModelsView = () => {
                   placeholder="Rechercher..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="velvet-input h-9 w-full sm:w-40 text-sm"
+                  className="alter-input h-9 w-full sm:w-40 text-sm"
                   style={{ paddingLeft: '2.25rem' }}
                 />
               </div>

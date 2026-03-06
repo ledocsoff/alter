@@ -143,7 +143,7 @@ const PromptHistoryPanel = ({ onReuse, generatedPrompt }) => {
                                     placeholder="Filtrer..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="velvet-input w-full text-[11px] px-2.5 py-1"
+                                    className="alter-input w-full text-[11px] px-2.5 py-1"
                                 />
                             </div>
                         )}

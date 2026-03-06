@@ -1,7 +1,7 @@
 // ============================================
-// Velvet Studio — Service Worker (Offline + Cache)
+// Alter — Service Worker (Offline + Cache)
 // ============================================
-const CACHE_NAME = 'velvet-v2';
+const CACHE_NAME = 'alter-v2';
 const STATIC_SHELL = ['/', '/index.html'];
 
 // Install — pre-cache app shell

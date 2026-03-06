@@ -352,7 +352,7 @@ const LocationsAndSandboxView = () => {
                                         </label>
                                         <textarea
                                             placeholder="Ex: chambre cosy avec fairy lights et rideaux blancs • café parisien en terrasse • studio minimaliste..."
-                                            className="velvet-input w-full resize-none text-[13px] leading-relaxed"
+                                            className="alter-input w-full resize-none text-[13px] leading-relaxed"
                                             value={newLocName}
                                             onChange={(e) => setNewLocName(e.target.value)}
                                             rows={2}
@@ -416,7 +416,7 @@ const LocationsAndSandboxView = () => {
                                         <button
                                             onClick={handleAutoFill}
                                             disabled={isAutoFilling || !newLocName.trim()}
-                                            className="velvet-btn-primary w-full sm:w-auto text-sm py-3 sm:py-2.5 px-6 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="alter-btn-primary w-full sm:w-auto text-sm py-3 sm:py-2.5 px-6 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             {isAutoFilling ? (
                                                 <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Analyse en cours...</>
@@ -449,7 +449,7 @@ const LocationsAndSandboxView = () => {
                                             <input
                                                 type="text"
                                                 placeholder="Chambre étudiante • Café terrasse • Studio..."
-                                                className="velvet-input w-full font-medium"
+                                                className="alter-input w-full font-medium"
                                                 value={newLocName}
                                                 onChange={(e) => setNewLocName(e.target.value)}
                                             />
@@ -465,7 +465,7 @@ const LocationsAndSandboxView = () => {
                                                 value={newLocEnv}
                                                 onChange={(e) => setNewLocEnv(e.target.value)}
                                                 rows={2}
-                                                className="velvet-input w-full resize-none leading-relaxed text-[13px] sm:text-sm"
+                                                className="alter-input w-full resize-none leading-relaxed text-[13px] sm:text-sm"
                                             />
                                         </div>
 
@@ -473,15 +473,15 @@ const LocationsAndSandboxView = () => {
                                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                             <div>
                                                 <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Éclairage</label>
-                                                <input type="text" placeholder="soft natural..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
+                                                <input type="text" placeholder="soft natural..." value={newLocLighting} onChange={(e) => setNewLocLighting(e.target.value)} className="alter-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                             <div>
                                                 <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Vibe</label>
-                                                <input type="text" placeholder="cozy, intimate..." value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
+                                                <input type="text" placeholder="cozy, intimate..." value={newLocVibe} onChange={(e) => setNewLocVibe(e.target.value)} className="alter-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                             <div>
                                                 <label className="text-[9px] sm:text-[11px] font-semibold text-zinc-600 uppercase tracking-widest mb-1 block truncate">Moment</label>
-                                                <input type="text" placeholder="golden hour..." value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="velvet-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
+                                                <input type="text" placeholder="golden hour..." value={newLocTimeOfDay} onChange={(e) => setNewLocTimeOfDay(e.target.value)} className="alter-input w-full text-[11px] sm:text-[12px] px-2 sm:px-3" />
                                             </div>
                                         </div>
 
@@ -496,7 +496,7 @@ const LocationsAndSandboxView = () => {
                                                     placeholder="pink LED strip, grey duvet, white IKEA lamp..."
                                                     value={newLocAnchorDetails}
                                                     onChange={(e) => setNewLocAnchorDetails(e.target.value)}
-                                                    className="velvet-input w-full text-[12px]"
+                                                    className="alter-input w-full text-[12px]"
                                                 />
                                             </div>
                                             <div>
@@ -506,7 +506,7 @@ const LocationsAndSandboxView = () => {
                                                     placeholder="warm beige, white sheets, soft pink..."
                                                     value={newLocColorPalette}
                                                     onChange={(e) => setNewLocColorPalette(e.target.value)}
-                                                    className="velvet-input w-full text-[12px]"
+                                                    className="alter-input w-full text-[12px]"
                                                 />
                                             </div>
                                         </div>
@@ -521,7 +521,7 @@ const LocationsAndSandboxView = () => {
                                                 placeholder="tattoo, piercing, neon lights..."
                                                 value={newLocNegativePrompt}
                                                 onChange={(e) => setNewLocNegativePrompt(e.target.value)}
-                                                className="velvet-input w-full text-[12px]"
+                                                className="alter-input w-full text-[12px]"
                                             />
                                         </div>
                                     </div>
@@ -538,7 +538,7 @@ const LocationsAndSandboxView = () => {
 
                                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800/40">
                                         {locFormMode === 'review' && (
-                                            <button onClick={resetForm} className="velvet-btn-ghost text-xs">Annuler</button>
+                                            <button onClick={resetForm} className="alter-btn-ghost text-xs">Annuler</button>
                                         )}
                                         <button
                                             onClick={handleSaveLocation}

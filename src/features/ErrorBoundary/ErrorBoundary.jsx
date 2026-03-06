@@ -13,7 +13,7 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error('[Velvet] Erreur fatale:', error, errorInfo);
+        console.error('[Alter] Erreur fatale:', error, errorInfo);
         logger.error('app', `Crash: ${error?.message || error}`, errorInfo?.componentStack?.split('\n').slice(0, 5).join('\n'));
     }
 
@@ -32,7 +32,7 @@ class ErrorBoundary extends React.Component {
                         <div className="space-y-2">
                             <button
                                 onClick={() => window.location.reload()}
-                                className="velvet-btn-primary w-full h-10 rounded-lg text-sm"
+                                className="alter-btn-primary w-full h-10 rounded-lg text-sm"
                             >
                                 Recharger la page
                             </button>

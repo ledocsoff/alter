@@ -35,8 +35,8 @@ const GalleryPanel = () => {
     // Allow parent to trigger refresh via custom event
     useEffect(() => {
         const handler = () => loadGallery(pagination.page);
-        window.addEventListener('velvet:gallery-updated', handler);
-        return () => window.removeEventListener('velvet:gallery-updated', handler);
+        window.addEventListener('alter:gallery-updated', handler);
+        return () => window.removeEventListener('alter:gallery-updated', handler);
     }, [loadGallery, pagination.page]);
 
     const handleSelect = async (item) => {
@@ -79,7 +79,7 @@ const GalleryPanel = () => {
     const handleDownload = (img) => {
         const a = document.createElement('a');
         a.href = galleryImageUrl(img.id);
-        a.download = `velvet_${img.modelName || 'gen'}_${new Date(img.timestamp).toISOString().slice(0, 10)}.png`;
+        a.download = `alter_${img.modelName || 'gen'}_${new Date(img.timestamp).toISOString().slice(0, 10)}.png`;
         a.click();
     };
 

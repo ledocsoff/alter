@@ -11,8 +11,8 @@ const currentDir = typeof __dirname !== 'undefined'
     ? __dirname
     : (typeof import.meta !== 'undefined' && import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd());
 
-const SAVE_DIR = process.env.VELVET_SAVE_PATH
-    ? path.join(process.env.VELVET_SAVE_PATH, 'sauvegarde')
+const SAVE_DIR = process.env.ALTER_SAVE_PATH
+    ? path.join(process.env.ALTER_SAVE_PATH, 'sauvegarde')
     : path.join(currentDir, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');
 const MAX_BACKUPS = 5;
@@ -1014,7 +1014,7 @@ cleanupTempFiles();
 // Validate data integrity on startup
 const startupData = readData();
 
-console.log(`\n  💎 Velvet Studio Server`);
+console.log(`\n  💎 Alter Server`);
 console.log(`  ➜  API:         http://localhost:${PORT}/api`);
 console.log(`  ➜  CORS:        localhost + LAN + Tailscale (dynamique)`);
 console.log(`  ➜  Sauvegarde:  ${SAVE_DIR}/`);

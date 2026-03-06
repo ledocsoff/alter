@@ -120,7 +120,7 @@ const ApiKeyModal = ({ isOpen, onClose }) => {
           <button
             onClick={() => handleSave(1)}
             disabled={!key.trim() || status === 'validating'}
-            className="velvet-btn-primary h-9 px-5 text-sm disabled:opacity-30"
+            className="alter-btn-primary h-9 px-5 text-sm disabled:opacity-30"
           >
             {status === 'validating' ? 'Vérification...' : 'Sauvegarder'}
           </button>

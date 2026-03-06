@@ -1,6 +1,6 @@
 {
-    "name": "Velvet Studio",
-    "short_name": "Velvet",
+    "name": "Alter",
+    "short_name": "Alter",
     "description": "AI Model Management & Prompt Generation Studio",
     "start_url": "./#/",
     "display": "standalone",

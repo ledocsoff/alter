@@ -7,21 +7,21 @@
    ============================================ */
 
 :root {
-  /* Velvet brand palette - Updated to Teal/Emerald (Maestro Approved) */
-  --velvet-primary: #0d9488;
-  --velvet-primary-light: #2dd4bf;
-  --velvet-accent: #10b981;
-  --velvet-glow: rgba(13, 148, 136, 0.15);
-  --velvet-surface: #0c0c0e;
-  --velvet-card: #141416;
-  --velvet-border: rgba(255, 255, 255, 0.06);
-  --velvet-border-hover: rgba(255, 255, 255, 0.12);
+  /* Alter brand palette - Updated to Teal/Emerald (Maestro Approved) */
+  --alter-primary: #0d9488;
+  --alter-primary-light: #2dd4bf;
+  --alter-accent: #10b981;
+  --alter-glow: rgba(13, 148, 136, 0.15);
+  --alter-surface: #0c0c0e;
+  --alter-card: #141416;
+  --alter-border: rgba(255, 255, 255, 0.06);
+  --alter-border-hover: rgba(255, 255, 255, 0.12);
 }
 
 /* ── Base ────────────────────────────── */
 
 body {
-  background-color: var(--velvet-surface);
+  background-color: var(--alter-surface);
   color: #e4e4e7;
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
@@ -32,7 +32,7 @@ body {
 /* ── Keyboard Focus ────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--velvet-primary);
+  outline: 2px solid var(--alter-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -261,30 +261,30 @@ body {
 
 /* ── Card System ───────────────────── */
 
-.velvet-card {
-  background: var(--velvet-card);
-  border: 1px solid var(--velvet-border);
+.alter-card {
+  background: var(--alter-card);
+  border: 1px solid var(--alter-border);
   border-radius: 16px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.velvet-card:hover {
-  border-color: var(--velvet-border-hover);
+.alter-card:hover {
+  border-color: var(--alter-border-hover);
   transform: translateY(-2px);
   box-shadow:
     0 8px 24px -4px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(13, 148, 136, 0.05);
 }
 
-.velvet-card:active {
+.alter-card:active {
   transform: translateY(0);
 }
 
 
 /* ── Buttons ───────────────────────── */
 
-.velvet-btn-primary {
-  background: linear-gradient(135deg, var(--velvet-primary), var(--velvet-accent));
+.alter-btn-primary {
+  background: linear-gradient(135deg, var(--alter-primary), var(--alter-accent));
   color: white;
   font-weight: 600;
   border-radius: 12px;
@@ -296,7 +296,7 @@ body {
   overflow: hidden;
 }
 
-.velvet-btn-primary::after {
+.alter-btn-primary::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -305,21 +305,21 @@ body {
   transition: opacity 0.2s;
 }
 
-.velvet-btn-primary:hover {
+.alter-btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
 }
 
-.velvet-btn-primary:hover::after {
+.alter-btn-primary:hover::after {
   opacity: 1;
 }
 
-.velvet-btn-primary:active {
+.alter-btn-primary:active {
   transform: translateY(0);
   box-shadow: none;
 }
 
-.velvet-btn-ghost {
+.alter-btn-ghost {
   background: transparent;
   color: #a1a1aa;
   font-weight: 500;
@@ -330,14 +330,14 @@ body {
   cursor: pointer;
 }
 
-.velvet-btn-ghost:hover {
+.alter-btn-ghost:hover {
   color: #e4e4e7;
   background: rgba(255, 255, 255, 0.05);
-  border-color: var(--velvet-border);
+  border-color: var(--alter-border);
 }
 
 /* Delete button — icon-only */
-.velvet-btn-delete {
+.alter-btn-delete {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -351,12 +351,12 @@ body {
   transition: all 0.2s ease;
 }
 
-.velvet-btn-delete:hover {
+.alter-btn-delete:hover {
   color: #f87171;
   background: rgba(248, 113, 113, 0.1);
 }
 
-.velvet-btn-delete svg {
+.alter-btn-delete svg {
   width: 14px;
   height: 14px;
   stroke-width: 2;
@@ -364,9 +364,9 @@ body {
 
 /* ── Inputs ────────────────────────── */
 
-.velvet-input {
+.alter-input {
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--velvet-border);
+  border: 1px solid var(--alter-border);
   border-radius: 10px;
   color: #e4e4e7;
   padding: 0.5rem 0.75rem;
@@ -375,18 +375,18 @@ body {
   outline: none;
 }
 
-.velvet-input:focus {
+.alter-input:focus {
   border-color: rgba(13, 148, 136, 0.5);
   box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
 }
 
-.velvet-input::placeholder {
+.alter-input::placeholder {
   color: #3f3f46;
 }
 
 /* ── Tags / Badges ─────────────────── */
 
-.velvet-tag {
+.alter-tag {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 6px;
@@ -398,8 +398,8 @@ body {
 
 /* ── Gradient text ─────────────────── */
 
-.velvet-gradient-text {
-  background: linear-gradient(135deg, var(--velvet-primary-light), var(--velvet-accent));
+.alter-gradient-text {
+  background: linear-gradient(135deg, var(--alter-primary-light), var(--alter-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -499,12 +499,12 @@ body {
   }
 
   /* ── Cards — reduce spacing ── */
-  .velvet-card {
+  .alter-card {
     border-radius: 12px;
     padding: 0.75rem;
   }
 
-  .velvet-card:hover {
+  .alter-card:hover {
     transform: none;
     /* Disable hover lift on touch */
   }
