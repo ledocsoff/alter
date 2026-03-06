@@ -1,23 +1,23 @@
-# 💎 Velvet Studio
+# 💎 Alter
 
 > AI Model Management & Image Generation Studio — Desktop app for macOS & Windows
 
-Velvet Studio is a premium prompt engineering workstation for AI image generation. Manage virtual model profiles, configure detailed scenes, and generate consistent images via Google Gemini — all from a sleek, dark-themed interface.
+Alter is a premium prompt engineering workstation for AI image generation. Manage virtual model profiles, configure detailed scenes, and generate consistent images via Google Gemini — all from a sleek, dark-themed interface.
 
 ## Download
 
 | Platform | Download |
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Velvet Studio-5.3.10-arm64.dmg](https://github.com/ledocsoff/velvet-studio/releases/latest) |
-| **Windows** (x64) | [Velvet Studio Setup 5.3.10.exe](https://github.com/ledocsoff/velvet-studio/releases/latest) |
+| **macOS** (Apple Silicon) | [Alter-5.3.10-arm64.dmg](https://github.com/ledocsoff/alter/releases/latest) |
+| **Windows** (x64) | [Alter Setup 5.3.10.exe](https://github.com/ledocsoff/alter/releases/latest) |
 
 ### 🍏 macOS Installation Guide (Important)
-Since Velvet Studio is downloaded from GitHub and is not signed by a paid Apple Developer certificate, macOS enforces strict security rules (Gatekeeper and App Translocation). To ensure the app can save your generation data and automatically update itself, please follow these exact steps:
+Since Alter is downloaded from GitHub and is not signed by a paid Apple Developer certificate, macOS enforces strict security rules (Gatekeeper and App Translocation). To ensure the app can save your generation data and automatically update itself, please follow these exact steps:
 1. Open the downloaded `.dmg` file.
-2. **CRITICAL:** Drag and drop the `Velvet Studio` icon into the `Applications` folder shortcut right next to it. *Do not launch it directly from the DMG window or your Downloads folder.*
+2. **CRITICAL:** Drag and drop the `Alter` icon into the `Applications` folder shortcut right next to it. *Do not launch it directly from the DMG window or your Downloads folder.*
 3. Open your Mac's `Applications` folder.
-4. **Right-click** (or Control+Click) on the `Velvet Studio` app and select **Open**.
+4. **Right-click** (or Control+Click) on the `Alter` app and select **Open**.
 5. A security prompt will appear. Click **Open** again to bypass Gatekeeper. 
 *(You only need to do this step once. Future launches can be done with a normal double-click).*
 
@@ -49,7 +49,7 @@ Since Velvet Studio is downloaded from GitHub and is not signed by a paid Apple 
 
 ## Audits & Quality Control
 
-Velvet Studio (v5.3.0) has passed a rigorous 6-phase master technical audit. The detailed reports (Cybersecurity OWASP 2025, Performance, Accessibility, and Server Integrity) can be found in the [`docs/audits/`](docs/audits/) directory.
+Alter (v5.3.0) has passed a rigorous 6-phase master technical audit. The detailed reports (Cybersecurity OWASP 2025, Performance, Accessibility, and Server Integrity) can be found in the [`docs/audits/`](docs/audits/) directory.
 
 ## Quick Start (Development)
 
@@ -103,7 +103,7 @@ The CI pipeline will:
 ## Architecture
 
 ```
-velvet-studio/
+alter/
 ├── src/                    # React frontend
 │   ├── views/              # Page-level components (Models, Accounts, Locations, Generation)
 │   ├── features/           # Feature modules (Gallery, SceneEditor, ImagePreview, etc.)

@@ -1,4 +1,4 @@
-# 🗺️ Velvet Studio v5.2.1 — Cartographie des Fonctionnalités & Analyse de Cohérence
+# 🗺️ Alter v5.2.1 — Cartographie des Fonctionnalités & Analyse de Cohérence
 
 ## Architecture Globale
 

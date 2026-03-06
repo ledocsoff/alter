@@ -1,4 +1,4 @@
-# 📊 Velvet Studio v5.2.1 — Analyse Performance & Qualité de Code
+# 📊 Alter v5.2.1 — Analyse Performance & Qualité de Code
 
 🤖 **Agent : `@frontend-specialist`** | Skills : `performance-profiling` + `clean-code`
 

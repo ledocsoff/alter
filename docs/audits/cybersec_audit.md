@@ -1,4 +1,4 @@
-# 🛡️ Velvet Studio v5.2.1 — Audit Cybersécurité Complet
+# 🛡️ Alter v5.2.1 — Audit Cybersécurité Complet
 
 🤖 **Agent : `@security-auditor`** | Skill : `vulnerability-scanner` + `red-team-tactics`
 
@@ -197,7 +197,7 @@ RECONNAISSANCE → DISCOVERY → ANALYSIS → REPORTING → VERIFICATION
 
 ## ✅ Conclusion
 
-L'application **Velvet Studio v5.2.1** présente une **posture de sécurité excellente** pour une application Electron locale :
+L'application **Alter v5.2.1** présente une **posture de sécurité excellente** pour une application Electron locale :
 
 - **Zéro vulnérabilité critique ou haute**
 - Toutes les entrées utilisateur sont sanitisées

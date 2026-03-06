@@ -2,7 +2,7 @@
 
 ## Résumé
 
-Implémentation de l'accès distant via Tailscale (ou LAN WiFi) à Velvet Studio depuis un iPhone/iPad.
+Implémentation de l'accès distant via Tailscale (ou LAN WiFi) à Alter depuis un iPhone/iPad.
 
 ## Fichiers modifiés
 
@@ -110,7 +110,7 @@ Pour permettre à d'autres utilisateurs (sans compte GitHub ou compétences tech
 - **Solution :** Extraction de l'interface de liste d'un lieu vers un composant enfant propre isolé (`LocationCard`), ce qui a restauré immédiatement le rendu de l'interface et stabilisé le Dashboard.
 
 ### 2. Conformité Design & "Anti-Cliché"
-- **Glassmorphism banni :** La classe CSS `.velvet-glass` utilisait un `backdrop-filter: blur()`. Conformément aux directives strictes de design, cela a été remplacé par une couleur de fond pleine, qualitative et sombre (`#18181b`) complétée par une ombre élégante (`box-shadow`), supprimant ainsi l'aspect générique "web3/dashboard".
+- **Glassmorphism banni :** La classe CSS `.alter-glass` utilisait un `backdrop-filter: blur()`. Conformément aux directives strictes de design, cela a été remplacé par une couleur de fond pleine, qualitative et sombre (`#18181b`) complétée par une ombre élégante (`box-shadow`), supprimant ainsi l'aspect générique "web3/dashboard".
 - **Feedback d'état d'API :** Les points indicateurs des clés API dans le header (vert/bleu) possèdent désormais une subtile animation de pulsation lente (`api-dot-active`) garantissant qu'il est impossible de rater l'état "Prêt" des clés d'un coup d'œil distrait.
 
 ### 3. Accessibilité & Responsivité
@@ -159,7 +159,7 @@ Suite au build de production initial, une passe d'audit intensive a été réali
 3. **Performance & Bundle** : Scan `depcheck` (0 dépendance inutilisée), bundle Vite optimisé (141KB gzipped).
 4. **Robustesse de l'API Serveur (`v5.2.2`)** : Correction d'une faille de corruption de données potentielle en forçant l'écriture atomique (tmp → rename) sur les index de références (`writeRefsIndex`, `writeLocRefsIndex`). Suppression d'un listener d'erreur dupliqué.
 5. **Accessibilité & UX (`v5.2.2`)** : Ajout d'indicateurs de focus globaux exclusifs au clavier (`:focus-visible` ring Teal) et de la sémantique ARIA (`role="dialog"`) sur les modales.
-6. **CSS & Clean Code (`v5.2.3`)** : Nettoyage de ~60 lignes de styles CSS morts (`velvet-glass`, `velvet-card-interactive`) allégeant le fichier final.
+6. **CSS & Clean Code (`v5.2.3`)** : Nettoyage de ~60 lignes de styles CSS morts (`alter-glass`, `alter-card-interactive`) allégeant le fichier final.
 
 ### Validation Finale
 Exécution du master script `.agent/scripts/checklist.py` avec **100% de succès sur les 6 suites** :

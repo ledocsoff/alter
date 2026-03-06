@@ -1,4 +1,4 @@
-# ♿ Velvet Studio v5.2.1 — Audit Accessibilité & Flux UX
+# ♿ Alter v5.2.1 — Audit Accessibilité & Flux UX
 
 🤖 **Agent : `@frontend-specialist`** | Skills : `frontend-design` + `web-design-guidelines`
 

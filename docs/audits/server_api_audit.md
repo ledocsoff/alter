@@ -1,4 +1,4 @@
-# 🔧 Velvet Studio v5.2.1 — Audit Server API & Intégrité des Données
+# 🔧 Alter v5.2.1 — Audit Server API & Intégrité des Données
 
 🤖 **Agent : `@backend-specialist`** | Skills : `api-patterns` + `database-design`
 
