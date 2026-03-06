@@ -127,7 +127,7 @@ const AppLayout = ({ children }) => {
       if (window.velvet.onUpdateNotAvailable) {
         window.velvet.onUpdateNotAvailable(() => {
           setIsCheckingUpdate(false);
-          toast.success('Velvet Studio est à jour ✨');
+          // Ne pas spammer de toast au démarrage. Cérémonie silencieuse.
         });
       }
       if (window.velvet.onUpdateError) {
@@ -135,7 +135,7 @@ const AppLayout = ({ children }) => {
           setIsCheckingUpdate(false);
           setDownloadProgress(null);
           setIsUpdateError(true);
-          toast.error(`Erreur de mise à jour: ${err}`);
+          toast.error(`AutoUpdater: ${err}`);
         });
       }
       if (window.velvet.onNotInApplications) {
@@ -153,18 +153,31 @@ const AppLayout = ({ children }) => {
     if (!window.velvet?.checkForUpdates) return;
     setIsCheckingUpdate(true);
     setIsUpdateError(false);
-    toast.success('Recherche de mises à jour...', { duration: 2000 });
+
     try {
       const res = await window.velvet.checkForUpdates();
+      // On libère toujours le spinner explicitement ! (Fini la charge infinie)
+      setIsCheckingUpdate(false);
+
       if (!res?.success) {
-        // En cas d'échec (ex: 404 car pas de release sur GitHub), on rassure l'utilisateur
-        toast.success('Velvet Studio est à jour ✨');
-        setIsCheckingUpdate(false);
+        setIsUpdateError(true);
+        toast.error(`Impossible de vérifier les maj: ${res.error}`);
       } else if (res.isUpdateAvailable) {
-        // Le listener onUpdateAvailable prend le relais pour afficherr la barre
+        // L'update est trouvé.
+        // S'il n'est pas déjà téléchargé (hasUpdate), on signale qu'il arrive.
+        if (!hasUpdate) {
+          toast.success(`La version v${res.remoteVersion} arrive ! Téléchargement en fond...`);
+        } else {
+          toast.success(`La version v${res.remoteVersion} est déjà prête à être installée.`);
+        }
+      } else {
+        toast.success(`Vous avez la dernière version (v${res.currentVersion}) ✨`);
       }
     } catch (err) {
+      // Sécurité anti-spin
       setIsCheckingUpdate(false);
+      setIsUpdateError(true);
+      toast.error('Erreur critique lors de la vérification réseau');
     }
   };
 

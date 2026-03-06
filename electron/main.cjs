@@ -25,6 +25,7 @@ function setupAutoUpdate() {
 
         autoUpdater.autoDownload = true;
         autoUpdater.autoInstallOnAppQuit = true;
+        autoUpdater.requestHeaders = { "Cache-Control": "no-cache" };
 
         autoUpdater.on('update-available', (info) => {
             console.log(`[Update] Nouvelle version disponible: v${info.version}`);
@@ -66,10 +67,17 @@ function setupAutoUpdate() {
 ipcMain.handle('check-for-updates', async (event) => {
     try {
         const result = await autoUpdater.checkForUpdates();
-        const remoteVersion = result?.updateInfo?.version;
+        const remoteVersion = result?.updateInfo?.version || '0.0.0';
         const currentVersion = app.getVersion();
-        const isUpdateAvailable = remoteVersion && remoteVersion !== currentVersion;
-        return { success: true, isUpdateAvailable };
+
+        // Ensure accurate comparison
+        const isUpdateAvailable = remoteVersion !== '0.0.0' && remoteVersion !== currentVersion;
+        return {
+            success: true,
+            isUpdateAvailable,
+            remoteVersion,
+            currentVersion
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }
