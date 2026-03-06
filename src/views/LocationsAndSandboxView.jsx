@@ -12,7 +12,9 @@ import LocationRefUpload from '../features/LocationRefUpload/LocationRefUpload';
 // Extracted to a proper component so useState can be used legally (Rules of Hooks)
 const LocationCard = ({ loc, idx, modelId, accountId, isGenerating, dragOverIdx, onDragStart, onDragEnter, onDragEnd, onEdit, onDuplicate, onDelete, navigate }) => {
     const [thumbFailed, setThumbFailed] = useState(false);
-    const apiBase = (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3001' : '';
+    // In packaged Electron apps, the protocol is not http/https (it's file: or a custom scheme)
+    const isBrowser = typeof window !== 'undefined' && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+    const apiBase = isBrowser ? '' : 'http://localhost:3001';
     const thumbUrl = loc.id ? `${apiBase}/api/location-refs/${encodeURIComponent(loc.id)}/first-image` : null;
 
     return (
