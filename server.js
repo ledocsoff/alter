@@ -991,14 +991,6 @@ if (activeDist) {
         }
         res.sendFile(path.join(activeDist, 'index.html'));
     });
-    console.log(`[Server] Web UI servie depuis: ${activeDist}`);
-} else {
-    console.warn(`[Server] WARNING: Aucun dossier 'dist' trouvé pour l'Interface Web !`);
-    console.warn(`[Server] Vérifié: \n - ${distDirs.join('\n - ')}`);
-    try {
-        const parentFiles = fs.readdirSync(path.dirname(currentDir));
-        console.warn(`[Server] Contenu Parent (${path.dirname(currentDir)}):`, parentFiles);
-    } catch (e) { }
 }
 
 // ============================================
@@ -1028,6 +1020,13 @@ console.log(`  ➜  Galerie:     ${GALLERY_DIR}/ (max ${MAX_GALLERY} images)`);
 console.log(`  ➜  Backups:     ${MAX_BACKUPS} rotations automatiques`);
 console.log(`  ➜  Données:     ${startupData.models?.length || 0} modele(s)`);
 console.log(`  ➜  Sécurité:    écriture atomique + validation + rate limit + path sanitization`);
+
+if (activeDist) {
+    console.log(`  ➜  Web UI Path: ${activeDist}`);
+} else {
+    console.warn(`  ➜  Web UI:      ❌ AUCUN DOSSIER DIST TROUVÉ (Navigateur Hors Ligne)`);
+    console.warn(`                  Paths essayés: ${distDirs.join(' | ')}`);
+}
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
     console.log(`  ➜  Statut:      en ligne sur le port ${PORT}`);

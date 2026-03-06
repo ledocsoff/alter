@@ -9,6 +9,7 @@ import DebugPanel from './features/DebugPanel/DebugPanel';
 import ErrorBoundary from './features/ErrorBoundary/ErrorBoundary';
 import ShortcutsModal from './features/ShortcutsModal/ShortcutsModal';
 import OnboardingFlow from './features/OnboardingFlow/OnboardingFlow';
+import UpdateModal from './features/Update/UpdateModal';
 
 // Code-splitting asynchrone des Vues (Améliore radicalement le Launch Time)
 const ModelsView = React.lazy(() => import('./views/ModelsView'));
@@ -99,6 +100,7 @@ const AppLayout = ({ children }) => {
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [isUpdateError, setIsUpdateError] = useState(false);
   const [notInApplications, setNotInApplications] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   // Listen for native update events from electron-updater
   useEffect(() => {
@@ -121,6 +123,7 @@ const AppLayout = ({ children }) => {
           setHasUpdate(true);
           setDownloadProgress(null);
           setIsCheckingUpdate(false);
+          setIsUpdateModalOpen(true);
           toast.success(`Mise à jour v${version} téléchargée et prête !`);
         });
       }
@@ -153,6 +156,7 @@ const AppLayout = ({ children }) => {
     if (!window.velvet?.checkForUpdates) return;
     setIsCheckingUpdate(true);
     setIsUpdateError(false);
+    setIsUpdateModalOpen(true); // Ouvre le modal premium
 
     try {
       const res = await window.velvet.checkForUpdates();
@@ -161,23 +165,20 @@ const AppLayout = ({ children }) => {
 
       if (!res?.success) {
         setIsUpdateError(true);
-        toast.error(`Impossible de vérifier les maj: ${res.error}`);
       } else if (res.isUpdateAvailable) {
         // L'update est trouvé.
-        // S'il n'est pas déjà téléchargé (hasUpdate), on signale qu'il arrive.
         if (!hasUpdate) {
           toast.success(`La version v${res.remoteVersion} arrive ! Téléchargement en fond...`);
-        } else {
-          toast.success(`La version v${res.remoteVersion} est déjà prête à être installée.`);
         }
       } else {
+        // Si c'est à jour, on referme le modal automatiquement après 2s ou on laisse l'utilisateur fermer.
+        setTimeout(() => setIsUpdateModalOpen(false), 3000);
         toast.success(`Vous avez la dernière version (v${res.currentVersion}) ✨`);
       }
     } catch (err) {
       // Sécurité anti-spin
       setIsCheckingUpdate(false);
       setIsUpdateError(true);
-      toast.error('Erreur critique lors de la vérification réseau');
     }
   };
 
@@ -324,38 +325,25 @@ const AppLayout = ({ children }) => {
         </Link>
         <button
           onClick={handleCheckUpdate}
-          disabled={isCheckingUpdate || hasUpdate || downloadProgress !== null}
-          className={`group flex flex-col items-start gap-0.5 text-[10px] transition-colors font-mono -ml-4 hidden sm:flex px-2 py-1 rounded-md ${isUpdateError ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
-          title={isUpdateError ? "Echec du telechargement. Cliquer pour reessayer." : "Rechercher des mises à jour"}
+          className={`group flex flex-col items-start gap-0.5 text-[10px] transition-colors font-mono -ml-4 hidden sm:flex px-2 py-1 rounded-md ${hasUpdate || downloadProgress !== null ? 'text-teal-400 hover:text-teal-300 hover:bg-teal-500/10 shadow-[0_0_10px_rgba(20,184,166,0.15)]' : isUpdateError ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
+          title="Rechercher des mises à jour"
         >
           <div className="flex items-center gap-1.5">
-            <span>{isUpdateError ? "Erreur MAJ (Retry)" : `v${__APP_VERSION__}`}</span>
-            {isCheckingUpdate ? (
-              <div className="w-2.5 h-2.5 border border-zinc-500 border-t-zinc-300 rounded-full animate-spin"></div>
-            ) : (
-              !hasUpdate && downloadProgress === null && (
-                <svg className={`w-3 h-3 ${isUpdateError ? 'opacity-100 text-red-400' : 'opacity-0 group-hover:opacity-100'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  {isUpdateError ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                  )}
-                </svg>
-              )
+            <span>
+              {hasUpdate ? "Mise à jour prête ! (Cliquez)" : downloadProgress !== null ? "Téléchargement..." : isUpdateError ? "Erreur MAJ (Retry)" : `v${__APP_VERSION__}`}
+            </span>
+            {hasUpdate && (
+              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></div>
             )}
           </div>
-          {/* Download Progress Bar underneath version */}
-          {downloadProgress !== null && (
-            <div className="w-24 mt-0.5">
-              <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+          {/* Very discreet progress bar on the button itself if modal is hidden */}
+          {downloadProgress !== null && !isUpdateModalOpen && (
+            <div className="w-full mt-0.5">
+              <div className="h-0.5 w-full bg-zinc-800 overflow-hidden">
                 <div
-                  className="h-full bg-teal-500 rounded-full transition-all duration-300 ease-out"
+                  className="h-full bg-teal-500 transition-all duration-300"
                   style={{ width: `${Math.max(2, downloadProgress.percent || 0)}%` }}
                 />
-              </div>
-              <div className="flex justify-between items-center mt-1 text-[8px] text-zinc-500">
-                <span>{Math.round(downloadProgress.percent || 0)}%</span>
-                <span>{downloadProgress.bytesPerSecond ? `${(downloadProgress.bytesPerSecond / 1024 / 1024).toFixed(1)} Mo/s` : '...'}</span>
               </div>
             </div>
           )}
@@ -464,6 +452,18 @@ const AppLayout = ({ children }) => {
         isOpen={showShortcuts}
         onClose={() => setShowShortcuts(false)}
       />
+      {isUpdateModalOpen && (
+        <UpdateModal
+          isCheckingUpdate={isCheckingUpdate}
+          downloadProgress={downloadProgress}
+          hasUpdate={hasUpdate}
+          isUpdating={isUpdating}
+          isUpdateError={isUpdateError}
+          onCheckUpdate={handleCheckUpdate}
+          onRestart={handleUpdate}
+          onClose={() => setIsUpdateModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
