@@ -9,28 +9,8 @@ const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MODEL_ID = 'gemini-3-pro-image-preview';
 
 // ============================================
-// RETRY — backoff exponentiel pour erreurs transitoires
+// AI API CALL (Single-shot, no retries to protect quotas)
 // ============================================
-const RETRYABLE_CODES = [429, 500, 502, 503, 504];
-const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 2000;
-
-const withRetry = async (fn, context = 'api') => {
-  let lastError;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastError = err;
-      const isRetryable = err._retryable || err.message?.includes('fetch') || err.message?.includes('network');
-      if (!isRetryable || attempt === MAX_RETRIES) throw err;
-      const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
-      logger.warn(context, `Tentative ${attempt}/${MAX_RETRIES} échouée, retry dans ${delay / 1000}s...`, err.message);
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-  throw lastError;
-};
 
 export const validateApiKey = async (apiKey) => {
   logger.info('api', `Validation de clé API (...${apiKey.slice(-4)})`);
@@ -59,67 +39,66 @@ export const validateApiKey = async (apiKey) => {
 
 // conversationHistory: array of { role: 'user'|'model', parts: [...] }
 export const generateImage = async (apiKey, promptText, aspectRatio = '9:16', conversationHistory = [], options = {}) => {
-  return withRetry(async () => {
-    const historyTurns = Math.floor(conversationHistory.length / 2);
-    logger.info('generation', `Lancement génération (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
-      model: MODEL_ID,
-      aspectRatio,
-      historyTurns,
-      promptLength: promptText.length,
-    });
+  const historyTurns = Math.floor(conversationHistory.length / 2);
+  logger.info('generation', `Lancement génération (${aspectRatio}, ${historyTurns} tour(s) historique)`, {
+    model: MODEL_ID,
+    aspectRatio,
+    historyTurns,
+    promptLength: promptText.length,
+  });
 
-    const contents = [
-      ...conversationHistory,
-      { role: 'user', parts: [{ text: promptText }] },
-    ];
+  const contents = [
+    ...conversationHistory,
+    { role: 'user', parts: [{ text: promptText }] },
+  ];
 
-    const generationConfig = {
-      responseModalities: ['IMAGE'],
-      imageConfig: {
-        aspectRatio: aspectRatio,
-      },
-    };
+  const generationConfig = {
+    responseModalities: ['IMAGE'],
+    imageConfig: {
+      aspectRatio: aspectRatio,
+    },
+  };
 
-    // Pass seed at API level for best-effort deterministic generation
-    if (options.seed) {
-      generationConfig.seed = Number(options.seed);
-    }
+  // Pass seed at API level for best-effort deterministic generation
+  if (options.seed) {
+    generationConfig.seed = Number(options.seed);
+  }
 
-    // ─── IMPERFECTION LAYER ───
+  // ─── IMPERFECTION LAYER ───
 
-    // Random realistic photo flaws to break AI "perfection"
-    const IMPERFECTIONS = [
-      'Slight phone shadow visible on the ground or wall',
-      'Minor lens flare from sun or light source',
-      'Slightly warm white balance, like an old iPhone',
-      'Subject slightly off-center in frame',
-      'One strand of hair out of place',
-      'Photo slightly tilted 1-2 degrees',
-      'Subtle motion blur on one hand',
-      'Slightly overexposed highlights on skin',
-      'Background object partially cut off by frame edge',
-      'Natural skin imperfection visible (freckle, small mark)',
-    ];
+  // Random realistic photo flaws to break AI "perfection"
+  const IMPERFECTIONS = [
+    'Slight phone shadow visible on the ground or wall',
+    'Minor lens flare from sun or light source',
+    'Slightly warm white balance, like an old iPhone',
+    'Subject slightly off-center in frame',
+    'One strand of hair out of place',
+    'Photo slightly tilted 1-2 degrees',
+    'Subtle motion blur on one hand',
+    'Slightly overexposed highlights on skin',
+    'Background object partially cut off by frame edge',
+    'Natural skin imperfection visible (freckle, small mark)',
+  ];
 
-    // Nano Virtual Edition — 6 additional iPhone-realism defects
-    const NANO_VIRTUAL_IMPERFECTIONS = [
-      'Slight 1-2° camera tilt like real hand-held iPhone',
-      'Subtle digital grain and noise typical of iPhone 15 Pro sensor',
-      'Flyaway hair strands or slightly messy hair',
-      'Visible goosebumps or natural skin texture variation',
-      'Slight warm/cool white balance shift (old iPhone look)',
-      'One tiny imperfection: freckle cluster, small mark or redness on cheek',
-    ];
+  // Nano Virtual Edition — 6 additional iPhone-realism defects
+  const NANO_VIRTUAL_IMPERFECTIONS = [
+    'Slight 1-2° camera tilt like real hand-held iPhone',
+    'Subtle digital grain and noise typical of iPhone 15 Pro sensor',
+    'Flyaway hair strands or slightly messy hair',
+    'Visible goosebumps or natural skin texture variation',
+    'Slight warm/cool white balance shift (old iPhone look)',
+    'One tiny imperfection: freckle cluster, small mark or redness on cheek',
+  ];
 
-    // Always active: merge full imperfection pool for Nano Virtual Mode
-    const fullImperfections = [...IMPERFECTIONS, ...NANO_VIRTUAL_IMPERFECTIONS];
-    const shuffled = [...fullImperfections].sort(() => Math.random() - 0.5);
-    const imperfectionText = `\n\nIMPERFECTION LAYER (add these realistic details):\n- ${shuffled.slice(0, 3).join('\n- ')}`;
+  // Always active: merge full imperfection pool for Nano Virtual Mode
+  const fullImperfections = [...IMPERFECTIONS, ...NANO_VIRTUAL_IMPERFECTIONS];
+  const shuffled = [...fullImperfections].sort(() => Math.random() - 0.5);
+  const imperfectionText = `\n\nIMPERFECTION LAYER (add these realistic details):\n- ${shuffled.slice(0, 3).join('\n- ')}`;
 
-    const body = {
-      system_instruction: {
-        parts: [{
-          text: `You are a photorealistic image generator specializing in casual social media photography. You produce images that look like real photos from a normal person's Instagram or TikTok — NOT professional fashion campaigns.
+  const body = {
+    system_instruction: {
+      parts: [{
+        text: `You are a photorealistic image generator specializing in casual social media photography. You produce images that look like real photos from a normal person's Instagram or TikTok — NOT professional fashion campaigns.
 
 RULES — ORDERED BY PRIORITY:
 
@@ -173,121 +152,118 @@ RULE #12 — DEPTH AND VOLUME SIMULATION:
 Follow the "virtual_depth_simulation" section precisely. Prioritize realistic 3D volume and depth rendering. Subject must occupy correct foreground depth. Prevent any flat, compressed or 2D-looking anatomy.${imperfectionText}
 
 OUTPUT: A single photorealistic casual photo. iPhone quality, deep focus, amateur and authentic.`
-        }]
-      },
-      contents,
-      generationConfig,
-      safetySettings: [
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      ],
-    };
+      }]
+    },
+    contents,
+    generationConfig,
+    safetySettings: [
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  };
 
-    const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
-    logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
+  const url = `${API_BASE}/${MODEL_ID}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  logger.debug('api', `POST ${API_BASE}/${MODEL_ID}:generateContent`, { bodySize: JSON.stringify(body).length });
 
-    // Verbose: log full prompt sent
-    logger.verbose('prompt', '📝 generateImage', {
-      promptText: promptText.slice(0, 2000),
-      aspectRatio,
-      historyTurns,
-      seed: options.seed || null,
-      systemInstruction: body.system_instruction?.parts?.[0]?.text?.slice(0, 300) + '...',
-    });
+  // Verbose: log full prompt sent
+  logger.verbose('prompt', '📝 generateImage', {
+    promptText: promptText.slice(0, 2000),
+    aspectRatio,
+    historyTurns,
+    seed: options.seed || null,
+    systemInstruction: body.system_instruction?.parts?.[0]?.text?.slice(0, 300) + '...',
+  });
 
-    const t0 = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    }).catch(fetchErr => {
-      clearTimeout(timeout);
-      const msg = fetchErr.name === 'AbortError' ? 'Timeout: le serveur n\'a pas répondu en 2 minutes' : `Erreur reseau: ${fetchErr.message}`;
-      const e = new Error(msg);
-      e._retryable = true;
-      throw e;
-    });
+  const t0 = Date.now();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: controller.signal,
+  }).catch(fetchErr => {
     clearTimeout(timeout);
+    const msg = fetchErr.name === 'AbortError' ? 'Timeout: le serveur n\'a pas répondu en 2 minutes' : `Erreur reseau: ${fetchErr.message}`;
+    const e = new Error(msg);
+    throw e;
+  });
+  clearTimeout(timeout);
 
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = err.error?.message || `Erreur ${res.status}`;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error?.message || `Erreur ${res.status}`;
 
-      logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
+    logger.error('api', `HTTP ${res.status} apres ${elapsed}s`, { status: res.status, message: msg });
 
-      if (RETRYABLE_CODES.includes(res.status)) {
-        // On 429 (quota) or 503 (service unavailable), try fallback to secondary API key if available
-        if ((res.status === 429 || res.status === 503) && !options._usedFallback) {
-          const key2 = getApiKey2();
-          if (key2 && key2 !== apiKey) {
-            logger.warn('api', `Erreur ${res.status} — basculement sur la clé secondaire`);
-            return generateImage(key2, promptText, aspectRatio, conversationHistory, { ...options, _usedFallback: true });
-          }
+    if ([429, 500, 502, 503, 504].includes(res.status)) {
+      // On 429 (quota) or 503 (service unavailable), try fallback to secondary API key if available
+      if ((res.status === 429 || res.status === 503) && !options._usedFallback) {
+        const key2 = getApiKey2();
+        if (key2 && key2 !== apiKey) {
+          logger.warn('api', `Erreur ${res.status} — basculement sur la clé secondaire`);
+          return generateImage(key2, promptText, aspectRatio, conversationHistory, { ...options, _usedFallback: true });
         }
-        const e = new Error(res.status === 429
-          ? 'Quota dépassé sur toutes les clés API. Attendez quelques minutes.'
-          : `Serveurs satures (${res.status}). Retry automatique en cours...`);
-        e._retryable = true;
-        throw e;
       }
-      if (res.status === 400 && msg.includes('safety')) throw new Error('Contenu filtre par les regles de securite.');
-      if (res.status === 403) {
-        if (msg.includes('Generative Language API')) {
-          throw new Error('Activez la "Generative Language API" dans votre projet GCP.');
-        }
-        throw new Error('Clé API invalide ou accès refusé.');
+      const e = new Error(res.status === 429
+        ? 'Quota dépassé sur toutes les clés API. Attendez quelques minutes.'
+        : `Erreur serveur Google (${res.status}).`);
+      throw e;
+    }
+    if (res.status === 400 && msg.includes('safety')) throw new Error('Contenu filtre par les regles de securite.');
+    if (res.status === 403) {
+      if (msg.includes('Generative Language API')) {
+        throw new Error('Activez la "Generative Language API" dans votre projet GCP.');
       }
-      throw new Error(msg);
+      throw new Error('Clé API invalide ou accès refusé.');
     }
+    throw new Error(msg);
+  }
 
-    logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
-    logger.verbose('api-response', '✅ generateImage', { elapsed: `${elapsed}s`, status: res.status });
-    const data = await res.json();
+  logger.success('api', `Reponse OK en ${elapsed}s (HTTP ${res.status})`);
+  logger.verbose('api-response', '✅ generateImage', { elapsed: `${elapsed}s`, status: res.status });
+  const data = await res.json();
 
-    const candidates = data.candidates || [];
-    if (candidates.length === 0) {
-      logger.warn('generation', 'Aucun candidat dans la reponse', data);
-      throw new Error('Aucun resultat genere. Le contenu a peut-etre ete filtre.');
+  const candidates = data.candidates || [];
+  if (candidates.length === 0) {
+    logger.warn('generation', 'Aucun candidat dans la reponse', data);
+    throw new Error('Aucun resultat genere. Le contenu a peut-etre ete filtre.');
+  }
+
+  const parts = candidates[0]?.content?.parts || [];
+  let imageBase64 = null;
+  let mimeType = 'image/png';
+  let textResponse = '';
+
+  for (const part of parts) {
+    if (part.inlineData) {
+      imageBase64 = part.inlineData.data;
+      mimeType = part.inlineData.mimeType || 'image/png';
     }
-
-    const parts = candidates[0]?.content?.parts || [];
-    let imageBase64 = null;
-    let mimeType = 'image/png';
-    let textResponse = '';
-
-    for (const part of parts) {
-      if (part.inlineData) {
-        imageBase64 = part.inlineData.data;
-        mimeType = part.inlineData.mimeType || 'image/png';
-      }
-      if (part.text) {
-        textResponse += part.text;
-      }
+    if (part.text) {
+      textResponse += part.text;
     }
+  }
 
-    if (!imageBase64) {
-      logger.error('generation', 'Pas d\'image dans la reponse', { textResponse, partsCount: parts.length });
-      throw new Error('Aucune image dans la reponse. ' + (textResponse || 'Essayez un prompt different.'));
-    }
+  if (!imageBase64) {
+    logger.error('generation', 'Pas d\'image dans la reponse', { textResponse, partsCount: parts.length });
+    throw new Error('Aucune image dans la reponse. ' + (textResponse || 'Essayez un prompt different.'));
+  }
 
-    const imgSizeKb = Math.round((imageBase64.length * 3) / 4 / 1024);
-    logger.success('generation', `Image generee: ${mimeType} (~${imgSizeKb} KB) en ${elapsed}s`);
+  const imgSizeKb = Math.round((imageBase64.length * 3) / 4 / 1024);
+  logger.success('generation', `Image generee: ${mimeType} (~${imgSizeKb} KB) en ${elapsed}s`);
 
-    return {
-      imageBase64,
-      mimeType,
-      textResponse,
-      dataUrl: `data:${mimeType};base64,${imageBase64}`,
-      modelParts: [{ inlineData: { mimeType, data: imageBase64 } }],
-    };
-  }, 'generation'); // end withRetry
+  return {
+    imageBase64,
+    mimeType,
+    textResponse,
+    dataUrl: `data:${mimeType};base64,${imageBase64}`,
+    modelParts: [{ inlineData: { mimeType, data: imageBase64 } }],
+  };
 };
 
 // ============================================
