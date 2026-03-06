@@ -99,6 +99,7 @@ const AppLayout = ({ children }) => {
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [isUpdateError, setIsUpdateError] = useState(false);
+  const [isUpToDate, setIsUpToDate] = useState(false);
   const [notInApplications, setNotInApplications] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
@@ -109,7 +110,6 @@ const AppLayout = ({ children }) => {
         window.velvet.onUpdateAvailable((info) => {
           setIsCheckingUpdate(false);
           setIsUpdateError(false);
-          toast.success(`Mise à jour v${info.version} disponible !`);
           setDownloadProgress({ percent: 0, bytesPerSecond: 0 });
         });
       }
@@ -124,7 +124,6 @@ const AppLayout = ({ children }) => {
           setDownloadProgress(null);
           setIsCheckingUpdate(false);
           setIsUpdateModalOpen(true);
-          toast.success(`Mise à jour v${version} téléchargée et prête !`);
         });
       }
       if (window.velvet.onUpdateNotAvailable) {
@@ -156,24 +155,31 @@ const AppLayout = ({ children }) => {
     if (!window.velvet?.checkForUpdates) return;
     setIsCheckingUpdate(true);
     setIsUpdateError(false);
-    setIsUpdateModalOpen(true); // Ouvre le modal premium
+    setIsUpToDate(false);
+    setIsUpdateModalOpen(true);
 
     try {
       const res = await window.velvet.checkForUpdates();
-      // On libère toujours le spinner explicitement ! (Fini la charge infinie)
       setIsCheckingUpdate(false);
 
       if (!res?.success) {
         setIsUpdateError(true);
       } else if (res.isUpdateAvailable) {
-        // L'update est trouvé.
-        if (!hasUpdate) {
-          toast.success(`La version v${res.remoteVersion} arrive ! Téléchargement en fond...`);
-        }
+        // La mise à jour est trouvée et le téléchargement a commencé en arrière-plan.
+        // Laissons le modal ouvert afficher le téléchargement.
       } else {
-        // Si c'est à jour, on referme le modal automatiquement après 2s ou on laisse l'utilisateur fermer.
-        setTimeout(() => setIsUpdateModalOpen(false), 3000);
-        toast.success(`Vous avez la dernière version (v${res.currentVersion}) ✨`);
+        // Déjà à jour : on affiche le succès dans le modal, on referme automatiquement.
+        setIsUpToDate(true);
+        setTimeout(() => {
+          setIsUpdateModalOpen((prev) => {
+            if (prev) {
+              // Seulement si c'est encore ouvert
+              setIsUpToDate(false);
+              return false;
+            }
+            return prev;
+          });
+        }, 3000);
       }
     } catch (err) {
       // Sécurité anti-spin
@@ -459,9 +465,13 @@ const AppLayout = ({ children }) => {
           hasUpdate={hasUpdate}
           isUpdating={isUpdating}
           isUpdateError={isUpdateError}
+          isUpToDate={isUpToDate}
           onCheckUpdate={handleCheckUpdate}
           onRestart={handleUpdate}
-          onClose={() => setIsUpdateModalOpen(false)}
+          onClose={() => {
+            setIsUpdateModalOpen(false);
+            setIsUpToDate(false);
+          }}
         />
       )}
     </div>

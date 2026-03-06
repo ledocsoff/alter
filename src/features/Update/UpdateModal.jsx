@@ -6,6 +6,7 @@ export default function UpdateModal({
     hasUpdate,
     isUpdating,
     isUpdateError,
+    isUpToDate,
     onCheckUpdate,
     onRestart,
     onClose
@@ -61,6 +62,29 @@ export default function UpdateModal({
                             >
                                 Réessayer
                             </button>
+                        </div>
+                    )}
+
+                    {!isCheckingUpdate && isUpToDate && (
+                        <div className="flex flex-col items-center gap-4 w-full animate-in zoom-in-95 duration-300">
+                            <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center mb-1">
+                                <svg className="w-6 h-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <p className="text-[15px] font-medium text-zinc-300">
+                                Velvet Studio est à jour !
+                            </p>
+                            <p className="text-sm text-zinc-500 -mt-2">
+                                Vous utilisez la dernière version disponible.
+                            </p>
+                        </div>
+                    )}
+
+                    {!isCheckingUpdate && !isUpdateError && !isUpToDate && !hasUpdate && downloadProgress === null && (
+                        <div className="flex flex-col items-center gap-4 w-full">
+                            <p className="text-sm text-zinc-400">Préparation du téléchargement...</p>
+                            <div className="w-5 h-5 border-2 border-zinc-700 border-t-teal-400 rounded-full animate-spin"></div>
                         </div>
                     )}
 

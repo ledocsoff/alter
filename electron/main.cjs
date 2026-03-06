@@ -56,8 +56,8 @@ function setupAutoUpdate() {
             if (wins.length > 0) wins[0].webContents.send('update-error', err.message);
         });
 
-        // Check for updates 3s after launch
-        setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 3000);
+        // L'auto-updater est maintenant 100% MANUEL.
+        // On supprime checkForUpdatesAndNotify() pour éviter les fenêtres natives système buggées au démarrage.
     } catch (err) {
         console.log('[Update] electron-updater non disponible, auto-update désactivé.');
     }
