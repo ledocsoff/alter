@@ -32,7 +32,6 @@
         "version": "node -e \"console.log('Alter v' + require('./package.json').version)\""
     },
     "dependencies": {
-        "electron-updater": "^6.8.3",
         "express": "^4.21.0",
         "express-rate-limit": "^8.3.0",
         "helmet": "^8.1.0",

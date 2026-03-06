@@ -11,11 +11,6 @@
         "server-runner.js",
         "package.json"
     ],
-    "publish": {
-        "provider": "github",
-        "owner": "ledocsoff",
-        "repo": "alter"
-    },
     "mac": {
         "category": "public.app-category.developer-tools",
         "target": [

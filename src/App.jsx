@@ -9,8 +9,6 @@ import DebugPanel from './features/DebugPanel/DebugPanel';
 import ErrorBoundary from './features/ErrorBoundary/ErrorBoundary';
 import ShortcutsModal from './features/ShortcutsModal/ShortcutsModal';
 import OnboardingFlow from './features/OnboardingFlow/OnboardingFlow';
-import UpdateModal from './features/Update/UpdateModal';
-
 // Code-splitting asynchrone des Vues (Améliore radicalement le Launch Time)
 const ModelsView = React.lazy(() => import('./views/ModelsView'));
 const ModelEditorShell = React.lazy(() => import('./views/ModelEditorShell'));
@@ -91,55 +89,11 @@ const AppLayout = ({ children }) => {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [hasKey, setHasKey] = useState(() => !!getApiKey());
   const [hasKey2, setHasKey2] = useState(() => !!getApiKey2());
-  const [errorCount, setErrorCount] = useState(0);
-  const [serverOnline, setServerOnline] = useState(true);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const [hasUpdate, setHasUpdate] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(null);
-  const [isUpdateError, setIsUpdateError] = useState(false);
-  const [isUpToDate, setIsUpToDate] = useState(false);
   const [notInApplications, setNotInApplications] = useState(false);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   // Listen for native update events from electron-updater
   useEffect(() => {
     if (window.alter) {
-      if (window.alter.onUpdateAvailable) {
-        window.alter.onUpdateAvailable((info) => {
-          setIsCheckingUpdate(false);
-          setIsUpdateError(false);
-          setDownloadProgress({ percent: 0, bytesPerSecond: 0 });
-        });
-      }
-      if (window.alter.onUpdateDownloadProgress) {
-        window.alter.onUpdateDownloadProgress((progress) => {
-          setDownloadProgress(progress);
-        });
-      }
-      if (window.alter.onUpdateDownloaded) {
-        window.alter.onUpdateDownloaded((version) => {
-          setHasUpdate(true);
-          setDownloadProgress(null);
-          setIsCheckingUpdate(false);
-          setIsUpdateModalOpen(true);
-        });
-      }
-      if (window.alter.onUpdateNotAvailable) {
-        window.alter.onUpdateNotAvailable(() => {
-          setIsCheckingUpdate(false);
-          // Ne pas spammer de toast au démarrage. Cérémonie silencieuse.
-        });
-      }
-      if (window.alter.onUpdateError) {
-        window.alter.onUpdateError((err) => {
-          setIsCheckingUpdate(false);
-          setDownloadProgress(null);
-          setIsUpdateError(true);
-          toast.error(`AutoUpdater: ${err}`);
-        });
-      }
       if (window.alter.onNotInApplications) {
         window.alter.onNotInApplications(() => setNotInApplications(true));
       }
@@ -150,49 +104,6 @@ const AppLayout = ({ children }) => {
       }
     }
   }, []);
-
-  const handleCheckUpdate = async () => {
-    if (!window.alter?.checkForUpdates) return;
-    setIsCheckingUpdate(true);
-    setIsUpdateError(false);
-    setIsUpToDate(false);
-    setIsUpdateModalOpen(true);
-
-    try {
-      const res = await window.alter.checkForUpdates();
-      setIsCheckingUpdate(false);
-
-      if (!res?.success) {
-        setIsUpdateError(true);
-      } else if (res.isUpdateAvailable) {
-        // La mise à jour est trouvée et le téléchargement a commencé en arrière-plan.
-        // Laissons le modal ouvert afficher le téléchargement.
-      } else {
-        // Déjà à jour : on affiche le succès dans le modal, on referme automatiquement.
-        setIsUpToDate(true);
-        setTimeout(() => {
-          setIsUpdateModalOpen((prev) => {
-            if (prev) {
-              // Seulement si c'est encore ouvert
-              setIsUpToDate(false);
-              return false;
-            }
-            return prev;
-          });
-        }, 3000);
-      }
-    } catch (err) {
-      // Sécurité anti-spin
-      setIsCheckingUpdate(false);
-      setIsUpdateError(true);
-    }
-  };
-
-  const handleUpdate = () => {
-    if (!window.alter?.restartApp) return;
-    setIsUpdating(true);
-    window.alter.restartApp();
-  };
 
   // Health check — ping server every 30s, with startup retry
   const apiBase = (typeof window !== 'undefined' && window.location.protocol === 'file:') ? 'http://localhost:3001' : '';
@@ -335,31 +246,6 @@ const AppLayout = ({ children }) => {
             Alter
           </span>
         </Link>
-        <button
-          onClick={handleCheckUpdate}
-          className={`group flex flex-col items-start gap-0.5 text-[10px] transition-colors font-mono -ml-4 hidden sm:flex px-2 py-1 rounded-md ${hasUpdate || downloadProgress !== null ? 'text-teal-400 hover:text-teal-300 hover:bg-teal-500/10 shadow-[0_0_10px_rgba(20,184,166,0.15)]' : isUpdateError ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
-          title="Rechercher des mises à jour"
-        >
-          <div className="flex items-center gap-1.5">
-            <span>
-              {hasUpdate ? "Mise à jour prête ! (Cliquez)" : downloadProgress !== null ? "Téléchargement..." : isUpdateError ? "Erreur MAJ (Retry)" : `v${__APP_VERSION__}`}
-            </span>
-            {hasUpdate && (
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></div>
-            )}
-          </div>
-          {/* Very discreet progress bar on the button itself if modal is hidden */}
-          {downloadProgress !== null && !isUpdateModalOpen && (
-            <div className="w-full mt-0.5">
-              <div className="h-0.5 w-full bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full bg-teal-500 transition-all duration-300"
-                  style={{ width: `${Math.max(2, downloadProgress.percent || 0)}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </button>
         <div className="hidden md:block h-4 w-px bg-zinc-800"></div>
         <div className="hidden md:block flex-1">
           <Breadcrumb />
@@ -375,26 +261,6 @@ const AppLayout = ({ children }) => {
             </span>
           </div>
           <div className="h-3 w-px bg-zinc-800/60"></div>
-          {hasUpdate && (
-            <>
-              <button
-                onClick={handleUpdate}
-                disabled={isUpdating}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-white bg-teal-600 px-3 py-1 rounded-md hover:bg-teal-500 transition-colors shadow-[0_0_15px_rgba(20,184,166,0.3)] disabled:opacity-50"
-                title="Redémarrer et installer la nouvelle version"
-              >
-                {isUpdating ? (
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></div>
-                ) : (
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
-                )}
-                <span>{isUpdating ? "Installation..." : "Redémarrer & Installer"}</span>
-              </button>
-              <div className="h-3 w-px bg-zinc-800/60"></div>
-            </>
-          )}
           <button
             onClick={() => setShowApiKeyModal(true)}
             className="flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-md transition-colors hover:bg-zinc-800/50"
