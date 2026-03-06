@@ -76,8 +76,17 @@ export const PromptProvider = ({ children }) => {
     return dbModel?.accounts?.find(a => a.id === activeWorkflow.accountId) || null;
   }, [activeWorkflow, allModelsDatabase]);
 
-  // Matrice d'ancrage = prompt principal
-  const anchorMatrix = useMemo(() => generateAnchorMatrix(model, scene, activeAccount), [model, scene, activeAccount]);
+  // Matrice d'ancrage = prompt principal (Nano Virtual Mode always ON)
+  const anchorMatrix = useMemo(() => {
+    const characterId = model.name
+      ? `MODEL_${model.name.toUpperCase().replace(/\s+/g, '_')}`
+      : 'MODEL_VIRTUAL_V01';
+    return generateAnchorMatrix(model, scene, activeAccount, {
+      nanoVirtualMode: true,
+      globalSeed: scene.seed || null,
+      characterId,
+    });
+  }, [model, scene, activeAccount]);
   const generatedPrompt = useMemo(() => JSON.stringify(anchorMatrix, null, 2), [anchorMatrix]);
 
   const updateSceneEntry = useCallback((key, value) => {

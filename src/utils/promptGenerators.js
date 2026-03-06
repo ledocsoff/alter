@@ -1,7 +1,7 @@
 // promptGenerators.js
-// Moteur de génération Matrice d'Ancrage v2
+// Moteur de génération Matrice d'Ancrage v3 — Nano Virtual Edition
 // Chaque champ = description narrative détaillée pour cohérence maximale
-// Refactoré: negative prompt simplifié, champs null supprimés, ControlNet retiré
+// nanoVirtualMode: active le pack de verrouillage virtuel (ON par défaut)
 
 import logger from './logger';
 
@@ -42,9 +42,8 @@ const PHOTO_TYPE_NORMALIZE = {
   'mirror': 'mirror selfie, full body reflection, phone visible in hand',
 };
 
-// Simplified negative prompt — focused directives instead of 120+ keyword spam
-// Gemini is NOT Stable Diffusion; it responds better to clear instructions than keyword lists
-const NEGATIVE_DIRECTIVES = [
+// Core negative directives (Gemini-optimized: clear instructions > keyword lists)
+const NEGATIVE_DIRECTIVES_BASE = [
   // Core quality
   "low quality", "blurry", "deformed anatomy", "extra fingers", "mutated hands",
   // Anti-AI look
@@ -59,10 +58,30 @@ const NEGATIVE_DIRECTIVES = [
   "inconsistent background",
 ];
 
+// Nano Virtual Mode — extended anti-normalization directives
+const NEGATIVE_DIRECTIVES_NANO = [
+  "anatomy normalization", "body proportion averaging",
+  "smaller bust than reference", "flattened or compressed breasts",
+  "tightened, lifted, or artificially supported breasts",
+  "slimmed torso", "beauty standard enforcement",
+  "dataset-average female anatomy",
+  "skin smoothing", "airbrushed texture",
+  "editorial fashion proportions",
+  "camera angles that reduce volume", "depth flattening", "beautification filters",
+];
+
 // ============================================
 // MATRICE JSON D'ANCRAGE — Prompt principal
+// Signature: (model, scene, activeAccount, options)
+// options: { nanoVirtualMode, globalSeed, characterId }
 // ============================================
-export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
+export const generateAnchorMatrix = (model, scene, activeAccount = null, options = {}) => {
+  const {
+    nanoVirtualMode = true,   // ON by default — backward compat: pass false to disable
+    globalSeed,
+    characterId,
+  } = options;
+
   const meta = scene.location_meta || {};
 
   // === SUBJECT ===
@@ -109,11 +128,24 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     get(model, 'skin.details'),
   );
 
-  // Append custom negative prompt if user provided one
+  // Build final negative directives string
+  const allNegDirectives = nanoVirtualMode
+    ? [...NEGATIVE_DIRECTIVES_BASE, ...NEGATIVE_DIRECTIVES_NANO]
+    : NEGATIVE_DIRECTIVES_BASE;
+
   const customNeg = scene.custom_negative_prompt?.trim();
   const negativeStr = customNeg
-    ? [...NEGATIVE_DIRECTIVES, customNeg].join(', ')
-    : NEGATIVE_DIRECTIVES.join(', ');
+    ? [...allNegDirectives, customNeg].join(', ')
+    : allNegDirectives.join(', ');
+
+  // Resolve seed — priority: globalSeed option > scene.seed
+  const effectiveSeed = globalSeed || scene.seed || null;
+
+  // Build anatomical fidelity — enhanced in Nano Virtual Mode
+  const baseAnatomicalFidelity = get(model, 'anatomical_fidelity') || 'Preserve exact anatomical proportions from reference.';
+  const nanoAnatomicalFidelity = nanoVirtualMode
+    ? `${baseAnatomicalFidelity} Never normalize or average body proportions. Preserve all natural volume, soft tissue behavior, sag, projection and asymmetry exactly as described. This is a virtual model with locked proportions — NO anatomy correction allowed.`
+    : baseAnatomicalFidelity;
 
   // Build matrix — only include fields with values (compact removes nulls)
   const rawMatrix = {
@@ -161,23 +193,48 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
     rawMatrix.custom_details = scene.custom_details.trim();
   }
 
-  // Identity lock directives
+  // === DIRECTIVES (base) ===
   rawMatrix.directives = {
     identity_lock: "Maintain exact same face across all generations. Same person, consistent identity. Consistent skin color and body proportions.",
-    anatomical_fidelity: get(model, 'anatomical_fidelity') || "Preserve exact anatomical proportions from reference.",
+    anatomical_fidelity: nanoAnatomicalFidelity,
   };
 
   // Aesthetic signature if model has one
   const sig = get(model, 'signature');
   if (sig) rawMatrix.directives.aesthetic_signature = sig;
 
-  if (scene.seed) {
-    rawMatrix.directives.seed = scene.seed;
+  if (effectiveSeed) {
+    rawMatrix.directives.seed = effectiveSeed;
   }
 
   // Spatial lock for anchored locations
   if (meta.anchor_details) {
     rawMatrix.directives.spatial_lock = "Background must remain spatially consistent: same furniture placement, same objects visible.";
+  }
+
+  // === NANO VIRTUAL MODE — Extended Identity Lock ===
+  if (nanoVirtualMode) {
+    const resolvedCharacterId = characterId || (model.name ? `MODEL_${model.name.toUpperCase().replace(/\s+/g, '_')}` : 'MODEL_V01');
+
+    // Virtual model lock on subject
+    rawMatrix.subject.character_id = resolvedCharacterId;
+    rawMatrix.subject.virtual_model_lock =
+      "This is ALWAYS the exact same virtual model. Same face, same body proportions, same skin tone, same hair texture. NEVER change identity between shots.";
+
+    // ControlNet simulation (inform Gemini about 3D volume expectations)
+    rawMatrix.virtual_depth_simulation = {
+      pose_guidance: "Preserve exact shoulder width, hip angle, and spine curvature from subject description. No pose compression.",
+      volume_guidance: "Preserve chest/hip foreground dominance. Prevent flat or depth-compressed rendering. Maintain realistic 3D soft tissue volume.",
+      realism_guidance: "Raw iPhone 15 Pro / 24mm lens aesthetic. Subtle digital grain, natural imperfect ambient lighting, visible skin texture and pores.",
+    };
+
+    // Extended directives for virtual model
+    rawMatrix.directives.global_seed = effectiveSeed;
+    rawMatrix.directives.character_seed = effectiveSeed;
+    rawMatrix.directives.character_id = resolvedCharacterId;
+    rawMatrix.directives.environment_swap_mode = "model_locked";
+    rawMatrix.directives.virtual_model_rule =
+      "Only the environment section may change between shots. Model face, anatomy, skin, hair are 100% locked by character_id and character_seed. NEVER update, average or normalize the model's appearance.";
   }
 
   // Platform compliance
@@ -198,7 +255,9 @@ export const generateAnchorMatrix = (model, scene, activeAccount = null) => {
   // Remove all null/empty fields for a cleaner prompt
   const matrix = compact(rawMatrix);
 
-  logger.verbose('prompt', '📝 buildPromptMatrix', {
+  logger.verbose('prompt', '📝 buildPromptMatrix (Nano Virtual Edition)', {
+    nanoVirtualMode,
+    characterId: matrix.subject?.character_id || null,
     photo_type: matrix.photo_type,
     subject_demographics: matrix.subject?.demographics,
     apparel: matrix.subject?.apparel,
