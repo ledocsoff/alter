@@ -27,13 +27,6 @@
             "filter": [
                 "**/*"
             ]
-        },
-        {
-            "from": "sauvegarde",
-            "to": "sauvegarde",
-            "filter": [
-                "**/*"
-            ]
         }
     ],
     "mac": {

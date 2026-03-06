@@ -11,7 +11,9 @@ const currentDir = typeof __dirname !== 'undefined'
     ? __dirname
     : (typeof import.meta !== 'undefined' && import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd());
 
-const SAVE_DIR = path.join(currentDir, 'sauvegarde');
+const SAVE_DIR = process.env.VELVET_SAVE_PATH
+    ? path.join(process.env.VELVET_SAVE_PATH, 'sauvegarde')
+    : path.join(currentDir, 'sauvegarde');
 const DATA_FILE = path.join(SAVE_DIR, 'data.json');
 const MAX_BACKUPS = 5;
 

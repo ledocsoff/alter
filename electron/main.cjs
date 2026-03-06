@@ -115,7 +115,12 @@ function startServer() {
             const serverPath = path.join(process.resourcesPath, 'server.cjs');
             const { spawn } = require('child_process');
             serverProcess = spawn(process.execPath, [serverPath], {
-                env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', ELECTRON: 'true' },
+                env: {
+                    ...process.env,
+                    ELECTRON_RUN_AS_NODE: '1',
+                    ELECTRON: 'true',
+                    VELVET_SAVE_PATH: path.join(app.getPath('documents'), 'Velvet Studio')
+                },
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
 
