@@ -12,6 +12,94 @@ let _verbose = false;
 
 // Restore verbose state from localStorage
 try { _verbose = localStorage.getItem(VERBOSE_STORAGE_KEY) === 'true'; } catch { }
+// ─── OMNISCIENT DEBUG (INTERCEPTS) ───
+
+const truncateLongStrings = (item) => {
+    if (typeof item === 'string') {
+        if (item.length > 2000) return item.substring(0, 100) + `... [TRONQUÉ: ${item.length} caractères]`;
+        return item;
+    }
+    if (Array.isArray(item)) return item.map(truncateLongStrings);
+    if (item !== null && typeof item === 'object') {
+        const copy = {};
+        for (const [k, v] of Object.entries(item)) {
+            copy[k] = truncateLongStrings(v);
+        }
+        return copy;
+    }
+    return item;
+};
+
+let _hijacked = false;
+const hijackSystem = () => {
+    if (_hijacked || typeof window === 'undefined') return;
+    _hijacked = true;
+
+    // 1. Intercept Console
+    const methods = ['log', 'info', 'warn', 'error'];
+    methods.forEach(method => {
+        const original = console[method];
+        console[method] = (...args) => {
+            original.apply(console, args);
+            // Only capture if verbose mode is on, to save memory during normal use
+            if (_verbose) {
+                // Avoid infinite loops if we are reacting to our own network intercepts
+                if (args[0] === '[Server]' || args[0] === '[Server Error]' || args[0] === '[Electron]') return;
+                try {
+                    const msg = args.map(a => typeof a === 'object' ? JSON.stringify(truncateLongStrings(a)) : String(a)).join(' ');
+                    _add(method === 'log' ? 'debug' : method, 'app', `[CONSOLE] ${msg}`, null, 'console');
+                } catch { } // Ignore circular JSON errors from random console logs
+            }
+        };
+    });
+
+    // 2. Intercept Fetch API
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+        if (!_verbose) return originalFetch.apply(window, args);
+
+        const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || 'unknown');
+        // Filter out Vite Hot Module Reload spam
+        if (url.includes('@vite') || url.includes('.vite')) return originalFetch.apply(window, args);
+
+        const method = args[1]?.method || 'GET';
+        let payload = null;
+
+        if (args[1]?.body && typeof args[1].body === 'string') {
+            try { payload = JSON.parse(args[1].body); } catch { payload = args[1].body; }
+        }
+
+        _add('debug', 'api', `[FETCH OUT] ${method} ${url.substring(0, 100)}`, truncateLongStrings(payload), 'network');
+
+        try {
+            const response = await originalFetch.apply(window, args);
+            const clone = response.clone();
+
+            const isJson = clone.headers.get('content-type')?.includes('application/json');
+            if (isJson) {
+                clone.json().then(data => {
+                    _add(response.ok ? 'debug' : 'error', 'api', `[FETCH IN] ${response.status} ${url.substring(0, 100)}`, truncateLongStrings(data), 'network');
+                }).catch(() => {
+                    _add(response.ok ? 'debug' : 'error', 'api', `[FETCH IN] ${response.status} ${url.substring(0, 100)}`, '[Response body unreadable]', 'network');
+                });
+            } else {
+                _add(response.ok ? 'debug' : 'error', 'api', `[FETCH IN] ${response.status} ${url.substring(0, 100)}`, `[Type: ${clone.headers.get('content-type')}]`, 'network');
+            }
+            return response;
+        } catch (err) {
+            _add('error', 'api', `[FETCH FAIL] ${method} ${url.substring(0, 100)}`, err.message, 'network');
+            throw err;
+        }
+    };
+
+    // 3. Global Errors
+    window.addEventListener('error', (e) => {
+        if (_verbose) _add('error', 'app', `[CRASH] ${e.message}`, e.error?.stack || null, 'exception');
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        if (_verbose) _add('error', 'app', `[PROMISE REJECT] ${String(e.reason)}`, null, 'exception');
+    });
+};
 
 // ─── CORE ───
 
@@ -81,13 +169,31 @@ const logger = {
     // === Management ===
     clear: () => { _logs = []; _notify(); },
 
-    // === Export (for sharing / diagnosis) ===
     exportJSON: () => JSON.stringify({
         exportedAt: new Date().toISOString(),
         verboseMode: _verbose,
         entryCount: _logs.length,
         entries: _logs,
     }, null, 2),
+
+    exportMarkdown: () => {
+        let md = `# Velvet Studio - Debug Logs\n`;
+        md += `Date: ${new Date().toISOString()}\n`;
+        md += `Verbose Mode: ${_verbose}\n`;
+        md += `Total Entries: ${_logs.length}\n\n`;
+
+        // Reverse so chronological order (oldest first)
+        [..._logs].reverse().forEach(l => {
+            md += `### [${l.level.toUpperCase()}] [${(l.category || l.source).toUpperCase()}] ${l.message}\n`;
+            md += `- **Time:** ${new Date(l.timestamp).toISOString()}\n`;
+            if (l.detail) {
+                const detailStr = typeof l.detail === 'string' ? l.detail : JSON.stringify(l.detail, null, 2);
+                md += `- **Detail:**\n\`\`\`json\n${detailStr}\n\`\`\`\n`;
+            }
+            md += `\n---\n\n`;
+        });
+        return md;
+    },
 
     downloadLog: () => {
         const json = logger.exportJSON();
@@ -105,5 +211,7 @@ const logger = {
 if (typeof window !== 'undefined') {
     window.__VELVET_DEBUG = logger;
 }
+
+hijackSystem();
 
 export default logger;

@@ -15,6 +15,7 @@ const SOURCE_LABELS = {
     api: 'API', storage: 'STORAGE', generation: 'GEN', app: 'APP', nav: 'NAV',
     prompt: 'PROMPT', scene: 'SCENE', preset: 'PRESET',
     'api-response': 'API', 'api-error': 'API', 'location-gen': 'GEN', 'image-gen': 'GEN',
+    console: 'CONSOLE', network: 'NETWORK', exception: 'CRASH',
 };
 
 const SOURCE_COLORS = {
@@ -30,6 +31,9 @@ const SOURCE_COLORS = {
     'api-error': { color: 'text-red-400', bg: 'bg-red-500/10' },
     'location-gen': { color: 'text-orange-400', bg: 'bg-orange-500/10' },
     'image-gen': { color: 'text-pink-400', bg: 'bg-pink-500/10' },
+    console: { color: 'text-zinc-300', bg: 'bg-zinc-700/50' },
+    network: { color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    exception: { color: 'text-red-400', bg: 'bg-red-500/20' },
 };
 
 // ─── Helpers ───
@@ -170,7 +174,7 @@ const DebugPanel = ({ isOpen, onClose }) => {
                     <div className="flex items-center gap-1.5">
                         {activeView === 'technical' && verboseEnabled && (
                             <>
-                                <button onClick={() => navigator.clipboard.writeText(logger.exportJSON())} className="text-[10px] text-zinc-600 hover:text-zinc-300 px-1.5 py-0.5 rounded transition-colors" title="Copier tout">📋</button>
+                                <button onClick={() => navigator.clipboard.writeText(logger.exportMarkdown())} className="text-[10px] text-zinc-600 hover:text-zinc-300 px-1.5 py-0.5 rounded transition-colors" title="Copier tout (Markdown)">📋</button>
                                 <button onClick={() => logger.downloadLog()} className="text-[10px] text-zinc-600 hover:text-zinc-300 px-1.5 py-0.5 rounded transition-colors" title="Exporter .json">💾</button>
                             </>
                         )}
@@ -265,8 +269,8 @@ const DebugPanel = ({ isOpen, onClose }) => {
                     <div className="shrink-0 px-4 py-2 border-t border-zinc-800/30 flex items-center justify-between">
                         <span className="text-[10px] text-zinc-600">{allLogs.length} entrées totales</span>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => navigator.clipboard.writeText(logger.exportJSON())} className="text-[10px] text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors font-medium">
-                                📋 Copier tout
+                            <button onClick={() => navigator.clipboard.writeText(logger.exportMarkdown())} className="text-[10px] text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors font-medium">
+                                📋 Copier tout (MarkDown)
                             </button>
                             <button onClick={() => logger.downloadLog()} className="text-[10px] text-zinc-500 hover:text-zinc-200 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors font-medium">
                                 💾 Exporter .json
