@@ -966,6 +966,27 @@ app.delete('/api/location-refs/:locationId/:refId', (req, res) => {
 });
 
 // ============================================
+// WEB UI (Static Files for Browser Access)
+// ============================================
+const distDirs = [
+    path.join(currentDir, 'dist'), // Production (extraResources dist)
+    path.join(path.dirname(currentDir), 'dist') // Dev mode fallback
+];
+const activeDist = distDirs.find(d => fs.existsSync(d));
+
+if (activeDist) {
+    app.use(express.static(activeDist));
+
+    // SPA Fallback for React Router (only for non-API routes)
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/sauvegarde')) {
+            return next();
+        }
+        res.sendFile(path.join(activeDist, 'index.html'));
+    });
+}
+
+// ============================================
 // ERROR HANDLER — attrape les erreurs non gérées (DOIT être après les routes)
 // ============================================
 app.use((err, _req, res, _next) => {
@@ -995,18 +1016,19 @@ console.log(`  ➜  Sécurité:    écriture atomique + validation + rate limit 
 
 const server = app.listen(PORT, '0.0.0.0', async () => {
     console.log(`  ➜  Statut:      en ligne sur le port ${PORT}`);
-    // Show all network addresses for easy Tailscale/LAN connection
+
     try {
         const os = await import('os');
         const nets = os.networkInterfaces();
         for (const [name, addrs] of Object.entries(nets)) {
             for (const addr of addrs) {
                 if (addr.family === 'IPv4' && !addr.internal) {
-                    console.log(`  ➜  Réseau:      http://${addr.address}:${PORT}  (${name})`);
+                    console.log(`  ➜  Réseau (API + Web): http://${addr.address}:${PORT}  (${name})`);
                 }
             }
         }
     } catch { }
+    console.log(`  ➜  Client Web:  http://localhost:${PORT}`);
     console.log('');
 });
 
