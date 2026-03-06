@@ -128,7 +128,7 @@ export const PromptProvider = ({ children }) => {
         if (obj.photo_type) parts.push(`Photo type: ${obj.photo_type}`);
         if (obj.subject) {
           const s = obj.subject;
-          parts.push(`Subject: ${[s.demographics, s.hair, s.face, s.apparel].filter(Boolean).join(', ')}`);
+          parts.push(`Subject: ${[s.demographics, s.hair, s.face, s.apparel, s.anatomy, s.skin_details, s.virtual_model_lock].filter(Boolean).join(', ')}`);
         }
         if (obj.pose) parts.push(`Pose: ${[obj.pose.body_position, obj.pose.expression].filter(Boolean).join(', ')}`);
         if (obj.environment) parts.push(`Environment: ${[obj.environment.setting, obj.environment.background_elements, obj.environment.time_of_day].filter(Boolean).join(', ')}`);
@@ -137,7 +137,19 @@ export const PromptProvider = ({ children }) => {
         if (obj.vibe) parts.push(`Vibe: ${obj.vibe}`);
         if (obj.style) parts.push(`Style: ${obj.style}`);
 
-        return parts.join(' | ') || JSON.stringify(obj);
+        // Advanced Locks & Nano Virtual Mode directives
+        if (obj.custom_details) parts.push(`Custom details: ${obj.custom_details}`);
+        if (obj.directives) {
+          const d = obj.directives;
+          parts.push(`DIRECTIVES: ${[d.identity_lock, d.anatomical_fidelity, d.virtual_model_rule, d.spatial_lock, d.aesthetic_signature].filter(Boolean).join(' | ')}`);
+        }
+        if (obj.virtual_depth_simulation) {
+          const v = obj.virtual_depth_simulation;
+          parts.push(`DEPTH/VOLUME: ${[v.pose_guidance, v.volume_guidance, v.realism_guidance].filter(Boolean).join(' | ')}`);
+        }
+        if (obj.negative_prompt) parts.push(`NEGATIVE: ${obj.negative_prompt}`);
+
+        return parts.join('\n\n') || JSON.stringify(obj);
       } catch {
         return promptData; // Fallback to raw string if not JSON
       }
