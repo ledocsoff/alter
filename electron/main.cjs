@@ -112,21 +112,23 @@ function startServer() {
             console.log('[Electron] Dev mode: using external API server from concurrently');
             // Do not spawn the server, just proceed to polling
         } else {
-            const serverPath = path.join(process.resourcesPath, 'server.cjs');
-            const { spawn } = require('child_process');
-            serverProcess = spawn(process.execPath, [serverPath], {
+            // Under production, server.cjs is bundled directly inside the sealed app.asar.
+            // Node's `fork()` method (unlike `spawn()`) is designed to execute scripts securely from inside ASAR archives!
+            const serverPath = path.join(__dirname, '../dist/server.cjs');
+            const { fork } = require('child_process');
+            serverProcess = fork(serverPath, [], {
                 env: {
                     ...process.env,
                     ELECTRON_RUN_AS_NODE: '1',
                     ELECTRON: 'true',
                     VELVET_SAVE_PATH: path.join(app.getPath('documents'), 'Velvet Studio')
                 },
-                stdio: ['ignore', 'pipe', 'pipe'],
+                stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
             });
 
             const fs = require('fs');
             const logPath = path.join(app.getPath('userData'), 'server-crash.log');
-            fs.writeFileSync(logPath, '[Electron] Starting internal server...\n', { flag: 'a' });
+            fs.writeFileSync(logPath, '[Electron] Starting internal server via fork()...\n', { flag: 'a' });
 
             serverProcess.stdout?.on('data', (data) => {
                 const msg = data.toString().trim();
@@ -141,7 +143,7 @@ function startServer() {
             });
 
             serverProcess.on('error', (err) => {
-                fs.writeFileSync(logPath, `[SPAWN ERR] ${err.message}\n`, { flag: 'a' });
+                fs.writeFileSync(logPath, `[FORK ERR] ${err.message}\n`, { flag: 'a' });
                 reject(err);
             });
 
@@ -203,14 +205,12 @@ function createWindow() {
         },
     });
 
-    // Load the app
     if (IS_DEV) {
         mainWindow.loadURL(`http://localhost:${VITE_PORT}`);
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
-        // In production, the dist folder is moved out of app.asar into Resources/dist 
-        // because we listed it inside extraResources in electron-builder.
-        mainWindow.loadFile(path.join(process.resourcesPath, 'dist', 'index.html'));
+        // In production, index.html is loaded directly from inside the secure app.asar
+        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
 
     // Show window once content is ready (avoids white flash)

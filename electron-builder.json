@@ -16,19 +16,6 @@
         "owner": "ledocsoff",
         "repo": "velvet-studio"
     },
-    "extraResources": [
-        {
-            "from": "dist/server.cjs",
-            "to": "server.cjs"
-        },
-        {
-            "from": "dist",
-            "to": "dist",
-            "filter": [
-                "**/*"
-            ]
-        }
-    ],
     "mac": {
         "category": "public.app-category.developer-tools",
         "target": [
