@@ -1,0 +1,3 @@
+# Linguist overrides — exclude agent scripts from GitHub language stats
+.agent/** linguist-vendored
+docs/** linguist-documentation

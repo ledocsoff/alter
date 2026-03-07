@@ -133,5 +133,4 @@ All data is stored in the `Documents/Alter/sauvegarde/` folder on your computer 
 
 ## License
 
-Private project.
- 
+MIT License — see [LICENSE](LICENSE) for details.
