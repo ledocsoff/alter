@@ -1,0 +1,82 @@
+name: Build and Release Alter
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  # ─── macOS Build ──────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: macos-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: macos-npm-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Vite App
+        run: npm run build
+
+      - name: Transpile Server to CommonJS
+        run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
+
+      - name: Build Electron App (macOS)
+        run: npx electron-builder --config electron-builder.json --mac --publish never
+
+      - name: Upload macOS Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alter-macOS
+          path: release/*.dmg
+
+  # ─── Windows Build ────────────────────────────────────────
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\npm-cache
+          key: windows-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: windows-npm-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Vite App
+        run: npm run build
+
+      - name: Transpile Server to CommonJS
+        run: npx esbuild server.js --bundle --platform=node --format=cjs --outfile=dist/server.cjs
+
+      - name: Build Electron App (Windows)
+        run: npx electron-builder --config electron-builder.json --win --publish never
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alter-Windows
+          path: release/*.exe

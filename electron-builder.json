@@ -1,0 +1,57 @@
+{
+    "appId": "com.alter.studio",
+    "productName": "Alter",
+    "asarUnpack": [
+        "**/node_modules/sharp/**/*",
+        "**/node_modules/@img/**/*"
+    ],
+    "directories": {
+        "output": "release"
+    },
+    "files": [
+        "dist/**/*",
+        "electron/**/*",
+        "server.js",
+        "package.json",
+        "node_modules/sharp/**/*",
+        "node_modules/@img/**/*"
+    ],
+    "mac": {
+        "category": "public.app-category.developer-tools",
+        "target": [
+            "dmg",
+            "zip"
+        ],
+        "icon": "public/icons/icon.png",
+        "identity": null,
+        "hardenedRuntime": false,
+        "gatekeeperAssess": false
+    },
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64",
+                    "ia32"
+                ]
+            }
+        ],
+        "icon": "public/icons/icon.ico",
+        "artifactName": "Alter-Setup-${version}.${ext}"
+    },
+    "linux": {
+        "target": [
+            "AppImage"
+        ],
+        "icon": "public/icons/icon.png"
+    },
+    "nsis": {
+        "oneClick": true,
+        "createDesktopShortcut": true,
+        "installerIcon": "public/icons/icon.ico",
+        "uninstallerIcon": "public/icons/icon.ico",
+        "shortcutName": "Alter",
+        "artifactName": "Alter-Setup-${version}.${ext}"
+    }
+}
