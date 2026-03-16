@@ -1,7 +1,7 @@
 {
     "name": "alter",
     "private": true,
-    "version": "6.0.0",
+    "version": "6.1.0",
     "description": "Premium AI Model Management & Image Generation Studio",
     "author": "ledocsoff",
     "homepage": "https://github.com/ledocsoff/alter",

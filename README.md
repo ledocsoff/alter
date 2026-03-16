@@ -8,8 +8,8 @@ Alter is a premium prompt engineering workstation for AI image generation. Manag
 
 | Platform | Download |
 |----------|----------|
-| **macOS** (Apple Silicon) | [Alter-6.0.0-arm64.dmg](https://github.com/ledocsoff/alter/releases/download/v6.0.0/Alter-6.0.0-arm64.dmg) |
-| **Windows** (x64) | [Alter-Setup-6.0.0.exe](https://github.com/ledocsoff/alter/releases/download/v6.0.0/Alter-Setup-6.0.0.exe) |
+| **macOS** (Apple Silicon) | [Alter-6.1.0-arm64.dmg](https://github.com/ledocsoff/alter/releases/download/v6.1.0/Alter-6.1.0-arm64.dmg) |
+| **Windows** (x64) | [Alter-Setup-6.1.0.exe](https://github.com/ledocsoff/alter/releases/download/v6.1.0/Alter-Setup-6.1.0.exe) |
 
 ### 🍏 macOS Installation Guide (Important)
 Since Alter is downloaded from GitHub and is not signed by a paid Apple Developer certificate, macOS enforces strict security rules (Gatekeeper and App Translocation). To ensure the app can save your generation data and automatically update itself, please follow these exact steps:
@@ -47,7 +47,7 @@ Since Alter is downloaded from GitHub and is not signed by a paid Apple Develope
 
 ## Audits & Quality Control
 
-Alter (v6.0.0) has passed a rigorous multi-phase technical audit. Detailed reports covering Cybersecurity, Performance, Accessibility, and Server Integrity are in the `docs/audits/` directory.
+Alter (v6.1.0) has passed a rigorous multi-phase technical audit. Detailed reports covering Cybersecurity, Performance, Accessibility, and Server Integrity are in the `docs/audits/` directory.
 
 ## Quick Start (Development)
 
@@ -77,8 +77,8 @@ Releases are automated via GitHub Actions. To create a new release:
 
 ```bash
 # Tag and push to trigger the build pipeline
-git tag v6.0.0
-git push origin v6.0.0
+git tag v6.1.0
+git push origin v6.1.0
 ```
 
 The CI pipeline will:
