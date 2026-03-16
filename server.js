@@ -9,9 +9,17 @@ import sharp from 'sharp';
 
 // --- STEALTH HYBRID SHARP PIPELINE ---
 // Returns { buffer, ext, mimeType } for safe integration
-const processForStealth = async (imgBuffer) => {
-    const TARGET_W = 1080;
-    const TARGET_H = 1350;
+const processForStealth = async (imgBuffer, aspectRatio = '4:5') => {
+    let TARGET_W = 1080;
+    let TARGET_H = 1350; // Default 4:5
+
+    if (aspectRatio === '1:1') {
+        TARGET_W = 1080;
+        TARGET_H = 1080;
+    } else if (aspectRatio === '9:16') {
+        TARGET_W = 1080;
+        TARGET_H = 1920;
+    }
 
     // 1. Strip metadata + Resize with Lanczos3 (destroys SynthID grid)
     const resized = await sharp(imgBuffer)
@@ -654,7 +662,7 @@ app.post('/api/gallery', largePayloadMiddleware, async (req, res) => {
     // Rate limit est géré globalement par apiLimiter désormais
 
     try {
-        const { base64, mimeType, prompt, scene, modelId, accountId, modelName, locationName, accountHandle, seed, modelHash } = req.body;
+        const { base64, mimeType, prompt, scene, modelId, accountId, modelName, locationName, accountHandle, seed, modelHash, aspectRatio } = req.body;
         if (!base64 || typeof base64 !== 'string') return res.status(400).json({ error: 'base64 requis (string)' });
 
         // Validate image size
@@ -715,7 +723,7 @@ app.post('/api/gallery', largePayloadMiddleware, async (req, res) => {
 
         let finalBuffer;
         try {
-            const result = await processForStealth(imgBuffer);
+            const result = await processForStealth(imgBuffer, aspectRatio);
             finalBuffer = result.buffer;
             ext = result.ext;
             outputMime = result.mimeType;
@@ -740,6 +748,7 @@ app.post('/api/gallery', largePayloadMiddleware, async (req, res) => {
             modelName: (modelName || '').slice(0, 100),
             locationName: (locationName || 'Sandbox').slice(0, 100),
             accountHandle: (accountHandle || '').slice(0, 100),
+            aspectRatio: aspectRatio || '9:16', // Save the aspect ratio in gallery meta too
             seed: seed || null,
             modelHash: modelHash || null,
             timestamp: Date.now(),

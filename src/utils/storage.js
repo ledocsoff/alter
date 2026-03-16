@@ -591,6 +591,7 @@ export const saveToGallery = async (imageData, meta = {}) => {
                 modelName: meta.modelName || '',
                 locationName: meta.locationName || 'Lieu inconnu',
                 accountHandle: meta.accountHandle || '',
+                aspectRatio: meta.aspectRatio || '9:16', // Included aspectRatio
                 seed: meta.seed || null,
                 modelHash: meta.modelHash || null,
             }),

@@ -52,6 +52,7 @@ export const PromptProvider = ({ children }) => {
   // =============================================
   // GLOBAL GENERATION STATE
   // =============================================
+  const [aspectRatio, setAspectRatio] = useState('9:16');
   const [generationStatus, setGenerationStatus] = useState('idle'); // 'idle' | 'generating' | 'error'
   const [currentImage, setCurrentImage] = useState(null);
   const [generationError, setGenerationError] = useState('');
@@ -253,7 +254,7 @@ Extract ONLY the clothing item from the following image.
     }
 
     try {
-      const result = await generateImage(apiKey, promptToSend, '9:16', anchorHistory, { seed: scene?.seed || null });
+      const result = await generateImage(apiKey, promptToSend, aspectRatio, anchorHistory, { seed: scene?.seed || null });
 
       if (!result?.imageBase64) {
         throw new Error(result?.error || "L'API a répondu sans image ou format inattendu.");
@@ -278,14 +279,14 @@ Extract ONLY the clothing item from the following image.
       setGenerationStatus('error');
       return { _error: errMsg };
     }
-  }, [generatedPrompt, generationStatus, lastGenTime, referenceImages, locationRefImages, outfitRefImages, model.name]);
+  }, [generatedPrompt, generationStatus, lastGenTime, referenceImages, locationRefImages, outfitRefImages, model.name, aspectRatio]);
 
   const value = useMemo(() => ({
     model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, outfitRefImages,
-    generationStatus, currentImage, generationError, customPromptOverride, generationElapsed,
+    generationStatus, currentImage, generationError, customPromptOverride, generationElapsed, aspectRatio,
     setModel, setScene, setReferenceImages, setLocationRefImages, setOutfitRefImages, updateSceneEntry,
-    handleGenerateImage, setGenerationStatus, setCurrentImage, setGenerationError, setCustomPromptOverride
-  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, outfitRefImages, generationStatus, currentImage, generationError, updateSceneEntry, handleGenerateImage, customPromptOverride, generationElapsed]);
+    handleGenerateImage, setGenerationStatus, setCurrentImage, setGenerationError, setCustomPromptOverride, setAspectRatio
+  }), [model, scene, generatedPrompt, anchorMatrix, referenceImages, locationRefImages, outfitRefImages, generationStatus, currentImage, generationError, updateSceneEntry, handleGenerateImage, customPromptOverride, generationElapsed, aspectRatio]);
 
   return (
     <PromptContext.Provider value={value}>

@@ -24,7 +24,11 @@ const GenerationView = () => {
     const { modelId, accountId, locationId } = useParams();
 
     const navigate = useNavigate();
-    const { allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages, generationStatus, setCustomPromptOverride } = useStudio();
+    const { 
+        allModelsDatabase, model, setModel, scene, setScene, updateSceneEntry, setActiveWorkflow, 
+        generatedPrompt, setReferenceImages, setLocationRefImages, referenceImages, locationRefImages, 
+        generationStatus, setCustomPromptOverride, aspectRatio, setAspectRatio 
+    } = useStudio();
     const toast = useToast();
 
     const [isLoaded, setIsLoaded] = useState(false);
@@ -231,6 +235,27 @@ const GenerationView = () => {
                         <span className="text-[9px] sm:text-[10px] text-zinc-500 font-medium">Seed</span>
                         <span className="text-[10px] sm:text-[11px] text-teal-400 font-mono font-semibold tabular-nums">{scene.seed || '—'}</span>
                     </div>
+                    {/* ASPECT RATIO SELECTOR */}
+                    <div className="flex bg-white/[0.03] border border-white/[0.06] rounded-lg p-0.5" title="Format d'image">
+                        {[
+                            { id: '1:1', label: '1:1', icon: '◻️' },
+                            { id: '4:5', label: '4:5', icon: '📱' },
+                            { id: '9:16', label: '16:9', icon: '🎥' } // Used '16:9' icon as visual representation of vertical but label is 9:16
+                        ].map((ar) => (
+                            <button
+                                key={ar.id}
+                                onClick={() => setAspectRatio(ar.id)}
+                                className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 rounded-md text-[9px] sm:text-[10px] font-medium transition-colors ${aspectRatio === ar.id
+                                        ? 'bg-zinc-800 text-teal-400 shadow-sm'
+                                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]'
+                                    }`}
+                            >
+                                <span>{ar.icon}</span>
+                                <span className={aspectRatio === ar.id ? 'font-bold' : ''}>{ar.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
                     <button
                         onClick={() => setShowRecap(!showRecap)}
                         className={`text-[9px] sm:text-[10px] font-medium px-2 py-1 sm:px-2.5 rounded-lg transition-all ${showRecap ? 'text-teal-400 bg-teal-500/10' : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]'}`}

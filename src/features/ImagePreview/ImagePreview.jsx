@@ -11,7 +11,7 @@ Keep the same outfit unless specified otherwise.
 The result should feel like a different shot from the same photoshoot.`;
 
 const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryUpdate }, ref) => {
-  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene, generationStatus, currentImage, generationElapsed, generationError, handleGenerateImage } = useStudio();
+  const { anchorMatrix, generatedPrompt, referenceImages, locationRefImages, scene, generationStatus, currentImage, generationElapsed, generationError, handleGenerateImage, aspectRatio } = useStudio();
   const toast = useToast();
 
   const [sessionImages, setSessionImages] = useState([]);
@@ -33,7 +33,7 @@ const ImagePreview = forwardRef(({ onRequestApiKey, galleryMeta = {}, onGalleryU
     try {
       galleryResult = await saveToGallery(
         { base64: finalImage.imageBase64, mimeType: finalImage.mimeType },
-        { ...galleryMetaRef.current, prompt: promptToSend }
+        { ...galleryMetaRef.current, prompt: promptToSend, aspectRatio } // Included aspectRatio
       );
       window.dispatchEvent(new CustomEvent('alter:gallery-updated'));
     } catch (err) { console.error('Gallery save failed:', err); }
